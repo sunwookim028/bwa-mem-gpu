@@ -24,6 +24,7 @@ typedef struct __smem_i smem_i;
 #define MEM_F_XB        0x2000
 
 typedef struct {
+	uint64_t max_mem_intv;
 	int a, b;               // match score and mismatch penalty
 	int o_del, e_del;
 	int o_ins, e_ins;
@@ -32,7 +33,6 @@ typedef struct {
 	int w;                  // band width
 	int zdrop;              // Z-dropoff
 
-	uint64_t max_mem_intv;
 
 	int T;                  // output score threshold; only affecting output
 	int flag;               // see MEM_F_* macros
@@ -59,6 +59,8 @@ typedef struct {
 
 typedef struct {
 	int64_t rb, re; // [rb,re): reference sequence in the alignment
+	uint64_t hash;
+	float frac_rep;
 	int qb, qe;     // [qb,qe): query sequence in the alignment
 	int rid;        // reference seq ID
 	int score;      // best local SW score
@@ -73,8 +75,6 @@ typedef struct {
 	int secondary_all;
 	int seedlen0;   // length of the starting seed
 	int n_comp:30, is_alt:2; // number of sub-alignments chained together
-	float frac_rep;
-	uint64_t hash;
 } mem_alnreg_t;
 
 typedef struct { size_t n, m; mem_alnreg_t *a; } mem_alnreg_v;
@@ -87,12 +87,12 @@ typedef struct {
 
 typedef struct { // This struct is only used for the convenience of API.
 	int64_t pos;     // forward strand 5'-end mapping position
+	char *XA;        // alternative mappings
+	uint32_t *cigar; // CIGAR in the BAM encoding: opLen<<4|op; op to integer mapping: MIDSH=>01234
 	int rid;         // reference sequence index in bntseq_t; <0 for unmapped
 	int flag;        // extra flag
 	uint32_t is_rev:1, is_alt:1, mapq:8, NM:22; // is_rev: whether on the reverse strand; mapq: mapping quality; NM: edit distance
 	int n_cigar;     // number of CIGAR operations
-	uint32_t *cigar; // CIGAR in the BAM encoding: opLen<<4|op; op to integer mapping: MIDSH=>01234
-	char *XA;        // alternative mappings
 
 	int score, sub, alt_sc;
 } mem_aln_t;

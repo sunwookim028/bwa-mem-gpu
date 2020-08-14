@@ -5,7 +5,7 @@ WRAP_MALLOC=-DUSE_MALLOC_WRAPPERS
 AR=			ar
 DFLAGS=		-DHAVE_PTHREAD $(WRAP_MALLOC)
 LOBJS=		utils.o kthread.o kstring.o ksw.o bwt.o bntseq.o bwa.o bwamem.o bwamem_pair.o bwamem_extra.o malloc_wrap.o \
-			QSufSort.o bwt_gen.o rope.o rle.o is.o bwtindex.o
+			QSufSort.o bwt_gen.o rope.o rle.o is.o bwtindex.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o bwamem_GPU.o GPULink.o
 AOBJS=		bwashm.o bwase.o bwaseqio.o bwtgap.o bwtaln.o bamlite.o \
 			bwape.o kopen.o pemerge.o maxk.o \
 			bwtsw2_core.o bwtsw2_main.o bwtsw2_aux.o bwt_lite.o \
@@ -14,6 +14,7 @@ PROG=		bwa
 INCLUDES=	
 LIBS=		-lm -lz -lpthread
 SUBDIRS=	.
+CUDADIR=    ./cuda
 
 ifeq ($(shell uname -s),Linux)
 	LIBS += -lrt
@@ -27,7 +28,7 @@ endif
 all:$(PROG)
 
 bwa:libbwa.a $(AOBJS) main.o
-		$(CC) $(CFLAGS) $(DFLAGS) $(AOBJS) main.o -o $@ -L. -lbwa $(LIBS)
+		g++ $(CFLAGS) $(DFLAGS) $(AOBJS) main.o -o $@ -L. -lbwa -L/usr/local/cuda/lib64 -lcuda -lcudart -lcudadevrt $(LIBS)
 
 bwamem-lite:libbwa.a example.o
 		$(CC) $(CFLAGS) $(DFLAGS) example.o -o $@ -L. -lbwa $(LIBS)
@@ -42,6 +43,25 @@ depend:
 	( LC_ALL=C ; export LC_ALL; makedepend -Y -- $(CFLAGS) $(DFLAGS) -- *.c )
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
+CUDAKernel_memmgnt.o: $(CUDADIR)/CUDAKernel_memmgnt.cu $(CUDADIR)/CUDAKernel_memmgnt.cuh
+	nvcc -I. -G -g -O0 --device-c -arch=sm_30 $(CUDADIR)/CUDAKernel_memmgnt.cu -o CUDAKernel_memmgnt.o
+bwt_CUDA.o: $(CUDADIR)/bwt_CUDA.cu $(CUDADIR)/bwt_CUDA.cuh
+	nvcc -I. -G -g --device-c -arch=sm_30 $(CUDADIR)/bwt_CUDA.cu -o bwt_CUDA.o
+bntseq_CUDA.o: $(CUDADIR)/bntseq_CUDA.cuh $(CUDADIR)/bntseq_CUDA.cu
+	nvcc -I. -G -g --device-c -arch=sm_30 $(CUDADIR)/bntseq_CUDA.cu -o bntseq_CUDA.o
+kbtree_CUDA.o: $(CUDADIR)/kbtree_CUDA.cuh $(CUDADIR)/kbtree_CUDA.cu
+	nvcc -I. -G -g --device-c -arch=sm_30 $(CUDADIR)/kbtree_CUDA.cu -o kbtree_CUDA.o
+ksw_CUDA.o: $(CUDADIR)/ksw_CUDA.cuh $(CUDADIR)/ksw_CUDA.cu
+	nvcc -I. -G -g --device-c -arch=sm_30 $(CUDADIR)/ksw_CUDA.cu -o ksw_CUDA.o
+bwa_CUDA.o: $(CUDADIR)/bwa_CUDA.cuh $(CUDADIR)/bwa_CUDA.cu
+	nvcc -I. -G -g --device-c -arch=sm_30 $(CUDADIR)/bwa_CUDA.cu -o bwa_CUDA.o
+kstring_CUDA.o: $(CUDADIR)/kstring_CUDA.cuh $(CUDADIR)/kstring_CUDA.cu
+	nvcc -I. -G -g --device-c -arch=sm_30 $(CUDADIR)/kstring_CUDA.cu -o kstring_CUDA.o
+bwamem_GPU.o: bwamem.h bwa.h bntseq.h $(CUDADIR)/bwamem_GPU.cuh kbtree.h $(CUDADIR)/bwamem_GPU.cu $(CUDADIR)/CUDAKernel_memmgnt.cuh $(CUDADIR)/CUDAKernel_memmgnt.cu $(CUDADIR)/bwt_CUDA.cu $(CUDADIR)/bntseq_CUDA.cu $(CUDADIR)/kbtree_CUDA.cuh $(CUDADIR)/ksw_CUDA.cu $(CUDADIR)/ksw_CUDA.cuh $(CUDADIR)/bwa_CUDA.cuh $(CUDADIR)/bwa_CUDA.cuh
+	nvcc -I. -G -g --device-c -arch=sm_30 $(CUDADIR)/bwamem_GPU.cu -o bwamem_GPU.o
+GPULink.o: bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o
+	nvcc -I. -G -g --device-link -arch=sm_30 bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o --output-file GPULink.o
+
 
 QSufSort.o: QSufSort.h
 bamlite.o: bamlite.h malloc_wrap.h
@@ -86,3 +106,16 @@ pemerge.o: ksw.h kseq.h malloc_wrap.h kstring.h bwa.h bntseq.h bwt.h utils.h
 rle.o: rle.h
 rope.o: rle.h rope.h
 utils.o: utils.h ksort.h malloc_wrap.h kseq.h
+
+.PHONY: test_300 test_500 debug_300 debug
+test_300:
+	./bwa mem ./GCF_000008865.2_ASM886v2_genomic.fna ./test/SRR10896389.fastq
+
+test_500:
+	./bwa mem ./GCF_000008865.2_ASM886v2_genomic.fna ./test/SRR12358935.fastq
+
+debug:
+	CUDA_VISIBLE_DEVICES=0 cuda-gdb bwa
+
+profile:
+	nsys profile --stat=true ./bwa mem -v4  ./GCF_000008865.2_ASM886v2_genomic.fna ./SRR10896389.fastq

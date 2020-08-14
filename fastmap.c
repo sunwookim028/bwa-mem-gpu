@@ -12,6 +12,7 @@
 #include "utils.h"
 #include "bntseq.h"
 #include "kseq.h"
+#include "cuda/bwamem_GPU.cuh"
 KSEQ_DECLARE(gzFile)
 
 extern unsigned char nst_nt4_table[256];
@@ -27,6 +28,7 @@ typedef struct {
 	int64_t n_processed;
 	int copy_comment, actual_chunk_size;
 	bwaidx_t *idx;
+	gpu_ptrs_t gpu_data;
 } ktp_aux_t;
 
 typedef struct {
@@ -70,19 +72,26 @@ static void *process(void *shared, int step, void *_data)
 				fprintf(stderr, "[M::%s] %d single-end sequences; %d paired-end sequences\n", __func__, n_sep[0], n_sep[1]);
 			if (n_sep[0]) {
 				tmp_opt.flag &= ~MEM_F_PE;
-				mem_process_seqs(&tmp_opt, idx->bwt, idx->bns, idx->pac, aux->n_processed, n_sep[0], sep[0], 0);
+				// prepare GPU data before kernel
+				prepare_batch_GPU(&aux->gpu_data, sep[0], n_sep[0], &tmp_opt);
+				mem_align_GPU(aux->gpu_data, sep[0], &tmp_opt, idx->bns);
 				for (i = 0; i < n_sep[0]; ++i)
 					data->seqs[sep[0][i].id].sam = sep[0][i].sam;
 			}
 			if (n_sep[1]) {
 				tmp_opt.flag |= MEM_F_PE;
-				mem_process_seqs(&tmp_opt, idx->bwt, idx->bns, idx->pac, aux->n_processed + n_sep[0], n_sep[1], sep[1], aux->pes0);
+				prepare_batch_GPU(&aux->gpu_data, sep[1], n_sep[1], &tmp_opt);
+				mem_align_GPU(aux->gpu_data, sep[1], &tmp_opt, idx->bns);
 				for (i = 0; i < n_sep[1]; ++i)
 					data->seqs[sep[1][i].id].sam = sep[1][i].sam;
 			}
 			free(sep[0]); free(sep[1]);
-		} else mem_process_seqs(opt, idx->bwt, idx->bns, idx->pac, aux->n_processed, data->n_seqs, data->seqs, aux->pes0);
+		} else {
+			prepare_batch_GPU(&aux->gpu_data, data->seqs, data->n_seqs, 0);
+			mem_align_GPU(aux->gpu_data, data->seqs, opt, idx->bns);
+		}
 		aux->n_processed += data->n_seqs;
+		fprintf(stderr, "[M::%s] finished processing %ld seqs\n", __func__, aux->n_processed);
 		return data;
 	} else if (step == 2) {
 		for (i = 0; i < data->n_seqs; ++i) {
@@ -358,7 +367,10 @@ int main_mem(int argc, char *argv[])
 	}
 	bwa_print_sam_hdr(aux.idx->bns, hdr_line);
 	aux.actual_chunk_size = fixed_chunk_size > 0? fixed_chunk_size : opt->chunk_size * opt->n_threads;
-	kt_pipeline(no_mt_io? 1 : 2, process, &aux, 3);
+	// Init memory on GPU
+	aux.gpu_data = GPU_Init(aux.opt, aux.idx->bwt, aux.idx->bns, aux.idx->pac, aux.pes0);
+	// kt_pipeline(no_mt_io? 1 : 2, process, &aux, 3);
+	kt_pipeline(1, process, &aux, 3);
 	free(hdr_line);
 	free(opt);
 	bwa_idx_destroy(aux.idx);

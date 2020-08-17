@@ -62,43 +62,15 @@ __device__ void* CUDAKernelMalloc(void* d_buffer_pool, size_t size, uint8_t alig
 	   The 4 bytes before the returned pointer is the size of the chunk
 	*/
 	CUDAKernel_mem_info* d_pool_info = (CUDAKernel_mem_info*)d_buffer_pool;
-	unsigned offset;
-	// // get the lock
-	// while (atomicExch(&(d_pool_info->lock), 1) == 1){}
+	unsigned offset = atomicAdd(&d_pool_info->current_offset, 3+4+align_size-1+size);
 
-	// offset = d_pool_info->current_offset;
-	// // enforce memory alignment
-	// // size pointer need to be divisible by 4
-	// if (offset%4)
-	// 	offset += 4 - (offset%4);
-	// // out pointer need to be divisible by align_size
-	// if ((offset+4)%align_size)
-	// 	offset += align_size - (offset+4)%align_size;
-
-	// // increase offset for next malloc
-	// d_pool_info->current_offset = offset + 4 + size;
-	// // release lock
-	// atomicExch(&(d_pool_info->lock), 0);
-
-	bool gotLock = false;
-	do 	// keep trying to get lock until lock_status is 0 (free)
-	{
-		if (gotLock = atomicCAS(&d_pool_info->lock, 0, 1) == 0){	// try to get lock
-			offset = d_pool_info->current_offset;
-			// enforce memory alignment
-				// size pointer need to be divisible by 4
-			if (offset%4)
-				offset += 4 - (offset%4);
-				// out pointer need to be divisible by align_size
-			if ((offset+4)%align_size)
-				offset += align_size - (offset+4)%align_size;
-
-			// increase offset for next malloc
-			d_pool_info->current_offset = offset + 4 + size;
-		}
-		if (gotLock) // release lock
-			d_pool_info->lock = 0;
-	} while (!gotLock);
+	// enforce memory alignment
+		// size pointer need to be divisible by 4
+	if (offset%4)
+		offset += 4 - (offset%4);
+		// out pointer need to be divisible by align_size
+	if ((offset+4)%align_size)
+		offset += align_size - (offset+4)%align_size;
 
 	// check if we passed the end pointer
 	if (offset > d_pool_info->end_offset){

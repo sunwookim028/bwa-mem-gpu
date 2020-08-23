@@ -107,12 +107,15 @@ rle.o: rle.h
 rope.o: rle.h rope.h
 utils.o: utils.h ksort.h malloc_wrap.h kseq.h
 
-.PHONY: test_300 test_500 debug_300 debug
+.PHONY: test_300 test_500 debug_300  test_benchmark debug
 test_300:
 	./bwa mem ./GCF_000008865.2_ASM886v2_genomic.fna ./test/SRR10896389.fastq
 
 test_500:
 	./bwa mem ./GCF_000008865.2_ASM886v2_genomic.fna ./test/SRR12358935.fastq
+
+test_benchmark:
+	./bwa mem ./GCF_000008865.2_ASM886v2_genomic.fna ./test/SRR10896389_benchmark.fastq
 
 debug:
 	CUDA_VISIBLE_DEVICES=0 cuda-gdb bwa

@@ -1,14 +1,5 @@
-#define NBUFFERPOOLS 32 	// number of buffer pools
-#define POOLSIZE 314572800	// size of each buffer pool is 300MB
 #include <stdio.h>
 #include <stdint.h>
-
-typedef struct
-{
-	int lock;					// malloc lock, 0 is free
-	unsigned current_offset;	// current offset to the available part of the chunk
-	unsigned end_offset;		// the max offset of the chunk
-} CUDAKernel_mem_info;
 
 // initialize 32 chunks of memory
 extern __host__ void* CUDA_mem_init();

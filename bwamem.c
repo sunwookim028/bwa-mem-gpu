@@ -96,7 +96,7 @@ mem_opt_t *mem_opt_init()
 	o->drop_ratio = 0.50;
 	o->XA_drop_ratio = 0.80;
 	o->split_factor = 1.5;
-	o->chunk_size = 10000000;
+	o->chunk_size = 30000000;
 	o->n_threads = 1;
 	o->max_XA_hits = 5;
 	o->max_XA_hits_alt = 200;

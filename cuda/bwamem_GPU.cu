@@ -10,33 +10,30 @@
 #include "kstring_CUDA.cuh"
 #include <string.h>
 
+__device__ __constant__ unsigned char d_nst_nt4_table[256] = {
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 5 /*'-'*/, 4, 4,
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  3, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  3, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4
+};
+
 /* ------------------------------ DEVICE FUNCTIONS TO BE CALLED WITHIN KERNEL ---------------------------*/
 /* collection of SA intervals  */
 typedef struct {
 	bwtintv_v mem, mem1, *tmpv[2];
 } smem_aux_t;
-
-__device__ static smem_aux_t *smem_aux_init(void* CUDAKernel_buffer)
-{
-	smem_aux_t *a;
-	a = (smem_aux_t*)CUDAKernelCalloc(CUDAKernel_buffer, 1, sizeof(smem_aux_t), 8);
-
-	void* temp = CUDAKernelCalloc(CUDAKernel_buffer, 1, sizeof(bwtintv_v), 8);
-	a->tmpv[0] = (bwtintv_v*)temp;
-
-	temp = CUDAKernelCalloc(CUDAKernel_buffer, 1, sizeof(bwtintv_v), 8);
-	a->tmpv[1] = (bwtintv_v*)temp;
-	return a;
-}
-
-// __device__ static void smem_aux_destroy(smem_aux_t *a)
-// {	
-// 	free(a->tmpv[0]->a); free(a->tmpv[0]);
-// 	free(a->tmpv[1]->a); free(a->tmpv[1]);
-// 	free(a->mem.a); free(a->mem1.a);
-// 	free(a);
-// }
-
 
 /************************
  * Seeding and Chaining *
@@ -66,80 +63,6 @@ __device__ static int test_and_merge(const mem_opt_t *opt, int64_t l_pac, mem_ch
 }
 
 /* end collection of SA intervals  */
-static __device__ void mem_collect_intv(const mem_opt_t *opt, const bwt_t *bwt, int len, const uint8_t *seq, smem_aux_t *a, void* d_buffer_ptr)
-{
-	int i, k, x = 0, old_n;
-	int start_width = 1;
-	int split_len = (int)(opt->min_seed_len * opt->split_factor + .499);
-	// first pass: find all SMEMs
-	while (x < len) {
-		if (seq[x] < 4) {
-			x = bwt_smem1a_gpu(bwt, len, seq, x, start_width, 0, &a->mem1, a->tmpv, d_buffer_ptr);
-			for (i = 0; i < a->mem1.n; ++i) {
-				bwtintv_t *p = &a->mem1.a[i];
-				int slen = (uint32_t)p->info - (p->info>>32); // seed length
-				if (slen >= opt->min_seed_len){
-					// kv_push(bwtintv_t, v=a->mem, x=*p, d_buffer_ptr);
-					if (a->mem.n == a->mem.m) {
-						a->mem.m = a->mem.m? a->mem.m<<1 : 2;
-						a->mem.a = (bwtintv_t*)CUDAKernelRealloc(d_buffer_ptr, a->mem.a, sizeof(bwtintv_t) * a->mem.m, 8);
-					}
-					a->mem.a[a->mem.n++] = *p;
-				}
-			}
-		} else ++x;
-	}
-
-	// second pass: find MEMs inside a long SMEM
-	old_n = a->mem.n;
-	for (k = 0; k < old_n; ++k) {
-		bwtintv_t *p = &a->mem.a[k];
-		int start = p->info>>32, end = (int32_t)p->info;
-		if (end - start < split_len || p->x[2] > opt->split_width) continue;
-		bwt_smem1a_gpu(bwt, len, seq, (start + end)>>1, p->x[2]+1, 0, &a->mem1, a->tmpv, d_buffer_ptr);
-		for (i = 0; i < a->mem1.n; ++i)
-			if ((uint32_t)a->mem1.a[i].info - (a->mem1.a[i].info>>32) >= opt->min_seed_len){
-				// kv_push(bwtintv_t, a->mem, a->mem1.a[i], d_buffer_ptr);
-				if (a->mem.n == a->mem.m) {
-					a->mem.m = a->mem.m? a->mem.m<<1 : 2;
-					a->mem.a = (bwtintv_t*)CUDAKernelRealloc(d_buffer_ptr, a->mem.a, sizeof(bwtintv_t) * a->mem.m, 8);
-				}
-				a->mem.a[a->mem.n++] = a->mem1.a[i];
-			}
-	}
-	// third pass: LAST-like
-	if (opt->max_mem_intv > 0) {
-		x = 0;
-		while (x < len) {
-			if (seq[x] < 4) {
-				if (1) {
-					bwtintv_t m;
-					x = bwt_seed_strategy1_gpu(bwt, len, seq, x, opt->min_seed_len, opt->max_mem_intv, &m);
-					if (m.x[2] > 0) {
-						// kv_push(bwtintv_t, a->mem, m, d_buffer_ptr);
-						if (a->mem.n == a->mem.m) {
-							a->mem.m = a->mem.m? a->mem.m<<1 : 2;
-							a->mem.a = (bwtintv_t*)CUDAKernelRealloc(d_buffer_ptr, a->mem.a, sizeof(bwtintv_t) * a->mem.m, 8);
-						}
-						a->mem.a[a->mem.n++] = m;
-					}
-				} else { // for now, we never come to this block which is slower
-					x = bwt_smem1a_gpu(bwt, len, seq, x, start_width, opt->max_mem_intv, &a->mem1, a->tmpv, d_buffer_ptr);
-					for (i = 0; i < a->mem1.n; ++i){
-						// kv_push(bwtintv_t, a->mem, a->mem1.a[i], d_buffer_ptr);
-						if (a->mem.n == a->mem.m) {
-							a->mem.m = a->mem.m? a->mem.m<<1 : 2;
-							a->mem.a = (bwtintv_t*)CUDAKernelRealloc(d_buffer_ptr, a->mem.a, sizeof(bwtintv_t) * a->mem.m, 8);
-						}
-						a->mem.a[a->mem.n++] = a->mem1.a[i];
-					}
-				}
-			} else ++x;
-		}
-	}
-	// // sort
-	ks_introsort(a->mem.n, a->mem.a, d_buffer_ptr);
-}
 
 static __device__ mem_chain_v mem_chain(
 	mem_opt_t *opt, 
@@ -160,9 +83,10 @@ static __device__ mem_chain_v mem_chain(
 	if (len < opt->min_seed_len) return chain; // if the query is shorter than the seed length, no match
 	tree = kb_init_chn(512, d_buffer_ptr);
 
-	aux = smem_aux_init(d_buffer_ptr);
 
-	mem_collect_intv(opt, bwt, len, seq, aux, d_buffer_ptr);
+	// aux = smem_aux_init(d_buffer_ptr);
+
+	// mem_collect_intv(opt, bwt, len, seq, aux, d_buffer_ptr);
 // printf("unit test 1 mem n = %d\n", aux->mem.n);
 // printf("unit test 1 mem m = %d\n", aux->mem.m);
 // printf("unit test 1 mem info = %lu\n", aux->mem.a[aux->mem.n-1].info);
@@ -982,7 +906,7 @@ __device__ static void mem_mark_primary_se_core_GPU(const mem_opt_t *opt, int n,
 	}
 }
 
-__device__ static mem_aln_t mem_reg2aln_GPU(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const char *query_, const mem_alnreg_t *ar, char* d_nst_nt4_table, void* d_buffer_ptr)
+__device__ static mem_aln_t mem_reg2aln_GPU(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const char *query_, const mem_alnreg_t *ar, void* d_buffer_ptr)
 {
 	mem_aln_t a;
 	int i, w2, tmp, qb, qe, NM, score, is_rev, last_sc = -(1<<30), l_MD;
@@ -1120,7 +1044,7 @@ __device__ static void mem_reorder_primary5(int T, mem_alnreg_v *a)
 }
 
 // ONLY work after mem_mark_primary_se()
-__device__ static char** mem_gen_alt(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_alnreg_v *a, int l_query, const char *query, char* d_nst_nt4_table, void* d_buffer_ptr) 
+__device__ static char** mem_gen_alt(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_alnreg_v *a, int l_query, const char *query, void* d_buffer_ptr) 
 {
 	int i, k, r, *cnt, tot;
 	kstring_t *aln = 0, str = {0,0,0};
@@ -1131,7 +1055,7 @@ __device__ static char** mem_gen_alt(const mem_opt_t *opt, const bntseq_t *bns, 
 	for (i = 0, tot = 0; i < a->n; ++i) {
 		// r = get_pri_idx(opt->XA_drop_ratio, a->a, i);
 		int kk = a->a[i].secondary_all;
-		if (kk >= 0 && a->a[i].score >= a->a[kk].score * opt->XA_drop_ratio) r = k;
+		if (kk >= 0 && a->a[i].score >= a->a[kk].score * opt->XA_drop_ratio) r = kk;
 		else r = -1;
 		if (r >= 0) {
 			++cnt[r], ++tot;
@@ -1145,11 +1069,11 @@ __device__ static char** mem_gen_alt(const mem_opt_t *opt, const bntseq_t *bns, 
 		mem_aln_t t;
 		// if ((r = get_pri_idx(opt->XA_drop_ratio, a->a, i)) < 0) continue;
 		int kk = a->a[i].secondary_all;
-		if (kk >= 0 && a->a[i].score >= a->a[kk].score * opt->XA_drop_ratio) r = k;
+		if (kk >= 0 && a->a[i].score >= a->a[kk].score * opt->XA_drop_ratio) r = kk;
 		else r = -1;
 		if (r<0) continue;
 		if (cnt[r] > opt->max_XA_hits_alt || (!has_alt[r] && cnt[r] > opt->max_XA_hits)) continue;
-		t = mem_reg2aln_GPU(opt, bns, pac, l_query, query, &a->a[i], d_nst_nt4_table, d_buffer_ptr);
+		t = mem_reg2aln_GPU(opt, bns, pac, l_query, query, &a->a[i], d_buffer_ptr);
 		str.l = 0;
 		kputs(bns->anns[t.rid].name, &str, d_buffer_ptr);
 		kputc(',', &str, d_buffer_ptr); kputc("+-"[t.is_rev], &str, d_buffer_ptr); kputl(t.pos + 1, &str, d_buffer_ptr);
@@ -1177,7 +1101,7 @@ end_gen_alt:
 }
 
 
-__device__ static void mem_reg2sam(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, bseq1_t *s, mem_alnreg_v *a, int extra_flag, const mem_aln_t *m, char* d_nst_nt4_table, void* d_buffer_ptr)
+__device__ static void mem_reg2sam(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, bseq1_t *s, mem_alnreg_v *a, int extra_flag, const mem_aln_t *m, void* d_buffer_ptr)
 {
 	kstring_t str;
 	struct { size_t n, m; mem_aln_t *a; } aa;
@@ -1185,7 +1109,7 @@ __device__ static void mem_reg2sam(const mem_opt_t *opt, const bntseq_t *bns, co
 	char **XA = 0;
 
 	if (!(opt->flag & MEM_F_ALL))
-		XA = mem_gen_alt(opt, bns, pac, a, s->l_seq, s->seq, d_nst_nt4_table, d_buffer_ptr);
+		XA = mem_gen_alt(opt, bns, pac, a, s->l_seq, s->seq, d_buffer_ptr);
 	aa.n = 0; aa.m = 0; aa.a = 0;
 	str.l = str.m = 0; str.s = 0;
 	for (k = l = 0; k < a->n; ++k) {
@@ -1200,7 +1124,7 @@ __device__ static void mem_reg2sam(const mem_opt_t *opt, const bntseq_t *bns, co
 				aa.a = (mem_aln_t*)CUDAKernelRealloc(d_buffer_ptr, aa.a, sizeof(mem_aln_t) * aa.m, 8), 0)
 			: 0), &aa.a[aa.n++]);
 
-		*q = mem_reg2aln_GPU(opt, bns, pac, s->l_seq, s->seq, p, d_nst_nt4_table, d_buffer_ptr);
+		*q = mem_reg2aln_GPU(opt, bns, pac, s->l_seq, s->seq, p, d_buffer_ptr);
 		// assert(q->rid >= 0); // this should not happen with the new code
 		q->XA = XA? XA[k] : 0;
 		q->flag |= extra_flag; // flag secondary
@@ -1213,7 +1137,7 @@ __device__ static void mem_reg2sam(const mem_opt_t *opt, const bntseq_t *bns, co
 	}
 	if (aa.n == 0) { // no alignments good enough; then write an unaligned record
 		mem_aln_t t;
-		t = mem_reg2aln_GPU(opt, bns, pac, s->l_seq, s->seq, 0, d_nst_nt4_table, d_buffer_ptr);
+		t = mem_reg2aln_GPU(opt, bns, pac, s->l_seq, s->seq, 0, d_buffer_ptr);
 		t.flag |= extra_flag;
 		mem_aln2sam(opt, bns, &str, s, 1, &t, 0, m, d_buffer_ptr);
 	} else {
@@ -1383,7 +1307,7 @@ __device__ int mem_matesw(const mem_opt_t *opt, const bntseq_t *bns, const uint8
 }
 
 
-__device__ static int mem_sam_pe(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_pestat_t pes[4], uint64_t id, bseq1_t s[2], mem_alnreg_v a[2], char* d_nst_nt4_table, void* d_buffer_ptr)
+__device__ static int mem_sam_pe(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_pestat_t pes[4], uint64_t id, bseq1_t s[2], mem_alnreg_v a[2], void* d_buffer_ptr)
 {
 	int n = 0, i, j, z[2], o, subo, n_sub, extra_flag = 1, n_pri[2], n_aa[2];
 	kstring_t str;
@@ -1471,11 +1395,11 @@ __device__ static int mem_sam_pe(const mem_opt_t *opt, const bntseq_t *bns, cons
 		}
 		if (!(opt->flag & MEM_F_ALL)) {
 			for (i = 0; i < 2; ++i)
-				XA[i] = mem_gen_alt(opt, bns, pac, &a[i], s[i].l_seq, s[i].seq, d_nst_nt4_table, d_buffer_ptr);
+				XA[i] = mem_gen_alt(opt, bns, pac, &a[i], s[i].l_seq, s[i].seq, d_buffer_ptr);
 		} else XA[0] = XA[1] = 0;
 		// write SAM
 		for (i = 0; i < 2; ++i) {
-			h[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, &a[i].a[z[i]], d_nst_nt4_table, d_buffer_ptr);
+			h[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, &a[i].a[z[i]], d_buffer_ptr);
 			h[i].mapq = q_se[i];
 			h[i].flag |= 0x40<<i | extra_flag;
 			h[i].XA = XA[i]? XA[i][z[i]] : 0;
@@ -1483,7 +1407,7 @@ __device__ static int mem_sam_pe(const mem_opt_t *opt, const bntseq_t *bns, cons
 			if (n_pri[i] < a[i].n) { // the read has ALT hits
 				mem_alnreg_t *p = &a[i].a[n_pri[i]];
 				if (p->score < opt->T || p->secondary >= 0 || !p->is_alt) continue;
-				g[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, p, d_nst_nt4_table, d_buffer_ptr);
+				g[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, p, d_buffer_ptr);
 				g[i].flag |= 0x800 | 0x40<<i | extra_flag;
 				g[i].XA = XA[i]? XA[i][n_pri[i]] : 0;
 				aa[i][n_aa[i]++] = g[i];
@@ -1514,8 +1438,8 @@ no_pairing:
 			else if (n_pri[i] < a[i].n && a[i].a[n_pri[i]].score >= opt->T)
 				which = n_pri[i];
 		}
-		if (which >= 0) h[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, &a[i].a[which], d_nst_nt4_table, d_buffer_ptr);
-		else h[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, 0, d_nst_nt4_table, d_buffer_ptr);
+		if (which >= 0) h[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, &a[i].a[which], d_buffer_ptr);
+		else h[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, 0, d_buffer_ptr);
 	}
 	if (!(opt->flag & MEM_F_NOPAIRING) && h[0].rid == h[1].rid && h[0].rid >= 0) { // if the top hits from the two ends constitute a proper pair, flag it.
 		int64_t dist;
@@ -1523,17 +1447,362 @@ no_pairing:
 		d = mem_infer_dir(bns->l_pac, a[0].a[0].rb, a[1].a[0].rb, &dist);
 		if (!pes[d].failed && dist >= pes[d].low && dist <= pes[d].high) extra_flag |= 2;
 	}
-	mem_reg2sam(opt, bns, pac, &s[0], &a[0], 0x41|extra_flag, &h[1], d_nst_nt4_table, d_buffer_ptr);
-	mem_reg2sam(opt, bns, pac, &s[1], &a[1], 0x81|extra_flag, &h[0], d_nst_nt4_table, d_buffer_ptr);
+	mem_reg2sam(opt, bns, pac, &s[0], &a[0], 0x41|extra_flag, &h[1], d_buffer_ptr);
+	mem_reg2sam(opt, bns, pac, &s[1], &a[1], 0x81|extra_flag, &h[0], d_buffer_ptr);
 	// if (strcmp(s[0].name, s[1].name) != 0) err_fatal(__func__, "paired reads have different names: \"%s\", \"%s\"\n", s[0].name, s[1].name);
 	// free(h[0].cigar); free(h[1].cigar);
 	return n;
 }
 
 
-/* ----------------------- MAIN FUNCTION FOR MEM ALIGNMENT -----------------*/
+
+
+#define start_width 1
+__global__ void mem_collect_intv_kernel(const mem_opt_t *opt, const bwt_t *bwt, const bseq1_t *d_seqs, 
+	smem_aux_t *d_aux, 			// aux output
+	int n,						// total number of reads
+	void* d_buffer_pools)
+{
+	char *seq1; uint8_t *seq; int len;
+	int i, k, x = 0, old_n;
+
+	i = blockIdx.x*blockDim.x + threadIdx.x;		// ID of the read to process
+	if (i>=n) return;
+	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x % 32);	// set buffer pool
+	smem_aux_t* a = &d_aux[i];						// get the aux for this read and init aux members
+	a->tmpv[0] = (bwtintv_v*)CUDAKernelCalloc(d_buffer_ptr, 1, sizeof(bwtintv_v), 8);
+	a->tmpv[0]->m = 30; a->tmpv[0]->a = (bwtintv_t*)CUDAKernelMalloc(d_buffer_ptr, 30*sizeof(bwtintv_t), 8);
+	a->tmpv[1] = (bwtintv_v*)CUDAKernelCalloc(d_buffer_ptr, 1, sizeof(bwtintv_v), 8);
+	a->tmpv[1]->m = 30; a->tmpv[1]->a = (bwtintv_t*)CUDAKernelMalloc(d_buffer_ptr, 30*sizeof(bwtintv_t), 8);
+	a->mem.m   = 30; a->mem.a  = (bwtintv_t*)CUDAKernelMalloc(d_buffer_ptr, 30*sizeof(bwtintv_t), 8);
+	a->mem1.m  = 30; a->mem1.a = (bwtintv_t*)CUDAKernelMalloc(d_buffer_ptr, 30*sizeof(bwtintv_t), 8);
+	seq1 = d_seqs[i].seq; 							// get seq from global mem
+	len  = d_seqs[i].l_seq;
+	if (len < opt->min_seed_len) return; 			// if the query is shorter than the seed length, no match
+
+	// convert to 2-bit encoding if we have not done so
+	for (i = 0; i < len; ++i)
+		seq1[i] = seq1[i] < 4? seq1[i] : d_nst_nt4_table[(int)seq1[i]];
+	seq = (uint8_t*)seq1;
+
+	int split_len = (int)(opt->min_seed_len * opt->split_factor + .499);
+	// first pass: find all SMEMs
+	while (x < len) {
+		if (seq[x] < 4) {
+			x = bwt_smem1a_gpu(bwt, len, seq, x, start_width, 0, &a->mem1, a->tmpv, d_buffer_ptr);
+			for (i = 0; i < a->mem1.n; ++i) {
+				bwtintv_t *p = &a->mem1.a[i];
+				int slen = (uint32_t)p->info - (p->info>>32); // seed length
+				if (slen >= opt->min_seed_len){
+					// kv_push(bwtintv_t, v=a->mem, x=*p, d_buffer_ptr);
+					if (a->mem.n == a->mem.m) {
+						a->mem.m = a->mem.m? a->mem.m<<1 : 2;
+						a->mem.a = (bwtintv_t*)CUDAKernelRealloc(d_buffer_ptr, a->mem.a, sizeof(bwtintv_t) * a->mem.m, 8);
+					}
+					a->mem.a[a->mem.n++] = *p;
+				}
+			}
+		} else ++x;
+	}
+
+	// second pass: find MEMs inside a long SMEM
+	old_n = a->mem.n;
+	for (k = 0; k < old_n; ++k) {
+		bwtintv_t *p = &a->mem.a[k];
+		int start = p->info>>32, end = (int32_t)p->info;
+		if (end - start < split_len || p->x[2] > opt->split_width) continue;
+		bwt_smem1a_gpu(bwt, len, seq, (start + end)>>1, p->x[2]+1, 0, &a->mem1, a->tmpv, d_buffer_ptr);
+		for (i = 0; i < a->mem1.n; ++i){
+			if ((uint32_t)a->mem1.a[i].info - (a->mem1.a[i].info>>32) >= opt->min_seed_len){
+				// kv_push(bwtintv_t, a->mem, a->mem1.a[i], d_buffer_ptr);
+				if (a->mem.n == a->mem.m) {
+					a->mem.m = a->mem.m? a->mem.m<<1 : 2;
+					a->mem.a = (bwtintv_t*)CUDAKernelRealloc(d_buffer_ptr, a->mem.a, sizeof(bwtintv_t) * a->mem.m, 8);
+				}
+				a->mem.a[a->mem.n++] = a->mem1.a[i];
+			}
+		}
+	}
+	// third pass: LAST-like
+	if (opt->max_mem_intv > 0) {
+		x = 0;
+		while (x < len) {
+			if (seq[x] < 4) {
+				bwtintv_t m;
+				x = bwt_seed_strategy1_gpu(bwt, len, seq, x, opt->min_seed_len, opt->max_mem_intv, &m);
+				if (m.x[2] > 0) {
+					// kv_push(bwtintv_t, a->mem, m, d_buffer_ptr);
+					if (a->mem.n == a->mem.m) {
+						a->mem.m = a->mem.m? a->mem.m<<1 : 2;
+						a->mem.a = (bwtintv_t*)CUDAKernelRealloc(d_buffer_ptr, a->mem.a, sizeof(bwtintv_t) * a->mem.m, 8);
+					}
+					a->mem.a[a->mem.n++] = m;
+				}
+			} else ++x;
+		}
+	}
+	// // sort
+	ks_introsort(a->mem.n, a->mem.a, d_buffer_ptr);
+}
+
+__global__ void mem_chain_kernel(
+	const mem_opt_t *opt,
+	const bwt_t *bwt,
+	const bntseq_t *bns,
+	const bseq1_t *d_seqs,
+	const int n,
+	smem_aux_t *d_aux,
+	mem_chain_v *d_chains,		// output
+	void* d_buffer_pools
+	)
+{
+	int i, b, e, l_rep;
+	kbtree_chn_t *tree;
+	mem_chain_v chain;
+
+	i = blockIdx.x*blockDim.x + threadIdx.x;		// ID of the read to process
+	if (i>=n) return;
+	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x % 32);	// set buffer pool
+	
+	chain.n = 0; chain.m = 0, chain.a = 0;
+	if (d_seqs[i].l_seq < opt->min_seed_len) { // if the query is shorter than the seed length, no match
+		d_chains[i] = chain; return;
+	}
+	tree = kb_init_chn(512, d_buffer_ptr);
+	smem_aux_t* aux = &d_aux[i];
+
+	bwtintv_t p;
+	for (i = 0, b = e = l_rep = 0; i < aux->mem.n; ++i) { // compute frac_rep
+		p = aux->mem.a[i];
+		int sb = (p.info>>32), se = (uint32_t)p.info;
+		if (p.x[2] <= opt->max_occ) continue;
+		if (sb > e) l_rep += e - b, b = sb, e = se;
+		else e = e > se? e : se;
+	}
+	l_rep += e - b;
+
+	for (i = 0; i < aux->mem.n; ++i) {
+		p = aux->mem.a[i];
+		int step, count, slen = (uint32_t)p.info - (p.info>>32); // seed length
+		int64_t k;
+		step = p.x[2] > opt->max_occ? p.x[2] / opt->max_occ : 1;
+		for (k = count = 0; k < p.x[2] && count < opt->max_occ; k += step, ++count) {
+			mem_chain_t tmp, *lower, *upper;
+			mem_seed_t s;
+			int rid, to_add = 0;
+			s.rbeg = tmp.pos = bwt_sa_gpu(bwt, p.x[0] + k); // this is the base coordinate in the forward-reverse reference
+			s.qbeg = p.info>>32;
+			s.score= s.len = slen;
+			rid = bns_intv2rid_gpu(bns, s.rbeg, s.rbeg + s.len);
+			if (rid < 0) continue; // bridging multiple reference sequences or the forward-reverse boundary; TODO: split the seed; don't discard it!!!
+			if (kb_size(tree)) {
+				kb_intervalp_chn(tree, &tmp, &lower, &upper); // find the closest chain
+				if (!lower || !test_and_merge(opt, bns->l_pac, lower, &s, rid, d_buffer_ptr)) to_add = 1;
+			} else to_add = 1;
+			if (to_add) { // add the seed as a new chain
+				tmp.n = 1; tmp.m = 4;
+				tmp.seeds = (mem_seed_t*)CUDAKernelCalloc(d_buffer_ptr, tmp.m, sizeof(mem_seed_t), 8);
+				tmp.seeds[0] = s;
+				tmp.rid = rid;
+				tmp.is_alt = !!bns->anns[rid].is_alt;
+				kb_putp_chn(tree, &tmp, d_buffer_ptr);
+			}
+		}
+	}
+
+	// // if (buf == 0) smem_aux_destroy(aux);
+
+	// kv_resize(type = mem_chain_t, v = chain, s = kb_size(tree), d_buffer_ptr);
+	chain.m = kb_size(tree);
+	chain.a = (mem_chain_t*)CUDAKernelRealloc(d_buffer_ptr, chain.a, sizeof(mem_chain_t) * chain.m, 8);
+
+	__kb_traverse(tree, &chain, d_buffer_ptr);
+	b = d_seqs[blockIdx.x*blockDim.x + threadIdx.x].l_seq; // this is seq length
+	for (i = 0; i < chain.n; ++i) chain.a[i].frac_rep = (float)l_rep / b;
+
+// printf("unit test 2 chain n = %d\n", chain.n);
+// printf("unit test 2 chain m = %d\n", chain.m);
+// for (i=0; i<chain.n; i++) printf("unit test 2 chain rbeg = %ld\n", chain.a[i].seeds->rbeg);
+
+	// kb_destroy(chn, tree);
+	d_chains[blockIdx.x*blockDim.x + threadIdx.x] = chain;
+}
+
+__global__ void mem_chain_flt_kernel(const mem_opt_t *opt, 
+	mem_chain_v *d_chains, 	// input and output
+	int n, // number of reads
+	void* d_buffer_pools)
+{
+	int i, k, n_chn;
+	mem_chain_t	*a;
+
+	i = blockIdx.x*blockDim.x + threadIdx.x;		// ID of the read to process
+	if (i>=n) return;
+	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x % 32);	// set buffer pool	
+	a = d_chains[i].a;
+	n_chn = d_chains[i].n;
+
+	struct { size_t n, m; int* a; } chains = {0,0,0}; // this keeps int indices of the non-overlapping chains
+	if (n_chn == 0) return; // no need to filter
+	// compute the weight of each chain and drop chains with small weight
+	for (i = k = 0; i < n_chn; ++i) {
+		mem_chain_t *c = &a[i];
+		c->first = -1; c->kept = 0;
+		c->w = mem_chain_weight(c);
+		if (c->w < opt->min_chain_weight) {} // free(c->seeds);
+		else a[k++] = *c;
+	}
+	n_chn = k;
+	ks_introsort_mem_flt(n_chn, a, d_buffer_ptr);
+	// pairwise chain comparisons
+	a[0].kept = 3;
+	// kv_push(type=int, v=chains, x=0);
+	if (chains.n == chains.m) {
+		chains.m = chains.m? chains.m<<1 : 2;
+		chains.a = (int*)CUDAKernelRealloc(d_buffer_ptr, chains.a, sizeof(int) * chains.m, 4);
+	}
+	chains.a[chains.n++] = 0;
+	for (i = 1; i < n_chn; ++i) {
+		int large_ovlp = 0;
+		for (k = 0; k < chains.n; ++k) {
+			int j = chains.a[k];
+			int b_max = chn_beg(a[j]) > chn_beg(a[i])? chn_beg(a[j]) : chn_beg(a[i]);
+			int e_min = chn_end(a[j]) < chn_end(a[i])? chn_end(a[j]) : chn_end(a[i]);
+			if (e_min > b_max && (!a[j].is_alt || a[i].is_alt)) { // have overlap; don't consider ovlp where the kept chain is ALT while the current chain is primary
+				int li = chn_end(a[i]) - chn_beg(a[i]);
+				int lj = chn_end(a[j]) - chn_beg(a[j]);
+				int min_l = li < lj? li : lj;
+				if (e_min - b_max >= min_l * opt->mask_level && min_l < opt->max_chain_gap) { // significant overlap
+					large_ovlp = 1;
+					if (a[j].first < 0) a[j].first = i; // keep the first shadowed hit s.t. mapq can be more accurate
+					if (a[i].w < a[j].w * opt->drop_ratio && a[j].w - a[i].w >= opt->min_seed_len<<1)
+						break;
+				}
+			}
+		}
+		if (k == chains.n) {
+	 		// kv_push(int, chains, i);
+	 		if (chains.n == chains.m) {
+				chains.m = chains.m? chains.m<<1 : 2;
+				chains.a = (int*)CUDAKernelRealloc(d_buffer_ptr, chains.a, sizeof(int) * chains.m, 4);
+			}
+			chains.a[chains.n++] = i;
+			a[i].kept = large_ovlp? 2 : 3;
+		}
+	}
+	for (i = 0; i < chains.n; ++i) {
+		mem_chain_t *c = &a[chains.a[i]];
+		if (c->first >= 0) a[c->first].kept = 1;
+	}
+	// free(chains.a);
+	for (i = k = 0; i < n_chn; ++i) { // don't extend more than opt->max_chain_extend .kept=1/2 chains
+		if (a[i].kept == 0 || a[i].kept == 3) continue;
+		if (++k >= opt->max_chain_extend) break;
+	}
+	for (; i < n_chn; ++i)
+		if (a[i].kept < 3) a[i].kept = 0;
+	for (i = k = 0; i < n_chn; ++i) { // free discarded chains
+		mem_chain_t *c = &a[i];
+		if (c->kept == 0){} // free(c->seeds);
+		else a[k++] = a[i];
+	}
+	d_chains[blockIdx.x*blockDim.x + threadIdx.x].n = k;
+}
+
+__global__ void mem_flt_chained_seeds_kernel(
+	const mem_opt_t *d_opt, const bntseq_t *d_bns, const uint8_t *d_pac, const bseq1_t *d_seqs,
+	mem_chain_v *d_chains, 	// input and output
+	int n,		// number of seqs
+	void* d_buffer_pools
+	)
+{
+	int i = blockIdx.x*blockDim.x + threadIdx.x;		// ID of the read to process
+	if (i>=n) return;
+	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x % 32);	// set buffer pool	
+	mem_chain_t* a = d_chains[i].a;
+	int n_chn = d_chains[i].n;
+	uint8_t* query = (uint8_t*)d_seqs[i].seq;
+	int l_query = d_seqs[i].l_seq;
+
+	double min_l = d_opt->min_chain_weight? MEM_HSP_COEF * d_opt->min_chain_weight : MEM_MINSC_COEF * log((float)l_query);
+	int j, k, min_HSP_score = (int)(d_opt->a * min_l + .499);
+	if (min_l > MEM_SEEDSW_COEF * l_query) return; // don't run the following for short reads
+	for (i = 0; i < n_chn; ++i) {
+		mem_chain_t *c = &a[i];
+		for (j = k = 0; j < c->n; ++j) {
+			mem_seed_t *s = &c->seeds[j];
+			s->score = mem_seed_sw(d_opt, d_bns, d_pac, l_query, query, s, d_buffer_ptr);
+			if (s->score < 0 || s->score >= min_HSP_score) {
+				s->score = s->score < 0? s->len * d_opt->a : s->score;
+				c->seeds[k++] = *s;
+			}
+		}
+		c->n = k;
+	}
+}
+
+__global__ void mem_chain2aln_kernel(
+	const mem_opt_t *d_opt,
+	const bntseq_t *d_bns,
+	const uint8_t *d_pac,
+	int n, // number of reads
+	const bseq1_t* d_seqs,
+	mem_chain_v *d_chains, 	// input chains
+	mem_alnreg_v* d_regs,		// output array
+	void *d_buffer_pools
+	)
+{
+	int j;
+	j = blockIdx.x*blockDim.x + threadIdx.x;		// ID of the read to process
+	if (j>=n) return;
+	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x % 32);	// set buffer pool
+	int l_seq = d_seqs[j].l_seq;
+	uint8_t *seq = (uint8_t*)d_seqs[j].seq;
+	mem_chain_v chn = d_chains[j];
+
+	mem_alnreg_v regs;		// output regs
+	regs.n = 0; regs.m = 0; regs.a = 0;
+
+	for (j = 0; j < chn.n; ++j) {
+		mem_chain_t *p = &chn.a[j];
+		mem_chain2aln(d_opt, d_bns, d_pac, l_seq, (uint8_t*)seq, p, &regs, d_buffer_ptr);
+	}
+	// output
+	d_regs[blockIdx.x*blockDim.x + threadIdx.x] = regs;
+}
+
+__global__ void mem_sort_dedup_patch_kernel(
+	mem_opt_t *d_opt, 			// user-defined options
+	bntseq_t *d_bns, 
+	uint8_t *d_pac, 
+	int n, 						// number of reads being processed in a batch
+	bseq1_t* d_seqs,			// array of sequence info
+	mem_alnreg_v* d_regs,		// array of output regs on GPU
+	void* d_buffer_pools 		// for CUDA kernel memory management
+	)
+{
+	int i;
+	mem_alnreg_t *a;
+	i = blockIdx.x*blockDim.x + threadIdx.x;		// ID of the read to process
+	if (i>=n) return;
+	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x % 32);	// set buffer pool
+	n = d_regs[i].n;
+	a = d_regs[i].a;
+	uint8_t *seq = (uint8_t*)d_seqs[i].seq;
+
+	n = mem_sort_dedup_patch(d_opt, d_bns, d_pac, (uint8_t*)seq, n, a, d_buffer_ptr);
+	d_regs[i].n = n;
+// printf("thread %d finished mem_sort_dedup_patch\n", i);
+// printf("unit test 6 regs.n = %d\n", regs.n);	
+	for (i = 0; i < n; ++i) {
+		mem_alnreg_t *p = &a[i];
+		if (p->rid >= 0 && d_bns->anns[p->rid].is_alt)
+			p->is_alt = 1;
+	}
+}
+
+/* ----------------------- KERNEL FUNCTION FOR MEM ALIGNMENT -----------------*/
 __global__ void mem_align_kernel(
-	char* d_nst_nt4_table, 		// 2-bit encoding conversion table
 	mem_opt_t *d_opt, 			// user-defined options
 	bwt_t *d_bwt, 
 	bntseq_t *d_bns, 
@@ -1600,7 +1869,6 @@ __global__ void mem_align_kernel(
 
 /* ----------------------- MAIN FUNCTION FOR GENERATING ALIGNMENT RESULTS -----------------*/
 __global__ void generate_sam_kernel(
-	char* d_nst_nt4_table, 		// 2-bit encoding conversion table
 	mem_opt_t *d_opt, 			// user-defined options
 	bntseq_t *d_bns, 
 	uint8_t *d_pac, 
@@ -1619,10 +1887,10 @@ __global__ void generate_sam_kernel(
 	if (!(d_opt->flag&MEM_F_PE)) {
 		mem_mark_primary_se_GPU(d_opt, d_regs[i].n, d_regs[i].a, i, d_buffer_ptr);
 		if (d_opt->flag & MEM_F_PRIMARY5) mem_reorder_primary5(d_opt->T, &d_regs[i]);
-		mem_reg2sam(d_opt, d_bns, d_pac, &d_seqs[i], &d_regs[i], 0, 0, d_nst_nt4_table, d_buffer_ptr);
+		mem_reg2sam(d_opt, d_bns, d_pac, &d_seqs[i], &d_regs[i], 0, 0, d_buffer_ptr);
 		// free(w->regs[i].a);
 	} else {
-		mem_sam_pe(d_opt, d_bns, d_pac, d_pes, i, &d_seqs[i<<1], &d_regs[i<<1], d_nst_nt4_table, d_buffer_ptr);
+		mem_sam_pe(d_opt, d_bns, d_pac, d_pes, i, &d_seqs[i<<1], &d_regs[i<<1], d_buffer_ptr);
 		// free(w->regs[i<<1|0].a); free(w->regs[i<<1|1].a);
 	}
 }
@@ -1639,26 +1907,92 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	// dim3 dimGrid(1);
 	// dim3 dimBlock(32);
 
-	/* KERNEL FOR ALIGNMENT */
-	fprintf(stderr, "[M::%s] Launch kernel mem_align ...\n", __func__);
-	mem_align_kernel <<< dimGrid, dimBlock >>> (gpu_data.d_nst_nt4_table,
-												gpu_data.d_opt,
-												gpu_data.d_bwt, 
-												gpu_data.d_bns, 
-												gpu_data.d_pac, 
-												gpu_data.n_seqs, 
-												gpu_data.d_seqs, 
-												gpu_data.d_regs, 
-												gpu_data.d_buffer_pools);
-	cudaPeekAtLastError() ;
-	cudaDeviceSynchronize();
-	fprintf(stderr, "[M::%s] Finished kernel mem_align ...\n", __func__);
 
-	// COPY regs to host memory 
+	/* first kernel: mem_collect_intv_kernel */
+	// pre-allocate aux output
+	smem_aux_t* d_aux;
+	cudaMalloc((void**)&d_aux, gpu_data.n_seqs*sizeof(smem_aux_t));
+	fprintf(stderr, "[M::%s] Launch kernel mem_collect_intv ...\n", __func__);
+	mem_collect_intv_kernel <<< dimGrid, dimBlock, 0 >>> (
+			gpu_data.d_opt, gpu_data.d_bwt, gpu_data.d_seqs, 
+			d_aux,	// output
+			gpu_data.n_seqs,
+			gpu_data.d_buffer_pools);
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+
+	/* second kernel: chaining seeds */
+	mem_chain_v *d_chains;
+	cudaMalloc((void**)&d_chains, gpu_data.n_seqs*sizeof(mem_chain_v));
+	fprintf(stderr, "[M::%s] Launch kernel mem_chain ...\n", __func__);
+	mem_chain_kernel <<< dimGrid, dimBlock, 0 >>> (
+			gpu_data.d_opt, gpu_data.d_bwt, gpu_data.d_bns, gpu_data.d_seqs,
+			gpu_data.n_seqs,
+			d_aux,
+			d_chains,		// output
+			gpu_data.d_buffer_pools);
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+
+	/* third kernel: chain filtering */
+	fprintf(stderr, "[M::%s] Launch kernel mem_chain_flt ...\n", __func__);
+	mem_chain_flt_kernel <<< dimGrid, dimBlock, 0 >>> (
+			gpu_data.d_opt, 
+			d_chains, 	// input and output
+			gpu_data.n_seqs, 		// number of reads
+			gpu_data.d_buffer_pools);
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+
+	/* fourth kernel: mem_flt_chained_seeds */
+	fprintf(stderr, "[M::%s] Launch kernel mem_flt_chained_seeds ...\n", __func__);
+	mem_flt_chained_seeds_kernel <<< dimGrid, dimBlock, 0 >>> (
+			gpu_data.d_opt, 
+			gpu_data.d_bns,
+			gpu_data.d_pac,
+			gpu_data.d_seqs,
+			d_chains, 	// input and output
+			gpu_data.n_seqs, 		// number of reads
+			gpu_data.d_buffer_pools);
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+
+
+	/* fifth kernel: SW extension */
+	mem_alnreg_v *d_regs;
+	cudaMalloc((void**)&d_regs, gpu_data.n_seqs*sizeof(mem_alnreg_v));
+	fprintf(stderr, "[M::%s] Launch kernel mem_chain2aln ...\n", __func__);
+	mem_chain2aln_kernel <<< dimGrid, dimBlock, 0 >>> (
+			gpu_data.d_opt,
+			gpu_data.d_bns,
+			gpu_data.d_pac,
+			gpu_data.n_seqs, // number of reads
+			gpu_data.d_seqs,
+			d_chains, 		// input chains
+			d_regs,			// output array
+			gpu_data.d_buffer_pools);
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+
+	/* sixth kernel: mem_sort_dedup_patch */
+	fprintf(stderr, "[M::%s] Launch kernel mem_sort_dedup_patch ...\n", __func__);
+	mem_sort_dedup_patch_kernel <<< dimGrid, dimBlock, 0 >>> (
+			gpu_data.d_opt,
+			gpu_data.d_bns,
+			gpu_data.d_pac,
+			gpu_data.n_seqs,
+			gpu_data.d_seqs,
+			d_regs,
+			gpu_data.d_buffer_pools
+	);
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+
+	// COPY d_regs to host memory 
 	mem_alnreg_v* h_regs;
 	h_regs = (mem_alnreg_v*)malloc(gpu_data.n_seqs * sizeof(mem_alnreg_v));
-	cudaMemcpy(h_regs, gpu_data.d_regs, gpu_data.n_seqs*sizeof(mem_alnreg_v), cudaMemcpyDeviceToHost);
-		// copy array a
+	cudaMemcpy(h_regs, d_regs, gpu_data.n_seqs*sizeof(mem_alnreg_v), cudaMemcpyDeviceToHost);
+		// copy member array a
 	mem_alnreg_t* temp_a;
 	for (int i=0; i<gpu_data.n_seqs; i++ ){
 		temp_a = (mem_alnreg_t*)malloc(h_regs[i].n*sizeof(mem_alnreg_t));
@@ -1676,17 +2010,16 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 		cudaMemcpy(gpu_data.d_pes, pes, 4*sizeof(mem_pestat_t), cudaMemcpyHostToDevice);
 	}
 	
-
-	/* generate alignment */
+	/* generate SAM alignment */
 	fprintf(stderr, "[M::%s] Launch kernel generate_sam ...\n", __func__);
 	generate_sam_kernel <<< dimGrid, dimBlock >>> 
-		(gpu_data.d_nst_nt4_table, gpu_data.d_opt, gpu_data.d_bns, gpu_data.d_pac, 
-		 gpu_data.d_seqs, gpu_data.n_seqs, gpu_data.d_pes, gpu_data.d_regs, gpu_data.d_buffer_pools);
+		(gpu_data.d_opt, gpu_data.d_bns, gpu_data.d_pac, 
+		 gpu_data.d_seqs, gpu_data.n_seqs, gpu_data.d_pes, d_regs, gpu_data.d_buffer_pools);
 	cudaPeekAtLastError() ;
 	cudaDeviceSynchronize();
 	fprintf(stderr, "[M::%s] Finished kernel generate_sam ...\n", __func__);
 
-	/* copy sam output */
+	/* copy sam output to host */
 	// TODO: CAN OPTIMIZER THIS TRANSFER
 	bseq1_t* h_seqs;
 	h_seqs = (bseq1_t*)malloc(gpu_data.n_seqs*sizeof(bseq1_t));
@@ -1696,8 +2029,12 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 		cudaMemcpy(seqs[i].sam, h_seqs[i].sam, h_seqs[i].l_sam+1, cudaMemcpyDeviceToHost);
 	}
 
-	// end: free memory
-	free(h_regs); free(h_seqs);
+	// free intermediate data
+	cudaFree(d_aux); cudaFree(d_chains); cudaFree(d_regs);
+	for (int i=0; i<gpu_data.n_seqs; i++ )
+		free(h_regs[i].a);
+	free(h_regs); 
+	free(h_seqs);
 };
 
 /* Function to set up GPU memory
@@ -1714,34 +2051,30 @@ gpu_ptrs_t GPU_Init(
 	)
 {
 	cudaSetDevice(0);
-	cudaDeviceSetLimit(cudaLimitStackSize, 2048);
+	// cudaDeviceSetLimit(cudaLimitStackSize, 2048);
 
 	/* CUDA GLOBAL MEMORY ALLOCATION AND TRANSFER */
 	fprintf(stderr, "[M::%s] Device memory allocation ......\n", __func__);
-	// 2-bit conversion table
-	char* d_nst_nt4_table;
-	cudaMalloc((void**)&d_nst_nt4_table, 256);
-	cudaMemcpy(d_nst_nt4_table, nst_nt4_table, 256, cudaMemcpyHostToDevice);
 
 	// matching and mapping options (opt)
-	fprintf(stderr, "[M::%s] options ...... %lu MB\n", __func__, sizeof(mem_opt_t)/1048576);
+	fprintf(stderr, "[M::%s] options ...... %.2f MB\n", __func__, (float)sizeof(mem_opt_t)/1048576);
 	mem_opt_t* d_opt;
 	cudaMalloc((void**)&d_opt, sizeof(mem_opt_t));
 	cudaMemcpy(d_opt, opt, sizeof(mem_opt_t), cudaMemcpyHostToDevice);
 
 	// Burrows-Wheeler Transform
 		// 1. bwt_t structure
-	fprintf(stderr, "[M::%s] bwt .......... %lu MB\n", __func__, sizeof(bwt_t)/1048576);
+	fprintf(stderr, "[M::%s] bwt .......... %.2f MB\n", __func__, (float)sizeof(bwt_t)/1048576);
 	bwt_t* d_bwt;
 	cudaMalloc((void**)&d_bwt, sizeof(bwt_t));
 	cudaMemcpy(d_bwt, bwt, sizeof(bwt_t), cudaMemcpyHostToDevice);
 		// 2. int array of bwt
-	fprintf(stderr, "[M::%s] bwt_int ...... %lu MB\n", __func__, bwt->bwt_size*sizeof(uint32_t)/1048576);
+	fprintf(stderr, "[M::%s] bwt_int ...... %.2f MB\n", __func__, (float)bwt->bwt_size*sizeof(uint32_t)/1048576);
 	uint32_t* d_bwt_int ;
 	cudaMalloc((void**)&d_bwt_int, bwt->bwt_size*sizeof(uint32_t));
 	cudaMemcpy(d_bwt_int, bwt->bwt, bwt->bwt_size*sizeof(uint32_t), cudaMemcpyHostToDevice);
 		// 3. int array of Suffix Array
-	fprintf(stderr, "[M::%s] suffix array . %lu MB \n", __func__, bwt->n_sa*sizeof(bwtint_t)/1048576);
+	fprintf(stderr, "[M::%s] suffix array . %.2f MB \n", __func__, (float)bwt->n_sa*sizeof(bwtint_t)/1048576);
 	bwtint_t* d_bwt_sa ;
 	cudaMalloc((void**)&d_bwt_sa, bwt->n_sa*sizeof(bwtint_t));
 	cudaMemcpy(d_bwt_sa, bwt->sa, bwt->n_sa*sizeof(bwtint_t), cudaMemcpyHostToDevice);
@@ -1779,25 +2112,25 @@ gpu_ptrs_t GPU_Init(
 		// now h_bns->anns has pointers of name and anno on device
 		// allocate anns on device and copy data from h_bns->anns to device
 	bntann1_t* temp_d_anns;
-	fprintf(stderr, "[M::%s] bns.anns ..... %lu MB\n", __func__, bns->n_seqs*sizeof(bntann1_t)/1048576);
+	fprintf(stderr, "[M::%s] bns.anns ..... %.2f MB\n", __func__, (float)bns->n_seqs*sizeof(bntann1_t)/1048576);
 	cudaMalloc((void**)&temp_d_anns, bns->n_seqs*sizeof(bntann1_t));
 	cudaMemcpy(temp_d_anns, h_bns->anns, bns->n_seqs*sizeof(bntann1_t), cudaMemcpyHostToDevice);
 		// now assign this pointer to h_bns->anns
 	h_bns->anns = temp_d_anns;
 
 		// allocate bns->ambs on device and copy data to device
-	fprintf(stderr, "[M::%s] bns.ambs ..... %lu MB\n", __func__, bns->n_holes*sizeof(bntamb1_t)/1048576);
+	fprintf(stderr, "[M::%s] bns.ambs ..... %.2f MB\n", __func__, (float)bns->n_holes*sizeof(bntamb1_t)/1048576);
 	cudaMalloc((void**)&h_bns->ambs, bns->n_holes*sizeof(bntamb1_t));
 	cudaMemcpy(h_bns->ambs, bns->ambs, bns->n_holes*sizeof(bntamb1_t), cudaMemcpyHostToDevice);
 
 		// finally allocate d_bns and copy from h_bns
-	fprintf(stderr, "[M::%s] bns .......... %lu MB\n", __func__, sizeof(bntseq_t)/1048576);
+	fprintf(stderr, "[M::%s] bns .......... %.2f MB\n", __func__, (float)sizeof(bntseq_t)/1048576);
 	bntseq_t* d_bns;
 	cudaMalloc((void**)&d_bns, sizeof(bntseq_t));
 	cudaMemcpy(d_bns, h_bns, sizeof(bntseq_t), cudaMemcpyHostToDevice);
 
 	// PAC
-	fprintf(stderr, "[M::%s] pac .......... %lu MB\n", __func__, bns->l_pac*sizeof(uint8_t)/1048576);
+	fprintf(stderr, "[M::%s] pac .......... %.2f MB\n", __func__, (float)bns->l_pac*sizeof(uint8_t)/1048576);
 	uint8_t* d_pac ;
 	cudaMalloc((void**)&d_pac, bns->l_pac/4*sizeof(uint8_t)); 		// l_pac is length of ref seq
 	cudaMemcpy(d_pac, pac, bns->l_pac/4*sizeof(uint8_t), cudaMemcpyHostToDevice); 		// divide by 4 because 2-bit encoding
@@ -1805,7 +2138,7 @@ gpu_ptrs_t GPU_Init(
 	// paired-end stats: only allocate on device
 	mem_pestat_t* d_pes;
 	if (opt->flag&MEM_F_PE){
-		fprintf(stderr, "[M::%s] pestat ....... %lu MB\n", __func__, 4*sizeof(mem_pestat_t)/1048576);
+		fprintf(stderr, "[M::%s] pestat ....... %.2f MB\n", __func__, (float)4*sizeof(mem_pestat_t)/1048576);
 		cudaMalloc((void**)&d_pes, 4*sizeof(mem_pestat_t));
 	}
 
@@ -1814,7 +2147,6 @@ gpu_ptrs_t GPU_Init(
 
 	/* Output */
 	gpu_ptrs_t gpu_data;
-	gpu_data.d_nst_nt4_table = d_nst_nt4_table;
 	gpu_data.d_opt = d_opt;
 	gpu_data.d_bwt = d_bwt;
 	gpu_data.d_bns = d_bns;
@@ -1827,14 +2159,13 @@ gpu_ptrs_t GPU_Init(
 }
 
 void prepare_batch_GPU(gpu_ptrs_t* gpu_data, const bseq1_t* seqs, int n_seqs, const mem_opt_t *opt){
-	/* free d_seqs and d_regs if they exist
-	   load in new seqs and reallocate d_regs
+	/* free d_seqs if they exist
 	   reset buffer pools
 	   update opt if opt !=0
 	 */
 	fprintf(stderr, "[M::%s] Prepare to align new batch of %d reads ..... \n", __func__, n_seqs);
 	bseq1_t* h_seqs;	// copy of seqs on host
-	// free d_seqs and d_regs if they exist
+	// free d_seqs if they exist
 	if (gpu_data->n_seqs > 0){
 		// free d_seqs
 		// First copy d_seqs to host
@@ -1850,8 +2181,6 @@ void prepare_batch_GPU(gpu_ptrs_t* gpu_data, const bseq1_t* seqs, int n_seqs, co
 		// free main array
 		cudaFree(gpu_data->d_seqs);
 
-		// free d_regs
-		cudaFree(gpu_data->d_regs);
 		// member pointers regs.a sit on buffer pools, so they will be freed when we reset buffer pools
 		free(h_seqs);
 	}
@@ -1895,12 +2224,6 @@ void prepare_batch_GPU(gpu_ptrs_t* gpu_data, const bseq1_t* seqs, int n_seqs, co
 	cudaMemcpy(d_seqs, h_seqs, n_seqs*sizeof(bseq1_t), cudaMemcpyHostToDevice);
 	gpu_data->d_seqs = d_seqs;
 	free(h_seqs);
-
-	// reallocate regs output
-	if (gpu_data->n_seqs > 0)
-		cudaFree(gpu_data->d_regs);
-	fprintf(stderr, "[M::%s] regs ......... %lu MB\n", __func__, n_seqs*sizeof(mem_alnreg_v)/1048576);
-	cudaMalloc((void**)&(gpu_data->d_regs), n_seqs*sizeof(mem_alnreg_v));
 
 	// reset buffer pools
 	CUDAResetBufferPool(gpu_data->d_buffer_pools);

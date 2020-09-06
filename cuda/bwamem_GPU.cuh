@@ -1,4 +1,5 @@
 #define CUDA_BLOCKSIZE 32
+#define MAX_SEQLEN 8
 
 #include "../bwa.h"
 #include "../bwt.h"
@@ -8,7 +9,6 @@
 /* list of pointers to data on GPU */
 typedef struct {
 	// constant pointers
-	char* d_nst_nt4_table;	// 2-bit conversion table
 	mem_opt_t* d_opt;		// user-defined options
 	bwt_t* d_bwt;			// bwt
 	bntseq_t* d_bns;		
@@ -19,7 +19,7 @@ typedef struct {
 	// pointers that will change each batch
 	int n_seqs;				// number of reads
 	bseq1_t *d_seqs;		// reads
-	mem_alnreg_v* d_regs;
+	int* d_hash_map;		// hash map for reordering seqs
 } gpu_ptrs_t;
 
 #ifdef __cplusplus

@@ -1,4 +1,13 @@
+#define NBUFFERPOOLS 32 	// number of buffer pools
+#define POOLSIZE 300000000	// size of each buffer pool is 300MB
 #include "CUDAKernel_memmgnt.cuh"
+
+typedef struct
+{
+	int lock;					// malloc lock, 0 is free
+	unsigned current_offset;	// current offset to the available part of the chunk
+	unsigned end_offset;		// the max offset of the chunk
+} CUDAKernel_mem_info;
 
 __host__ void* CUDA_mem_init(){
 	/*
@@ -74,15 +83,16 @@ __device__ void* CUDAKernelMalloc(void* d_buffer_pool, size_t size, uint8_t alig
 
 	// check if we passed the end pointer
 	if (offset > d_pool_info->end_offset){
-		printf("Kernel OOM %u %u at blockID %d threadID %d\n", offset, d_pool_info->end_offset, blockIdx.x, threadIdx.x);
-		return 0;
+		// printf("Kernel OOM %u %u at blockID %d threadID %d\n", offset, d_pool_info->end_offset, blockIdx.x, threadIdx.x);
+		__trap();
+		return (void*)-1;
 	}
 	// store size info in first 4 bytes
 	unsigned* size_ptr = (unsigned*)((char*)d_buffer_pool + offset);
 	*size_ptr = (unsigned)size;
 	// output pointer
 	void* out_ptr = (void*)((char*)d_buffer_pool + offset + 4);
-// printf("Malloc info: current_offset %u, end_offset %u, out_offset %u\n", d_pool_info->current_offset, d_pool_info->end_offset, offset+4);
+// printf("[Malloc]: block %d thread %d, return %p\n", blockIdx.x, threadIdx.x, out_ptr);
 	return out_ptr;
 }
 
@@ -93,16 +103,14 @@ __device__ void* CUDAKernelCalloc(void* d_buffer_pool, size_t num, size_t size, 
 	   d_buffer_pool: pointer to a chunk in global memory that was allocated by CUDA_mem_init
 	*/
 	void* out_ptr = CUDAKernelMalloc(d_buffer_pool, num*size, align_size);
-	if (out_ptr == 0)	// check if success
-		return 0;
-	
+
 	// initialize with 0
-	int i =0;	// byte counter
+	int i = 0;	// byte counter
 	// set 4 bytes to 0
-	for (; i<num*size; i+=sizeof(int))
-		((int*)out_ptr)[i/sizeof(int)] = 0;
+	for (; i<num*size; i+=4)
+		((int*)out_ptr)[i/4] = 0;
 	// set last few bytes to 0
-	for (; i<num*size; i+=sizeof(char))
+	for (; i<num*size; i+=1)
 		((char*)out_ptr)[i] = 0;
 
 	return out_ptr;
@@ -125,9 +133,6 @@ __device__ void* CUDAKernelRealloc(void* d_buffer_pool, void* d_current_ptr, siz
 	if (old_size < new_size){
 		void* out_ptr	= CUDAKernelMalloc(d_buffer_pool, new_size, align_size);
 		cudaKernelMemcpy(d_current_ptr, out_ptr, old_size);
-		// check if we ran out of memory in the chunk
-		if (out_ptr == 0)
-			return 0;
 		return out_ptr;
 	} else {
 		unsigned* size_ptr = (unsigned*)((char*)d_current_ptr - 4);

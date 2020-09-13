@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 // initialize 32 chunks of memory
-extern __host__ void* CUDA_mem_init();
+extern __host__ void* CUDA_BufferInit();
 // reset buffer pools
 extern __host__ void CUDAResetBufferPool(void* big_pool);
 

@@ -72,14 +72,16 @@ static void *process(void *shared, int step, void *_data)
 		ktp_data_t *ret;
 		int64_t size = 0;
 		ret = calloc(1, sizeof(ktp_data_t));
+		// reset seq offsets 
+		seq_name_offset = 0; seq_offset = 0; seq_comment_offset = 0; seq_qual_offset = 0;
 		ret->seqs = bseq_read(aux->actual_chunk_size, &ret->n_seqs, aux->ks, aux->ks2);
-		if (ret->seqs == 0) {
+		if (ret->n_seqs == 0) {
 			free(ret);
 			return 0;
 		}
 		if (!aux->copy_comment)
 			for (i = 0; i < ret->n_seqs; ++i) {
-				free(ret->seqs[i].comment);
+				// free(ret->seqs[i].comment);
 				ret->seqs[i].comment = 0;
 			}
 		for (i = 0; i < ret->n_seqs; ++i) size += ret->seqs[i].l_seq;
@@ -122,10 +124,12 @@ static void *process(void *shared, int step, void *_data)
 	} else if (step == 2) {
 		for (i = 0; i < data->n_seqs; ++i) {
 			if (data->seqs[i].sam) err_fputs(data->seqs[i].sam, stdout);
-			free(data->seqs[i].name); free(data->seqs[i].comment);
-			free(data->seqs[i].seq); free(data->seqs[i].qual); free(data->seqs[i].sam);
+			// free(data->seqs[i].name); free(data->seqs[i].comment);
+			// free(data->seqs[i].seq); free(data->seqs[i].qual); 
+			// free(data->seqs[i].sam);
 		}
-		free(data->seqs); free(data);
+		// free(data->seqs); 
+		free(data);
 		return 0;
 	}
 	return 0;
@@ -393,12 +397,15 @@ int main_mem(int argc, char *argv[])
 	}
 	bwa_print_sam_hdr(aux.idx->bns, hdr_line);
 	aux.actual_chunk_size = fixed_chunk_size > 0? fixed_chunk_size : opt->chunk_size * opt->n_threads;
-	// Init memory on GPU
+	// Init static memory on GPU
 	aux.gpu_data = GPU_Init(aux.opt, aux.idx->bwt, aux.idx->bns, aux.idx->pac, aux.pes0);
+	// prepare large chunks of memory for seqs
+	CUDAInitSeqsMemory();
 	// kt_pipeline(no_mt_io? 1 : 2, process, &aux, 3);
 	kt_pipeline(1, process, &aux, 3);
 	free(hdr_line);
 	free(opt);
+	CUDADataFree();
 	bwa_idx_destroy(aux.idx);
 	kseq_destroy(aux.ks);
 	err_gzclose(fp); kclose(ko);

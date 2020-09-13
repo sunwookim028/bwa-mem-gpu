@@ -24,6 +24,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
 */
+
 #ifndef BWA_H_
 #define BWA_H_
 
@@ -56,7 +57,6 @@ typedef struct {
 typedef struct {
 	int l_seq, id;
 	char *name, *comment, *seq, *qual, *sam;
-	int l_sam;	// length of sam not including NULL term. This is for GPU Memory transfer
 } bseq1_t;
 
 extern int bwa_verbose;

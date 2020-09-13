@@ -1100,7 +1100,8 @@ end_gen_alt:
 	return XA;
 }
 
-
+extern __device__ char* d_seq_sam_ptr;
+extern __device__ int d_seq_sam_offset;
 __device__ static void mem_reg2sam(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, bseq1_t *s, mem_alnreg_v *a, int extra_flag, const mem_aln_t *m, void* d_buffer_ptr)
 {
 	kstring_t str;
@@ -1146,8 +1147,10 @@ __device__ static void mem_reg2sam(const mem_opt_t *opt, const bntseq_t *bns, co
 		// for (k = 0; k < aa.n; ++k) free(aa.a[k].cigar);
 		// free(aa.a);
 	}
-	s->sam = str.s; // output
-	s->l_sam = strlen_GPU(str.s);	// Minh: add this for GPU data transfer
+	l = strlen_GPU(str.s); 		// length of output
+	k = atomicAdd(&d_seq_sam_offset, l+1);	// offset to output to d_seq_sam_ptr
+	memcpy(&d_seq_sam_ptr[k], str.s, l+1);	// copy sam to output
+	s->sam = (char*)k; 	// record offset
 	// if (XA) {
 	// 	for (k = 0; k < a->n; ++k) free(XA[k]);
 	// 	free(XA);
@@ -1415,10 +1418,18 @@ __device__ static int mem_sam_pe(const mem_opt_t *opt, const bntseq_t *bns, cons
 		}
 		for (i = 0; i < n_aa[0]; ++i)
 			mem_aln2sam(opt, bns, &str, &s[0], n_aa[0], aa[0], i, &h[1], d_buffer_ptr); // write read1 hits
-		s[0].sam = strdup_GPU(str.s, d_buffer_ptr); s[0].l_sam = strlen_GPU(s[0].sam) ;str.l = 0;
+		int l_sam = strlen_GPU(str.s); 		// length of output
+		int offset = atomicAdd(&d_seq_sam_offset, l_sam+1);	// offset to output to d_seq_sam_ptr
+		memcpy(&d_seq_sam_ptr[offset], str.s, l_sam+1);	// copy sam to output
+		s[0].sam = (char*)offset; 	// record offset
+		str.l = 0;
 		for (i = 0; i < n_aa[1]; ++i)
 			mem_aln2sam(opt, bns, &str, &s[1], n_aa[1], aa[1], i, &h[0], d_buffer_ptr); // write read2 hits
-		s[1].sam = str.s; s[1].l_sam = strlen_GPU(s[1].sam);
+		l_sam = strlen_GPU(str.s); 		// length of output
+		offset = atomicAdd(&d_seq_sam_offset, l_sam+1);	// offset to output to d_seq_sam_ptr
+		memcpy(&d_seq_sam_ptr[offset], str.s, l_sam+1);	// copy sam to output
+		s[1].sam = (char*)offset; 	// record offset
+
 		// if (strcmp(s[0].name, s[1].name) != 0) err_fatal(__func__, "paired reads have different names: \"%s\", \"%s\"\n", s[0].name, s[1].name);
 // 		// free
 // 		for (i = 0; i < 2; ++i) {
@@ -1988,26 +1999,30 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
 
-	// COPY d_regs to host memory 
-	mem_alnreg_v* h_regs;
-	h_regs = (mem_alnreg_v*)malloc(gpu_data.n_seqs * sizeof(mem_alnreg_v));
-	cudaMemcpy(h_regs, d_regs, gpu_data.n_seqs*sizeof(mem_alnreg_v), cudaMemcpyDeviceToHost);
-		// copy member array a
-	mem_alnreg_t* temp_a;
-	for (int i=0; i<gpu_data.n_seqs; i++ ){
-		temp_a = (mem_alnreg_t*)malloc(h_regs[i].n*sizeof(mem_alnreg_t));
-		cudaMemcpy(temp_a, h_regs[i].a, h_regs[i].n*sizeof(mem_alnreg_t), cudaMemcpyDeviceToHost);
-		h_regs[i].a = temp_a;
-	}
 
 	/* paired-end statistics */
-	// infer insert sizes if not provided
-	mem_pestat_t pes[4];
 	if (opt->flag&MEM_F_PE) { 
+		// COPY d_regs to host memory 
+		mem_alnreg_v* h_regs;
+		h_regs = (mem_alnreg_v*)malloc(gpu_data.n_seqs * sizeof(mem_alnreg_v));
+		cudaMemcpy(h_regs, d_regs, gpu_data.n_seqs*sizeof(mem_alnreg_v), cudaMemcpyDeviceToHost);
+			// copy member array a
+		mem_alnreg_t* temp_a;
+		for (int i=0; i<gpu_data.n_seqs; i++ ){
+			temp_a = (mem_alnreg_t*)malloc(h_regs[i].n*sizeof(mem_alnreg_t));
+			cudaMemcpy(temp_a, h_regs[i].a, h_regs[i].n*sizeof(mem_alnreg_t), cudaMemcpyDeviceToHost);
+			h_regs[i].a = temp_a;
+		}
+		// infer insert sizes if not provided
+		mem_pestat_t pes[4];
 		if (gpu_data.h_pes0) memcpy(pes, gpu_data.h_pes0, 4 * sizeof(mem_pestat_t)); 	// if pes0 != NULL, set the insert-size distribution as pes0
 		else mem_pestat(opt, bns->l_pac, gpu_data.n_seqs, h_regs, pes); 		// otherwise, infer the insert size distribution from data
 		// copy pes to device
 		cudaMemcpy(gpu_data.d_pes, pes, 4*sizeof(mem_pestat_t), cudaMemcpyHostToDevice);
+		// free intermediate data
+		for (int i=0; i<gpu_data.n_seqs; i++ )
+			free(h_regs[i].a);
+		free(h_regs); 
 	}
 	
 	/* generate SAM alignment */
@@ -2020,20 +2035,20 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	fprintf(stderr, "[M::%s] Finished kernel generate_sam ...\n", __func__);
 
 	/* copy sam output to host */
-	// TODO: CAN OPTIMIZER THIS TRANSFER
 	bseq1_t* h_seqs;
 	h_seqs = (bseq1_t*)malloc(gpu_data.n_seqs*sizeof(bseq1_t));
 	cudaMemcpy(h_seqs, gpu_data.d_seqs, gpu_data.n_seqs*sizeof(bseq1_t), cudaMemcpyDeviceToHost);
-	for (int i=0; i<gpu_data.n_seqs; i++){
-		seqs[i].sam = (char*)malloc(h_seqs[i].l_sam+1);
-		cudaMemcpy(seqs[i].sam, h_seqs[i].sam, h_seqs[i].l_sam+1, cudaMemcpyDeviceToHost);
-	}
+	int L_sam;	// find total size of sam
+	cudaMemcpyFromSymbol(&L_sam, d_seq_sam_offset, sizeof(int), 0, cudaMemcpyDeviceToHost);
+	char* symbol_addr, *d_temp;
+	gpuErrchk(cudaGetSymbolAddress((void**)&symbol_addr, d_seq_sam_ptr));
+	gpuErrchk(cudaMemcpy(&d_temp, symbol_addr, sizeof(char*), cudaMemcpyDeviceToHost));
+	cudaMemcpy(seq_sam_ptr, d_temp, L_sam, cudaMemcpyDeviceToHost);
+	for (int i=0; i<gpu_data.n_seqs; i++)
+		seqs[i].sam = &seq_sam_ptr[(long)h_seqs[i].sam];
 
 	// free intermediate data
 	cudaFree(d_aux); cudaFree(d_chains); cudaFree(d_regs);
-	for (int i=0; i<gpu_data.n_seqs; i++ )
-		free(h_regs[i].a);
-	free(h_regs); 
 	free(h_seqs);
 };
 
@@ -2052,178 +2067,31 @@ gpu_ptrs_t GPU_Init(
 {
 	cudaSetDevice(0);
 	// cudaDeviceSetLimit(cudaLimitStackSize, 2048);
-
-	/* CUDA GLOBAL MEMORY ALLOCATION AND TRANSFER */
-	fprintf(stderr, "[M::%s] Device memory allocation ......\n", __func__);
-
-	// matching and mapping options (opt)
-	fprintf(stderr, "[M::%s] options ...... %.2f MB\n", __func__, (float)sizeof(mem_opt_t)/1048576);
-	mem_opt_t* d_opt;
-	cudaMalloc((void**)&d_opt, sizeof(mem_opt_t));
-	cudaMemcpy(d_opt, opt, sizeof(mem_opt_t), cudaMemcpyHostToDevice);
-
-	// Burrows-Wheeler Transform
-		// 1. bwt_t structure
-	fprintf(stderr, "[M::%s] bwt .......... %.2f MB\n", __func__, (float)sizeof(bwt_t)/1048576);
-	bwt_t* d_bwt;
-	cudaMalloc((void**)&d_bwt, sizeof(bwt_t));
-	cudaMemcpy(d_bwt, bwt, sizeof(bwt_t), cudaMemcpyHostToDevice);
-		// 2. int array of bwt
-	fprintf(stderr, "[M::%s] bwt_int ...... %.2f MB\n", __func__, (float)bwt->bwt_size*sizeof(uint32_t)/1048576);
-	uint32_t* d_bwt_int ;
-	cudaMalloc((void**)&d_bwt_int, bwt->bwt_size*sizeof(uint32_t));
-	cudaMemcpy(d_bwt_int, bwt->bwt, bwt->bwt_size*sizeof(uint32_t), cudaMemcpyHostToDevice);
-		// 3. int array of Suffix Array
-	fprintf(stderr, "[M::%s] suffix array . %.2f MB \n", __func__, (float)bwt->n_sa*sizeof(bwtint_t)/1048576);
-	bwtint_t* d_bwt_sa ;
-	cudaMalloc((void**)&d_bwt_sa, bwt->n_sa*sizeof(bwtint_t));
-	cudaMemcpy(d_bwt_sa, bwt->sa, bwt->n_sa*sizeof(bwtint_t), cudaMemcpyHostToDevice);
-		// set pointers on device's memory to bwt_int and SA
-	cudaMemcpy((void**)&(d_bwt->bwt), &d_bwt_int, sizeof(uint32_t*), cudaMemcpyHostToDevice);
-	cudaMemcpy((void**)&(d_bwt->sa), &d_bwt_sa, sizeof(bwtint_t*), cudaMemcpyHostToDevice);
-
-	// BNS
-	// First create h_bns as a copy of bns on host
-	// Then allocate its member pointers on device and copy data over
-	// Then copy h_bns to d_bns
-	uint32_t i, size;			// loop index and length of strings
-	bntseq_t* h_bns;			// host copy to modify pointers
-	h_bns = (bntseq_t*)malloc(sizeof(bntseq_t));
-	memcpy(h_bns, bns, sizeof(bntseq_t));
-	h_bns->anns = (bntann1_t*)malloc(bns->n_seqs*sizeof(bntann1_t));
-	memcpy(h_bns->ambs, bns->ambs, bns->n_holes*sizeof(bntamb1_t));
-	h_bns->ambs = (bntamb1_t*)malloc(bns->n_holes*sizeof(bntamb1_t));
-	memcpy(h_bns->anns, bns->anns, bns->n_seqs*sizeof(bntann1_t));
-
-		// allocate anns.name
-	for (i=0; i<bns->n_seqs; i++){
-		size = strlen(bns->anns[i].name);
-		// allocate this name and copy to device
-		cudaMalloc((void**)&(h_bns->anns[i].name), size+1); 			// +1 for "\0"
-		cudaMemcpy(h_bns->anns[i].name, bns->anns[i].name, size+1, cudaMemcpyHostToDevice);
-	}
-	// allocate anns.anno
-	for (i=0; i<bns->n_seqs; i++){
-		size = strlen(bns->anns[i].anno);
-		// allocate this name and copy to device
-		cudaMalloc((void**)&(h_bns->anns[i].anno), size+1); 			// +1 for "\0"
-		cudaMemcpy(h_bns->anns[i].anno, bns->anns[i].anno, size+1, cudaMemcpyHostToDevice);
-	}
-		// now h_bns->anns has pointers of name and anno on device
-		// allocate anns on device and copy data from h_bns->anns to device
-	bntann1_t* temp_d_anns;
-	fprintf(stderr, "[M::%s] bns.anns ..... %.2f MB\n", __func__, (float)bns->n_seqs*sizeof(bntann1_t)/1048576);
-	cudaMalloc((void**)&temp_d_anns, bns->n_seqs*sizeof(bntann1_t));
-	cudaMemcpy(temp_d_anns, h_bns->anns, bns->n_seqs*sizeof(bntann1_t), cudaMemcpyHostToDevice);
-		// now assign this pointer to h_bns->anns
-	h_bns->anns = temp_d_anns;
-
-		// allocate bns->ambs on device and copy data to device
-	fprintf(stderr, "[M::%s] bns.ambs ..... %.2f MB\n", __func__, (float)bns->n_holes*sizeof(bntamb1_t)/1048576);
-	cudaMalloc((void**)&h_bns->ambs, bns->n_holes*sizeof(bntamb1_t));
-	cudaMemcpy(h_bns->ambs, bns->ambs, bns->n_holes*sizeof(bntamb1_t), cudaMemcpyHostToDevice);
-
-		// finally allocate d_bns and copy from h_bns
-	fprintf(stderr, "[M::%s] bns .......... %.2f MB\n", __func__, (float)sizeof(bntseq_t)/1048576);
-	bntseq_t* d_bns;
-	cudaMalloc((void**)&d_bns, sizeof(bntseq_t));
-	cudaMemcpy(d_bns, h_bns, sizeof(bntseq_t), cudaMemcpyHostToDevice);
-
-	// PAC
-	fprintf(stderr, "[M::%s] pac .......... %.2f MB\n", __func__, (float)bns->l_pac*sizeof(uint8_t)/1048576);
-	uint8_t* d_pac ;
-	cudaMalloc((void**)&d_pac, bns->l_pac/4*sizeof(uint8_t)); 		// l_pac is length of ref seq
-	cudaMemcpy(d_pac, pac, bns->l_pac/4*sizeof(uint8_t), cudaMemcpyHostToDevice); 		// divide by 4 because 2-bit encoding
-
-	// paired-end stats: only allocate on device
-	mem_pestat_t* d_pes;
-	if (opt->flag&MEM_F_PE){
-		fprintf(stderr, "[M::%s] pestat ....... %.2f MB\n", __func__, (float)4*sizeof(mem_pestat_t)/1048576);
-		cudaMalloc((void**)&d_pes, 4*sizeof(mem_pestat_t));
-	}
-
+	gpu_ptrs_t gpu_data;	// output
+	CUDATransferStaticData(opt, bwt, bns, pac, pes0, &gpu_data);
 	// buffer
-	void* d_buffer_pools = CUDA_mem_init();
+	gpu_data.d_buffer_pools = CUDA_BufferInit();
 
-	/* Output */
-	gpu_ptrs_t gpu_data;
-	gpu_data.d_opt = d_opt;
-	gpu_data.d_bwt = d_bwt;
-	gpu_data.d_bns = d_bns;
-	gpu_data.d_pac = d_pac;
-	gpu_data.d_buffer_pools = d_buffer_pools;
-	gpu_data.d_pes = d_pes;
-	gpu_data.h_pes0 = pes0;
-	gpu_data.n_seqs = 0;
 	return gpu_data;
 }
 
+__device__ int d_seq_sam_offset = 0;
 void prepare_batch_GPU(gpu_ptrs_t* gpu_data, const bseq1_t* seqs, int n_seqs, const mem_opt_t *opt){
 	/* free d_seqs if they exist
 	   reset buffer pools
 	   update opt if opt !=0
 	 */
 	fprintf(stderr, "[M::%s] Prepare to align new batch of %d reads ..... \n", __func__, n_seqs);
-	bseq1_t* h_seqs;	// copy of seqs on host
-	// free d_seqs if they exist
-	if (gpu_data->n_seqs > 0){
-		// free d_seqs
-		// First copy d_seqs to host
-		h_seqs = (bseq1_t*)malloc(gpu_data->n_seqs*sizeof(bseq1_t));
-		cudaMemcpy(h_seqs, gpu_data->d_seqs, gpu_data->n_seqs*sizeof(bseq1_t), cudaMemcpyDeviceToHost);
-		for (int i=0; i<gpu_data->n_seqs; i++){
-			// free member pointers
-			cudaFree(h_seqs[i].name);
-			cudaFree(h_seqs[i].comment);
-			cudaFree(h_seqs[i].seq);
-			cudaFree(h_seqs[i].qual);
-		}
-		// free main array
-		cudaFree(gpu_data->d_seqs);
 
-		// member pointers regs.a sit on buffer pools, so they will be freed when we reset buffer pools
-		free(h_seqs);
-	}
-
+	// transfer seqs
+	CUDATransferSeqs(n_seqs);
+	gpu_data->d_seqs = d_preallocated_seqs;
 	gpu_data->n_seqs = n_seqs;
-	// load in new seqs
-	// first create h_seqs as a copy of seqs on host
-	// then allocate all of its *name, *comment, *seq, *qual, *sam on device
-	// then copy h_seqs to d_seqs and its members to device
-	uint32_t size = (uint32_t)(n_seqs*sizeof(bseq1_t));
-	h_seqs = (bseq1_t*)malloc(size);
-	memcpy(h_seqs, seqs, size);
 
-		// allocate and copy members to device
-	for (int i = 0; i < n_seqs; i++){	// loop through each read
-		// name
-		size = strlen(seqs[i].name);
-		cudaMalloc((void**)&h_seqs[i].name, size+1); 								// allocate name, +1 for \0
-		cudaMemcpy(h_seqs[i].name, seqs[i].name, size+1, cudaMemcpyHostToDevice);	// copy name
-		// comment
-		if (h_seqs[i].comment){
-			size = strlen(seqs[i].comment);
-			cudaMalloc((void**)&h_seqs[i].comment, size+1); 								// allocate comment, +1 for \0
-			cudaMemcpy(h_seqs[i].comment, seqs[i].comment, size+1, cudaMemcpyHostToDevice);	// copy comment
-		}
-		// seq
-		size = strlen(seqs[i].seq);
-		cudaMalloc((void**)&h_seqs[i].seq, size+1); 								// allocate seq, +1 for \0
-		cudaMemcpy(h_seqs[i].seq, seqs[i].seq, size+1, cudaMemcpyHostToDevice);		// copy seq
-		// qual
-		if (h_seqs[i].qual){
-			size = strlen(seqs[i].qual);
-			cudaMalloc((void**)&h_seqs[i].qual, size+1); 								// allocate qual, +1 for \0
-			cudaMemcpy(h_seqs[i].qual, seqs[i].qual, size+1, cudaMemcpyHostToDevice);	// copy qual
-		}
-	}
-		// allocate d_seqs, copy h_seqs to d_seqs
-	bseq1_t* d_seqs;
-	cudaMalloc((void**)&d_seqs, n_seqs*sizeof(bseq1_t));
-	fprintf(stderr, "[M::%s] seqs ......... %lu MB\n", __func__, n_seqs*sizeof(bseq1_t)/1048576);
-	cudaMemcpy(d_seqs, h_seqs, n_seqs*sizeof(bseq1_t), cudaMemcpyHostToDevice);
-	gpu_data->d_seqs = d_seqs;
-	free(h_seqs);
+	// reset sam offset on device
+	int temp = 0;
+	// cudaGetSymbolAddress((void**)symbol_addr, "d_seq_sam_offset");
+	cudaMemcpyToSymbol(d_seq_sam_offset, &temp, sizeof(int), 0, cudaMemcpyHostToDevice);
 
 	// reset buffer pools
 	CUDAResetBufferPool(gpu_data->d_buffer_pools);

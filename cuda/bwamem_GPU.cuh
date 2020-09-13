@@ -5,22 +5,7 @@
 #include "../bwt.h"
 #include "../bntseq.h"
 #include "../bwamem.h"
-
-/* list of pointers to data on GPU */
-typedef struct {
-	// constant pointers
-	mem_opt_t* d_opt;		// user-defined options
-	bwt_t* d_bwt;			// bwt
-	bntseq_t* d_bns;		
-	uint8_t* d_pac; 
-	void* d_buffer_pools;	// buffer pools
-	mem_pestat_t* d_pes; 	// paired-end stats
-	mem_pestat_t* h_pes0;	// pes0 on host for paired-end stats
-	// pointers that will change each batch
-	int n_seqs;				// number of reads
-	bseq1_t *d_seqs;		// reads
-	int* d_hash_map;		// hash map for reordering seqs
-} gpu_ptrs_t;
+#include "CUDADataTransfer.cuh"
 
 #ifdef __cplusplus
 extern "C"{

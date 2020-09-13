@@ -1,5 +1,5 @@
 #define NBUFFERPOOLS 32 	// number of buffer pools
-#define POOLSIZE 300000000	// size of each buffer pool is 300MB
+#define POOLSIZE 100000000	// size of each buffer pool is 100MB
 #include "CUDAKernel_memmgnt.cuh"
 
 typedef struct
@@ -9,7 +9,7 @@ typedef struct
 	unsigned end_offset;		// the max offset of the chunk
 } CUDAKernel_mem_info;
 
-__host__ void* CUDA_mem_init(){
+__host__ void* CUDA_BufferInit(){
 	/*
 	Allocate NBUFFERPOOLS Buffer pools, each with size POOLSIZE
 	First few bytes of each pool contain CUDAKernel_mem_info
@@ -34,7 +34,7 @@ __host__ void* CUDA_mem_init(){
 }
 
 __host__ void CUDAResetBufferPool(void* d_buffer_pools){
-	fprintf(stderr, "[M::%s] reset buffer pools ... \n", __func__, NBUFFERPOOLS*(size_t)POOLSIZE/1048576);
+	fprintf(stderr, "[M::%s] reset buffer pools ... \n", __func__);
 	// first coppy the array of pool pointers to host
 	void** h_pools;
 	h_pools = (void**)malloc(NBUFFERPOOLS*sizeof(void*));
@@ -66,7 +66,7 @@ __device__ void* CUDAKernelSelectPool(void* d_buffer_pools, int i){
 __device__ void* CUDAKernelMalloc(void* d_buffer_pool, size_t size, uint8_t align_size){
 	/* Malloc function to be run within kernel 
 	   return pointer to a chunk of global memory
-	   d_buffer_pool: pointer to a chunk in global memory that was allocated by CUDA_mem_init
+	   d_buffer_pool: pointer to a chunk in global memory that was allocated by CUDA_BufferInit
 	   align_size: size of alignment of the chunk. The returned pointer is divisible by align_size (expect 1, 2, 4, 8, power of 2)
 	   The 4 bytes before the returned pointer is the size of the chunk
 	*/
@@ -100,7 +100,7 @@ __device__ void* CUDAKernelCalloc(void* d_buffer_pool, size_t num, size_t size, 
 	/* Calloc function to be run within kernel 
 	   allocate num blocks, each with size "size"
 	   return pointer to first block
-	   d_buffer_pool: pointer to a chunk in global memory that was allocated by CUDA_mem_init
+	   d_buffer_pool: pointer to a chunk in global memory that was allocated by CUDA_BufferInit
 	*/
 	void* out_ptr = CUDAKernelMalloc(d_buffer_pool, num*size, align_size);
 
@@ -118,7 +118,7 @@ __device__ void* CUDAKernelCalloc(void* d_buffer_pool, size_t num, size_t size, 
 
 __device__ void* CUDAKernelRealloc(void* d_buffer_pool, void* d_current_ptr, size_t new_size, uint8_t align_size){
 	/* Realloc function to be run within kernel.
-	   d_buffer_pool: pointer to a chunk in global memory that was allocated by CUDA_mem_init. If this is null, only do malloc
+	   d_buffer_pool: pointer to a chunk in global memory that was allocated by CUDA_BufferInit. If this is null, only do malloc
 	   d_current_ptr: pointer to current memory block
 	   old_size: size of current 
 	   if new_size<old_size, simply change the size value *(d_current_ptr-4)

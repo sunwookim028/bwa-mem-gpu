@@ -133,11 +133,11 @@ bseq1_t *bseq_read(int chunk_size, int *n_, void *ks1_, void *ks2_)
 			size += seqs[n++].l_seq;
 		}
 		if (size >= chunk_size && (n&1) == 0) break;
-		if (   n>SEQ_MAX_COUNT
+		if (   n>=SEQ_MAX_COUNT
 			|| seq_name_offset>SEQ_NAME_LIMIT-50 
-			|| seq_comment_offset>SEQ_COMMENT_LIMIT-1000
-			|| seq_offset>SEQ_LIMIT-1000
-			|| seq_qual_offset>SEQ_QUAL_LIMIT-1000)  break;
+			|| seq_comment_offset>SEQ_COMMENT_LIMIT-500
+			|| seq_offset>SEQ_LIMIT-500
+			|| seq_qual_offset>SEQ_QUAL_LIMIT-500)  break;
 	}
 	if (size == 0) { // test if the 2nd file is finished
 		if (ks2 && kseq_read(ks2) >= 0)

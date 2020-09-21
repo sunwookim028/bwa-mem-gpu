@@ -1,5 +1,5 @@
 #define NBUFFERPOOLS 32 	// number of buffer pools
-#define POOLSIZE 100000000	// size of each buffer pool is 100MB
+#define POOLSIZE 180000000	// size of each buffer pool is 190MB
 #include "CUDAKernel_memmgnt.cuh"
 
 typedef struct
@@ -83,7 +83,7 @@ __device__ void* CUDAKernelMalloc(void* d_buffer_pool, size_t size, uint8_t alig
 
 	// check if we passed the end pointer
 	if (offset > d_pool_info->end_offset){
-		// printf("Kernel OOM %u %u at blockID %d threadID %d\n", offset, d_pool_info->end_offset, blockIdx.x, threadIdx.x);
+		printf("FATAL ERROR: Buffer OOM at blockID %d threadID %d\n", blockIdx.x, threadIdx.x);
 		__trap();
 		return (void*)-1;
 	}

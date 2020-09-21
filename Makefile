@@ -15,6 +15,8 @@ INCLUDES=
 LIBS=		-lm -lz -lpthread
 SUBDIRS=	.
 CUDADIR=    ./cuda
+NVCC_FLAGS= -Xptxas -O4 -Xcompiler -O4 --device-c -arch=sm_30
+NVCC_DEBUG= -g -G -O0 --device-c -arch=sm_30
 
 ifeq ($(shell uname -s),Linux)
 	LIBS += -lrt
@@ -44,25 +46,25 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 CUDADataTransfer.o: $(CUDADIR)/CUDADataTransfer.cu $(CUDADIR)/CUDADataTransfer.cuh
-	nvcc -I. --device-c -arch=sm_30 $(CUDADIR)/CUDADataTransfer.cu -o CUDADataTransfer.o
+	nvcc -I. $(NVCC_FLAGS) $(CUDADIR)/CUDADataTransfer.cu -o CUDADataTransfer.o
 CUDAKernel_memmgnt.o: $(CUDADIR)/CUDAKernel_memmgnt.cu $(CUDADIR)/CUDAKernel_memmgnt.cuh
-	nvcc -I. --device-c -arch=sm_30 $(CUDADIR)/CUDAKernel_memmgnt.cu -o CUDAKernel_memmgnt.o
+	nvcc -I. $(NVCC_FLAGS) $(CUDADIR)/CUDAKernel_memmgnt.cu -o CUDAKernel_memmgnt.o
 # preprocessing.o: $(CUDADIR)/preprocessing.cu $(CUDADIR)/preprocessing.cuh
 # 	nvcc -I.  --device-c -arch=sm_30 $(CUDADIR)/preprocessing.cu -o preprocessing.o
 bwt_CUDA.o: $(CUDADIR)/bwt_CUDA.cu $(CUDADIR)/bwt_CUDA.cuh
-	nvcc -I. --device-c -arch=sm_30 $(CUDADIR)/bwt_CUDA.cu -o bwt_CUDA.o
+	nvcc -I. $(NVCC_FLAGS) $(CUDADIR)/bwt_CUDA.cu -o bwt_CUDA.o
 bntseq_CUDA.o: $(CUDADIR)/bntseq_CUDA.cuh $(CUDADIR)/bntseq_CUDA.cu
-	nvcc -I. --device-c -arch=sm_30 $(CUDADIR)/bntseq_CUDA.cu -o bntseq_CUDA.o
+	nvcc -I. $(NVCC_FLAGS) $(CUDADIR)/bntseq_CUDA.cu -o bntseq_CUDA.o
 kbtree_CUDA.o: $(CUDADIR)/kbtree_CUDA.cuh $(CUDADIR)/kbtree_CUDA.cu
-	nvcc -I. --device-c -arch=sm_30 $(CUDADIR)/kbtree_CUDA.cu -o kbtree_CUDA.o
+	nvcc -I. $(NVCC_FLAGS) $(CUDADIR)/kbtree_CUDA.cu -o kbtree_CUDA.o
 ksw_CUDA.o: $(CUDADIR)/ksw_CUDA.cuh $(CUDADIR)/ksw_CUDA.cu
-	nvcc -I. --device-c -arch=sm_30 $(CUDADIR)/ksw_CUDA.cu -o ksw_CUDA.o
+	nvcc -I. $(NVCC_FLAGS) $(CUDADIR)/ksw_CUDA.cu -o ksw_CUDA.o
 bwa_CUDA.o: $(CUDADIR)/bwa_CUDA.cuh $(CUDADIR)/bwa_CUDA.cu
-	nvcc -I. --device-c -arch=sm_30 $(CUDADIR)/bwa_CUDA.cu -o bwa_CUDA.o
+	nvcc -I. $(NVCC_FLAGS) $(CUDADIR)/bwa_CUDA.cu -o bwa_CUDA.o
 kstring_CUDA.o: $(CUDADIR)/kstring_CUDA.cuh $(CUDADIR)/kstring_CUDA.cu
-	nvcc -I. --device-c -arch=sm_30 $(CUDADIR)/kstring_CUDA.cu -o kstring_CUDA.o
+	nvcc -I. $(NVCC_FLAGS) $(CUDADIR)/kstring_CUDA.cu -o kstring_CUDA.o
 bwamem_GPU.o: bwamem.h bwa.h bntseq.h $(CUDADIR)/bwamem_GPU.cuh kbtree.h $(CUDADIR)/bwamem_GPU.cu $(CUDADIR)/CUDAKernel_memmgnt.cuh $(CUDADIR)/CUDAKernel_memmgnt.cu $(CUDADIR)/bwt_CUDA.cu $(CUDADIR)/bntseq_CUDA.cu $(CUDADIR)/kbtree_CUDA.cuh $(CUDADIR)/ksw_CUDA.cu $(CUDADIR)/ksw_CUDA.cuh $(CUDADIR)/bwa_CUDA.cuh $(CUDADIR)/bwa_CUDA.cuh
-	nvcc -I. -G --device-c -arch=sm_30 $(CUDADIR)/bwamem_GPU.cu -o bwamem_GPU.o
+	nvcc -I. -O4 -G -Xcompiler -O4 --device-c -arch=sm_30 $(CUDADIR)/bwamem_GPU.cu -o bwamem_GPU.o
 GPULink.o: bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o CUDADataTransfer.o
 	nvcc -I. --device-link -arch=sm_30 bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o CUDADataTransfer.o --output-file GPULink.o
 

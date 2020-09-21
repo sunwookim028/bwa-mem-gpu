@@ -19,12 +19,12 @@ bseq1_t *preallocated_seqs=0, *d_preallocated_seqs=0;
 void CUDAInitSeqsMemory()
 {
 	// allocate big chunks of memory as pinned memory on host
-	cudaMallocHost((void**)&seq_name_ptr, SEQ_NAME_LIMIT);
-	cudaMallocHost((void**)&seq_comment_ptr, SEQ_COMMENT_LIMIT);
-	cudaMallocHost((void**)&seq_ptr, SEQ_LIMIT);
-	cudaMallocHost((void**)&seq_qual_ptr, SEQ_QUAL_LIMIT);
-	cudaMallocHost((void**)&preallocated_seqs, SEQ_MAX_COUNT*sizeof(bseq1_t));
-	cudaMallocHost((void**)&seq_sam_ptr, SEQ_SAM_LIMIT);
+	gpuErrchk(cudaMallocHost((void**)&seq_name_ptr, SEQ_NAME_LIMIT));
+	gpuErrchk(cudaMallocHost((void**)&seq_comment_ptr, SEQ_COMMENT_LIMIT));
+	gpuErrchk(cudaMallocHost((void**)&seq_ptr, SEQ_LIMIT));
+	gpuErrchk(cudaMallocHost((void**)&seq_qual_ptr, SEQ_QUAL_LIMIT));
+	gpuErrchk(cudaMallocHost((void**)&preallocated_seqs, SEQ_MAX_COUNT*sizeof(bseq1_t)));
+	gpuErrchk(cudaMallocHost((void**)&seq_sam_ptr, SEQ_SAM_LIMIT));
 	// allocate corresponding chunks on device
 	gpuErrchk(cudaMalloc((void**)&d_seq_name_ptr, SEQ_NAME_LIMIT));
 	gpuErrchk(cudaMalloc((void**)&d_seq_comment_ptr, SEQ_COMMENT_LIMIT));
@@ -35,7 +35,7 @@ void CUDAInitSeqsMemory()
 	gpuErrchk(cudaGetSymbolAddress((void**)&symbol_addr, d_seq_sam_ptr));
 	char* d_temp;
 	gpuErrchk(cudaMalloc((void**)&d_temp, SEQ_SAM_LIMIT));
-	cudaMemcpy(symbol_addr, &d_temp, sizeof(char*), cudaMemcpyHostToDevice);
+	gpuErrchk(cudaMemcpy(symbol_addr, &d_temp, sizeof(char*), cudaMemcpyHostToDevice));
 	fprintf(stderr, "[M::%s] seq name ..... %.2f MB\n", __func__, (float)SEQ_NAME_LIMIT/1000000);
 	fprintf(stderr, "[M::%s] seq comment .. %.2f MB\n", __func__, (float)SEQ_COMMENT_LIMIT/1000000);
 	fprintf(stderr, "[M::%s] seq  ......... %.2f MB\n", __func__, (float)SEQ_LIMIT/1000000);
@@ -155,15 +155,15 @@ void CUDATransferStaticData(
 void CUDATransferSeqs(int n_seqs)
 {
 	// copy name to device
-	cudaMemcpy(d_seq_name_ptr, seq_name_ptr, seq_name_offset, cudaMemcpyHostToDevice);
+	gpuErrchk(cudaMemcpy(d_seq_name_ptr, seq_name_ptr, seq_name_offset, cudaMemcpyHostToDevice));
 	// copy seq to device
-	cudaMemcpy(d_seq_ptr, seq_ptr, seq_offset, cudaMemcpyHostToDevice);
+	gpuErrchk(cudaMemcpy(d_seq_ptr, seq_ptr, seq_offset, cudaMemcpyHostToDevice));
 	// copy comment to device
-	cudaMemcpy(d_seq_comment_ptr, seq_comment_ptr, seq_comment_offset, cudaMemcpyHostToDevice);
+	gpuErrchk(cudaMemcpy(d_seq_comment_ptr, seq_comment_ptr, seq_comment_offset, cudaMemcpyHostToDevice));
 	// copy qual to device
-	cudaMemcpy(d_seq_qual_ptr, seq_qual_ptr, seq_qual_offset, cudaMemcpyHostToDevice);
+	gpuErrchk(cudaMemcpy(d_seq_qual_ptr, seq_qual_ptr, seq_qual_offset, cudaMemcpyHostToDevice));
 	// copy seqs to device
-	cudaMemcpy(d_preallocated_seqs, preallocated_seqs, n_seqs*sizeof(bseq1_t), cudaMemcpyHostToDevice);
+	gpuErrchk(cudaMemcpy(d_preallocated_seqs, preallocated_seqs, n_seqs*sizeof(bseq1_t), cudaMemcpyHostToDevice));
 }
 
 /* transfer SAM output */

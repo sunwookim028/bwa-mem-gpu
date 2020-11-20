@@ -1,10 +1,9 @@
 #define NBUFFERPOOLS 32 	// number of buffer pools
-#define POOLSIZE 180000000	// size of each buffer pool is 190MB
+#define POOLSIZE 100000000	// size of each buffer pool is 190MB
 #include "CUDAKernel_memmgnt.cuh"
 
 typedef struct
 {
-	int lock;					// malloc lock, 0 is free
 	unsigned current_offset;	// current offset to the available part of the chunk
 	unsigned end_offset;		// the max offset of the chunk
 } CUDAKernel_mem_info;
@@ -15,7 +14,7 @@ __host__ void* CUDA_BufferInit(){
 	First few bytes of each pool contain CUDAKernel_mem_info
 	return array of pointers to the pools
 	*/
-	fprintf(stderr, "[M::%s] init buffer .. %ld MB\n", __func__, NBUFFERPOOLS*(size_t)POOLSIZE/1048576);
+	fprintf(stderr, "[M::%s] init buffer ......... %ld MB\n", __func__, NBUFFERPOOLS*(size_t)POOLSIZE/1048576);
 	// allocate array of pointers on host
 	void** pools;
 	pools = (void**)malloc(NBUFFERPOOLS*sizeof(void*));
@@ -34,7 +33,6 @@ __host__ void* CUDA_BufferInit(){
 }
 
 __host__ void CUDAResetBufferPool(void* d_buffer_pools){
-	fprintf(stderr, "[M::%s] reset buffer pools ... \n", __func__);
 	// first coppy the array of pool pointers to host
 	void** h_pools;
 	h_pools = (void**)malloc(NBUFFERPOOLS*sizeof(void*));
@@ -49,8 +47,6 @@ __host__ void CUDAResetBufferPool(void* d_buffer_pools){
 		d_pool_info.current_offset = sizeof(CUDAKernel_mem_info);
 		// set limit of the pool
 		d_pool_info.end_offset = (unsigned)POOLSIZE;
-		// lock is free
-		d_pool_info.lock = 0;
 		// copy d_pool_info to the start of the pool
 		gpuErrchk(cudaMemcpy(pool_addr, &d_pool_info, sizeof(CUDAKernel_mem_info), cudaMemcpyHostToDevice));
 	}
@@ -71,7 +67,7 @@ __device__ void* CUDAKernelMalloc(void* d_buffer_pool, size_t size, uint8_t alig
 	   The 4 bytes before the returned pointer is the size of the chunk
 	*/
 	CUDAKernel_mem_info* d_pool_info = (CUDAKernel_mem_info*)d_buffer_pool;
-	unsigned offset = atomicAdd(&d_pool_info->current_offset, 3+4+align_size-1+size);
+	unsigned offset = atomicAdd(&d_pool_info->current_offset, 3+4+(align_size-1)+size); // 3+4 is padding for size + its alignment
 
 	// enforce memory alignment
 		// size pointer need to be divisible by 4
@@ -85,14 +81,13 @@ __device__ void* CUDAKernelMalloc(void* d_buffer_pool, size_t size, uint8_t alig
 	if (offset > d_pool_info->end_offset){
 		printf("FATAL ERROR: Buffer OOM at blockID %d threadID %d\n", blockIdx.x, threadIdx.x);
 		__trap();
-		return (void*)-1;
 	}
 	// store size info in first 4 bytes
 	unsigned* size_ptr = (unsigned*)((char*)d_buffer_pool + offset);
 	*size_ptr = (unsigned)size;
 	// output pointer
 	void* out_ptr = (void*)((char*)d_buffer_pool + offset + 4);
-// printf("[Malloc]: block %d thread %d, return %p\n", blockIdx.x, threadIdx.x, out_ptr);
+// printf("[Malloc]: block %d thread %d, offset %p\n", blockIdx.x, threadIdx.x, offset);
 	return out_ptr;
 }
 
@@ -105,13 +100,7 @@ __device__ void* CUDAKernelCalloc(void* d_buffer_pool, size_t num, size_t size, 
 	void* out_ptr = CUDAKernelMalloc(d_buffer_pool, num*size, align_size);
 
 	// initialize with 0
-	int i = 0;	// byte counter
-	// set 4 bytes to 0
-	for (; i<num*size; i+=4)
-		((int*)out_ptr)[i/4] = 0;
-	// set last few bytes to 0
-	for (; i<num*size; i+=1)
-		((char*)out_ptr)[i] = 0;
+	memset(out_ptr, 0, num*size);
 
 	return out_ptr;
 }
@@ -175,4 +164,24 @@ __device__ unsigned cudaKernelSizeOf(void* ptr){
 	/* return the size of the memory chunk that starts with ptr */
 	unsigned* size_ptr = (unsigned*)((char*)ptr - 4);
 	return *size_ptr;
+}
+
+/* for debugging */
+__device__ void	printBufferInfo(void* d_buffer_pools, int pool_id){
+	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, pool_id);
+	CUDAKernel_mem_info* d_pool_info = (CUDAKernel_mem_info*)d_buffer_ptr;
+	printf("pool %2d: %f used\n", pool_id, (float)d_pool_info->current_offset/d_pool_info->end_offset);	
+}
+
+/* print buffer info from host */
+__global__ void printBufferInfoHost_kernel(void* d_buffer_pools){
+	for (int i=0; i<NBUFFERPOOLS; i++){
+		void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, i);
+		CUDAKernel_mem_info* d_pool_info = (CUDAKernel_mem_info*)d_buffer_ptr;
+		printf("pool %2d: %.2f used\n", i, (float)d_pool_info->current_offset/d_pool_info->end_offset);			
+	}
+}
+
+void printBufferInfoHost(void* d_buffer_pools){
+	printBufferInfoHost_kernel <<< 1, 1 >>> (d_buffer_pools);
 }

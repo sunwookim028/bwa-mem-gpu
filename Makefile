@@ -15,11 +15,18 @@ INCLUDES=
 LIBS=		-lm -lz -lpthread
 SUBDIRS=	.
 CUDADIR=    ./cuda
-NVCC_FLAGS= -Xptxas -O4 -Xcompiler -O4 --device-c -arch=sm_30
-NVCC_DEBUG= -g -G -O0 --device-c -arch=sm_30
+CUDA_ARCH = sm_52
+NVCC_OPTIM_FLAGS= -Xptxas -O4 -Xcompiler -O4 --device-c -arch=$(CUDA_ARCH)
+NVCC_DEBUG_FLAGS= -g -G -O0 --device-c -arch=$(CUDA_ARCH)
 
 ifeq ($(shell uname -s),Linux)
 	LIBS += -lrt
+endif
+
+ifeq ($(debug), 1)
+	NVCC_FLAGS = $(NVCC_DEBUG_FLAGS)
+else
+	NVCC_FLAGS = $(NVCC_OPTIM_FLAGS)
 endif
 
 .SUFFIXES:.c .o .cc
@@ -63,10 +70,10 @@ bwa_CUDA.o: $(CUDADIR)/bwa_CUDA.cuh $(CUDADIR)/bwa_CUDA.cu
 	nvcc -I. $(NVCC_FLAGS) $(CUDADIR)/bwa_CUDA.cu -o bwa_CUDA.o
 kstring_CUDA.o: $(CUDADIR)/kstring_CUDA.cuh $(CUDADIR)/kstring_CUDA.cu
 	nvcc -I. $(NVCC_FLAGS) $(CUDADIR)/kstring_CUDA.cu -o kstring_CUDA.o
-bwamem_GPU.o: bwamem.h bwa.h bntseq.h $(CUDADIR)/bwamem_GPU.cuh kbtree.h $(CUDADIR)/bwamem_GPU.cu $(CUDADIR)/CUDAKernel_memmgnt.cuh $(CUDADIR)/CUDAKernel_memmgnt.cu $(CUDADIR)/bwt_CUDA.cu $(CUDADIR)/bntseq_CUDA.cu $(CUDADIR)/kbtree_CUDA.cuh $(CUDADIR)/ksw_CUDA.cu $(CUDADIR)/ksw_CUDA.cuh $(CUDADIR)/bwa_CUDA.cuh $(CUDADIR)/bwa_CUDA.cuh
-	nvcc -I. -O4 -G -Xcompiler -O4 --device-c -arch=sm_30 $(CUDADIR)/bwamem_GPU.cu -o bwamem_GPU.o
-GPULink.o: bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o CUDADataTransfer.o
-	nvcc -I. --device-link -arch=sm_30 bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o CUDADataTransfer.o --output-file GPULink.o
+bwamem_GPU.o: bwamem.h bwa.h bntseq.h $(CUDADIR)/bwamem_GPU.cuh kbtree.h $(CUDADIR)/bwamem_GPU.cu $(CUDADIR)/CUDAKernel_memmgnt.cuh $(CUDADIR)/bwt_CUDA.cuh $(CUDADIR)/bntseq_CUDA.cuh $(CUDADIR)/kbtree_CUDA.cuh $(CUDADIR)/ksw_CUDA.cuh $(CUDADIR)/bwa_CUDA.cuh $(CUDADIR)/bwa_CUDA.cuh
+	nvcc -I./cuda/cub $(NVCC_FLAGS) $(CUDADIR)/bwamem_GPU.cu -o bwamem_GPU.o
+GPULink.o: bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o CUDADataTransfer.o
+	nvcc -I. --device-link -arch=$(CUDA_ARCH) bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o CUDADataTransfer.o --output-file GPULink.o
 
 
 QSufSort.o: QSufSort.h
@@ -113,18 +120,12 @@ rle.o: rle.h
 rope.o: rle.h rope.h
 utils.o: utils.h ksort.h malloc_wrap.h kseq.h
 
-.PHONY: test_300 test_500 debug_300  test_benchmark debug
-test_300:
-	./bwa mem -o out ./GCF_000008865.2_ASM886v2_genomic.fna ./test/SRR10896389.fastq
-
-test_500:
-	./bwa mem -o out ./GCF_000008865.2_ASM886v2_genomic.fna ./test/SRR12358935.fastq
-
-test_benchmark:
-	./bwa mem -o out ./GCF_000008865.2_ASM886v2_genomic.fna ./test/SRR10896389_benchmark.fastq
+.PHONY: test debug
+test:
+	./bwa mem -o out ../gaivi_test/HG38/GCF_000001405.39_GRCh38.p13_genomic.fna ../gaivi_test/SRR043348_small.fastq
 
 debug:
-	CUDA_VISIBLE_DEVICES=0 cuda-gdb bwa
+	make clean && make -j10 debug=1 && CUDA_VISIBLE_DEVICES=0 cuda-gdb --args bwa mem -o out ../gaivi_test/HG38/GCF_000001405.39_GRCh38.p13_genomic.fna ../gaivi_test/SRR043348_small.fastq
 
 profile:
 	nsys profile --stat=true ./bwa mem -v4  ./GCF_000008865.2_ASM886v2_genomic.fna ./SRR10896389.fastq

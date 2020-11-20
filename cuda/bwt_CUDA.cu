@@ -195,6 +195,65 @@ __device__ static void bwt_reverse_intvs(bwtintv_v *p)
 		}
 	}
 }
+
+// extend furthest to the right from a position and save that one seed
+__device__ void bwt_smem_right(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, int min_seed_len, bwtintv_v *mem)
+{
+	bwtintv_t ik, ok[4];
+	if (q[x] > 3) return;			// dont do N base
+	if (min_intv < 1) min_intv = 1; // the interval size should be at least 1
+	bwt_set_intv(bwt, q[x], ik); 	// the initial interval of a single base
+	int i;
+	for (i = x + 1; i < len; ++i) { // forward search
+		if (ik.x[2] < max_intv) { // an interval small enough
+			break;
+		} else if (q[i] < 4) { // an A/C/G/T base
+			int c = 3 - q[i]; // complement of q[i]
+			bwt_extend_gpu(bwt, &ik, ok, 0);
+			if (ok[c].x[2] < min_intv) break; // the interval size is too small to be extended further
+			ik = ok[c]; 	// keep going
+		} else { // an ambiguous base
+			break; // always terminate extension at an ambiguous base; in this case, i<len always stands
+		}
+	}
+	ik.info = ((uint64_t)x<<32) | ((uint64_t)i);		// begin and end positions on seq
+
+	// push the SMEM ik to mem if it is long enough
+	if (!(i-x>=min_seed_len)){
+		ik.info = 0;
+	}
+	mem->a[x] = ik;
+}
+// extend furthest to the left from a position and save that one seed
+__device__ void bwt_smem_left(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, int min_seed_len, bwtintv_v *mem)
+{
+	bwtintv_t ik, ok[4];
+	if (q[x] > 3) return;			// dont do N base
+	if (min_intv < 1) min_intv = 1; // the interval size should be at least 1
+	bwt_set_intv(bwt, q[x], ik); 	// the initial interval of a single base
+	ik.info = x + 1;				// right position on seq
+	int i;
+	for (i=x-1; i>=0; --i) { // backward search
+		if (ik.x[2] < max_intv) { // an interval small enough
+			break;
+		} else if (q[i] < 4) { // an A/C/G/T base
+			int c = q[i]; 
+			bwt_extend_gpu(bwt, &ik, ok, 1);
+			if (ok[c].x[2] < min_intv) break; // the interval size is too small to be extended further
+			ik = ok[c];		// keep going
+		} else { // an ambiguous base
+			break; // always terminate extension at an ambiguous base; in this case, i<len always stands
+		}
+	}
+	ik.info |= (uint64_t)i<<32;		// left position on seq
+
+	// push the SMEM ik to mem if it is long enough
+	if ((uint32_t)ik.info - (ik.info>>32) >= min_seed_len){
+		int n = atomicAdd(&(mem->n), 1);
+		mem->a[n] = ik;
+	}
+}
+
 // NOTE: $max_intv is not currently used in BWA-MEM
 __device__ int bwt_smem1a_gpu(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, bwtintv_v *mem, bwtintv_v *tmpvec[2], void* d_buffer_ptr)
 {
@@ -225,7 +284,6 @@ __device__ int bwt_smem1a_gpu(const bwt_t *bwt, int len, const uint8_t *q, int x
 			if (ok[c].x[2] != ik.x[2]) { // change of the interval size
 				// push ik to curr. kv_push(bwtintv_t, v=*curr, x=ik, d_buffer_ptr);
 				if (tmpvec[1]->n == tmpvec[1]->m){
-					swap = (bwtintv_v*)-1;
 					tmpvec[1]->m = tmpvec[1]->m? tmpvec[1]->m<<1 : 2;
 					tmpvec[1]->a = (bwtintv_t*)CUDAKernelRealloc(d_buffer_ptr, tmpvec[1]->a, sizeof(bwtintv_t) * tmpvec[1]->m, 8);
 				}

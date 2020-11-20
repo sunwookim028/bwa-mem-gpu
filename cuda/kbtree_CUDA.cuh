@@ -1,22 +1,5 @@
 #include <stdint.h>
-
-// chaining data struct 
-typedef struct {
-	int64_t rbeg;
-	int32_t qbeg, len;
-	int score;
-	int This_is_padding_for_CUDA_alignment;
-} mem_seed_t; // unaligned memory
-
-typedef struct {
-	mem_seed_t *seeds;
-	int64_t pos;
-	int n, m, first, rid;
-	uint32_t w:29, kept:2, is_alt:1;
-	float frac_rep;
-	// int64_t pos;
-} mem_chain_t;
-typedef struct { size_t n, m; mem_chain_t *a;  } mem_chain_v;
+#include "../bwamem.h"
 
 
 typedef struct {

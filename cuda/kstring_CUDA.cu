@@ -22,6 +22,7 @@ __device__ int strlen_GPU(const char *p)
 	return counter;
 }
 
+/* concatenate string p to the end of string s->s */
 __device__ int kputsn(const char *p, int l, kstring_t *s, void* d_buffer_ptr)
 {
 	if (s->l + l + 1 >= s->m) {
@@ -35,11 +36,13 @@ __device__ int kputsn(const char *p, int l, kstring_t *s, void* d_buffer_ptr)
 	return l;
 }
 
+/* concatenate string p to the end of string s->s without given len(p)*/
 __device__ int kputs(const char *p, kstring_t *s, void* d_buffer_ptr)
 {
 	return kputsn(p, strlen_GPU(p), s, d_buffer_ptr);
 }
 
+/* add one char (c) to string s->s*/
 __device__ int kputc(int c, kstring_t *s, void* d_buffer_ptr)
 {
 	if (s->l + 1 >= s->m) {

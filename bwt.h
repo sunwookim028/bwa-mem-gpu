@@ -63,7 +63,7 @@ typedef struct {
 	bwtint_t x[3], info;
 } bwtintv_t;
 
-typedef struct { size_t n, m; bwtintv_t *a; } bwtintv_v;
+typedef struct { int n, m; bwtintv_t *a; } bwtintv_v;
 
 /* For general OCC_INTERVAL, the following is correct:
 #define bwt_bwt(b, k) ((b)->bwt[(k)/OCC_INTERVAL * (OCC_INTERVAL/(sizeof(uint32_t)*8/2) + sizeof(bwtint_t)/4*4) + sizeof(bwtint_t)/4*4 + (k)%OCC_INTERVAL/16])

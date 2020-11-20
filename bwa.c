@@ -34,7 +34,7 @@
 #include "utils.h"
 #include "kstring.h"
 #include "kvec.h"
-#include "cuda/CUDADataTransfer.cuh"
+#include "cuda/batch_config.h"
 
 #ifdef USE_MALLOC_WRAPPERS
 #  include "malloc_wrap.h"
@@ -114,9 +114,9 @@ static inline void kseq2bseq1(const kseq_t *ks, bseq1_t *s)
 bseq1_t *bseq_read(int chunk_size, int *n_, void *ks1_, void *ks2_)
 {
 	kseq_t *ks = (kseq_t*)ks1_, *ks2 = (kseq_t*)ks2_;
-	int size = 0, m, n;
+	int size = 0, n;
 	bseq1_t *seqs = preallocated_seqs;
-	m = n = 0;
+	n = 0;
 	while (kseq_read(ks) >= 0) {
 		if (ks2 && kseq_read(ks2) < 0) { // the 2nd file has fewer reads
 			fprintf(stderr, "[W::%s] the 2nd file has fewer sequences.\n", __func__);

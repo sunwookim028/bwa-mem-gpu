@@ -39,6 +39,7 @@
 #include "bntseq.h"
 #include "kseq.h"
 #include "cuda/bwamem_GPU.cuh"
+#include "cuda/batch_config.h"
 KSEQ_DECLARE(gzFile)
 
 extern unsigned char nst_nt4_table[256];
@@ -119,7 +120,7 @@ static void *process(void *shared, int step, void *_data)
 			mem_align_GPU(aux->gpu_data, data->seqs, opt, idx->bns);
 		}
 		aux->n_processed += data->n_seqs;
-		fprintf(stderr, "[M::%s] finished processing %ld seqs\n", __func__, aux->n_processed);
+		fprintf(stderr, "[M::%s] finished processing %,ld seqs\n", __func__, aux->n_processed);
 		return data;
 	} else if (step == 2) {
 		for (i = 0; i < data->n_seqs; ++i) {

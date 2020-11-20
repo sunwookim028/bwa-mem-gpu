@@ -1,20 +1,30 @@
-#define SEQ_MAX_COUNT 40000			// max number of seqs 
-#define SEQ_NAME_LIMIT 2000000 		// chunk size of name
-#define SEQ_COMMENT_LIMIT 40000000	// chunk size of comment
-#define SEQ_LIMIT 40000000			// chunk size of seq
-#define SEQ_QUAL_LIMIT 40000000		// chunk size of qual
-#define SEQ_SAM_LIMIT 200000000		// chunk size of sam output
-
 #include "../bwa.h"
 #include "../bwt.h"
 #include "../bntseq.h"
 #include "../bwamem.h"
+#include "batch_config.h"
 
-extern bseq1_t *preallocated_seqs;	// a chunk of SEQ_MAX_COUNT seqs on host's pinned memory
-extern bseq1_t *d_preallocated_seqs;// same chunk on device
-extern char *seq_name_ptr, *seq_comment_ptr, *seq_ptr, *seq_qual_ptr, *seq_sam_ptr;		 // pointers to chunks on host
-extern char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_ptr, *d_seq_qual_ptr;// pointers to chunks on device
-extern int seq_name_offset, seq_comment_offset, seq_offset, seq_qual_offset; // offset on the chunks
+// collections of SA intervals
+typedef struct {
+	bwtintv_v mem, mem1, *tmpv[2];
+} smem_aux_t;
+
+typedef struct
+{
+	uint16_t seqID;		// read ID
+	uint16_t chainID;	// index on the chain vector of the read
+	uint16_t seedID	;	// index of seed on the chain
+	uint16_t regID;		// index on the (mem_alnreg_t)regs.a vector
+	// below are for SW extension
+	uint8_t* read_left; 	// string of read on the left of seed
+	uint16_t readlen_left; 	// length of read on the left of seed
+	uint8_t* ref_left;		// string of reference on the left of seed
+	uint16_t reflen_left;	// length of reference on the left of seed
+	uint8_t* read_right; 	// string of read on the right of seed
+	uint16_t readlen_right; // length of read on the right of seed
+	uint8_t* ref_right;		// string of reference on the right of seed
+	uint16_t reflen_right;	// length of reference on the right of seed
+} seed_record_t;
 
 /* list of pointers to data on GPU */
 typedef struct {
@@ -29,6 +39,12 @@ typedef struct {
 	// pointers that will change each batch
 	int n_seqs;				// number of reads
 	bseq1_t *d_seqs;		// reads
+	// intermediate data
+	seed_record_t *d_seed_records; 	// global records of seeds, a big chunk of memory
+	int *d_Nseeds;			// total number of seeds
+	smem_aux_t* d_aux;		// collections of SA intervals, vector of size nseqs
+	mem_chain_v *d_chains;	// chain vectors of size nseqs
+	mem_alnreg_v *d_regs;	// alignment info vectors, size nseqs
 } gpu_ptrs_t;
 
 #ifdef __cplusplus

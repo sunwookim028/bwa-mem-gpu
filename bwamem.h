@@ -83,6 +83,24 @@ typedef struct {
 	int8_t mat[25];         // scoring matrix; mat[0] == 0 if unset
 } mem_opt_t;
 
+// chaining data struct 
+typedef struct {
+	int64_t rbeg;
+	int32_t qbeg, len;
+	int score;
+	int This_is_padding_for_CUDA_alignment;
+} mem_seed_t; // unaligned memory
+
+typedef struct {
+	mem_seed_t *seeds;
+	int64_t pos;
+	int16_t n, m, first, rid;
+	uint32_t w:29, kept:2, is_alt:1;
+	float frac_rep;
+	// int64_t pos;
+} mem_chain_t;
+typedef struct { int n, m; mem_chain_t *a;  } mem_chain_v;
+
 typedef struct {
 	int64_t rb, re; // [rb,re): reference sequence in the alignment
 	uint64_t hash;

@@ -20,6 +20,9 @@ extern __device__ void cudaKernelMemcpy(void* from, void* to, size_t len);
 extern __device__ void cudaKernelMemmove(void* from, void* to, size_t len);
 // check size of a chunk starting with ptr
 extern __device__ unsigned cudaKernelSizeOf(void* ptr);
+//debugging
+extern __device__ void	printBufferInfo(void* d_buffer_pool, int pool_id);
+extern void printBufferInfoHost(void* d_buffer_pools);
 
 /*CUDA ERROR HANDLER*/
 

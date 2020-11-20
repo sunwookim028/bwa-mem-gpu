@@ -1,3 +1,4 @@
+#include "kbtree_CUDA.cuh"
 #include "CUDADataTransfer.cuh"
 #include <stdio.h>
 #include <stdint.h>
@@ -36,12 +37,12 @@ void CUDAInitSeqsMemory()
 	char* d_temp;
 	gpuErrchk(cudaMalloc((void**)&d_temp, SEQ_SAM_LIMIT));
 	gpuErrchk(cudaMemcpy(symbol_addr, &d_temp, sizeof(char*), cudaMemcpyHostToDevice));
-	fprintf(stderr, "[M::%s] seq name ..... %.2f MB\n", __func__, (float)SEQ_NAME_LIMIT/1000000);
-	fprintf(stderr, "[M::%s] seq comment .. %.2f MB\n", __func__, (float)SEQ_COMMENT_LIMIT/1000000);
-	fprintf(stderr, "[M::%s] seq  ......... %.2f MB\n", __func__, (float)SEQ_LIMIT/1000000);
-	fprintf(stderr, "[M::%s] seq qual ..... %.2f MB\n", __func__, (float)SEQ_QUAL_LIMIT/1000000);
-	fprintf(stderr, "[M::%s] seq info ..... %.2f MB\n", __func__, (float)SEQ_MAX_COUNT*sizeof(bseq1_t)/1000000);
-	fprintf(stderr, "[M::%s] sam .......... %.2f MB\n", __func__, (float)SEQ_SAM_LIMIT/1000000);
+	fprintf(stderr, "[M::%s] seq name ......... %d MB\n", __func__, (int)SEQ_NAME_LIMIT/1000000);
+	fprintf(stderr, "[M::%s] seq comment ...... %d MB\n", __func__, (int)SEQ_COMMENT_LIMIT/1000000);
+	fprintf(stderr, "[M::%s] seq  ............. %d MB\n", __func__, (int)SEQ_LIMIT/1000000);
+	fprintf(stderr, "[M::%s] seq qual ......... %d MB\n", __func__, (int)SEQ_QUAL_LIMIT/1000000);
+	fprintf(stderr, "[M::%s] seq info ......... %d MB\n", __func__, (int)SEQ_MAX_COUNT*sizeof(bseq1_t)/1000000);
+	fprintf(stderr, "[M::%s] sam .............. %d MB\n", __func__, (int)SEQ_SAM_LIMIT/1000000);
 }
 
 /* transfer one-time static data */

@@ -174,14 +174,19 @@ __device__ void	printBufferInfo(void* d_buffer_pools, int pool_id){
 }
 
 /* print buffer info from host */
-__global__ void printBufferInfoHost_kernel(void* d_buffer_pools){
-	for (int i=0; i<NBUFFERPOOLS; i++){
-		void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, i);
-		CUDAKernel_mem_info* d_pool_info = (CUDAKernel_mem_info*)d_buffer_ptr;
-		printf("pool %2d: %.2f used\n", i, (float)d_pool_info->current_offset/d_pool_info->end_offset);			
-	}
+__global__ void printBufferInfoHost_kernel(void* d_buffer_pools, float* d_usage){
+	int i = threadIdx.x;
+	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, i);
+	CUDAKernel_mem_info* d_pool_info = (CUDAKernel_mem_info*)d_buffer_ptr;
+	d_usage[i] =  (float)d_pool_info->current_offset/d_pool_info->end_offset;			
 }
 
 void printBufferInfoHost(void* d_buffer_pools){
-	printBufferInfoHost_kernel <<< 1, 1 >>> (d_buffer_pools);
+	float *h_usage, *d_usage;
+	h_usage = (float*)malloc(NBUFFERPOOLS*sizeof(float));
+	cudaMalloc((void**)&d_usage, NBUFFERPOOLS*sizeof(float));
+	printBufferInfoHost_kernel <<< 1, NBUFFERPOOLS >>> (d_buffer_pools, d_usage);
+	cudaMemcpy(h_usage, d_usage, NBUFFERPOOLS*sizeof(float), cudaMemcpyDeviceToHost);
+	for (int i=0; i<NBUFFERPOOLS; i++)
+		fprintf(stderr, "pool %2d: %.2f used\n", i, h_usage[i]);
 }

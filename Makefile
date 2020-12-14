@@ -122,7 +122,7 @@ utils.o: utils.h ksort.h malloc_wrap.h kseq.h
 
 .PHONY: test debug
 test:
-	./bwa mem -o out ../gaivi_test/HG38/GCF_000001405.39_GRCh38.p13_genomic.fna ../gaivi_test/SRR043348_small.fastq
+	./bwa mem -o out -v4 ../gaivi_test/HG38/GCF_000001405.39_GRCh38.p13_genomic.fna ../gaivi_test/SRR043348_small.fastq
 
 debug:
 	make clean && make -j10 debug=1 && CUDA_VISIBLE_DEVICES=0 cuda-gdb --args bwa mem -o out ../gaivi_test/HG38/GCF_000001405.39_GRCh38.p13_genomic.fna ../gaivi_test/SRR043348_small.fastq

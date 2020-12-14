@@ -38,6 +38,7 @@
 #include "utils.h"
 #include "bntseq.h"
 #include "kseq.h"
+#include <locale.h>
 #include "cuda/bwamem_GPU.cuh"
 #include "cuda/batch_config.h"
 KSEQ_DECLARE(gzFile)
@@ -120,7 +121,7 @@ static void *process(void *shared, int step, void *_data)
 			mem_align_GPU(aux->gpu_data, data->seqs, opt, idx->bns);
 		}
 		aux->n_processed += data->n_seqs;
-		fprintf(stderr, "[M::%s] finished processing %,ld seqs\n", __func__, aux->n_processed);
+		fprintf(stderr, "[M::%s] finished processing %'ld seqs\n", __func__, aux->n_processed);
 		return data;
 	} else if (step == 2) {
 		for (i = 0; i < data->n_seqs; ++i) {
@@ -403,6 +404,7 @@ int main_mem(int argc, char *argv[])
 	// prepare large chunks of memory for seqs
 	CUDAInitSeqsMemory();
 	// kt_pipeline(no_mt_io? 1 : 2, process, &aux, 3);
+	setlocale(LC_NUMERIC, "");
 	kt_pipeline(1, process, &aux, 3);
 	free(hdr_line);
 	free(opt);

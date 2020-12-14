@@ -1040,39 +1040,30 @@ end_gen_alt:
 
 extern __device__ char* d_seq_sam_ptr;
 extern __device__ int d_seq_sam_offset;
+/* alignments have been marked primary/secondary and filter out. Now write all alignments left */
 __device__ static void mem_reg2sam(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, bseq1_t *s, mem_alnreg_v *a, int extra_flag, const mem_aln_t *m, void* d_buffer_ptr)
 {
 	kstring_t str;
 	struct { size_t n, m; mem_aln_t *a; } aa;
+	aa.n = a->n; 
+	aa.a = (mem_aln_t*)CUDAKernelMalloc(d_buffer_ptr, aa.n*sizeof(mem_aln_t), 8);
 	int k, l;
 	char **XA = 0;
 
 	if (!(opt->flag & MEM_F_ALL))
 		XA = mem_gen_alt(opt, bns, pac, a, s->l_seq, s->seq, d_buffer_ptr);
-	aa.n = 0; aa.m = 0; aa.a = 0;
 	str.l = str.m = 0; str.s = 0;
-	for (k = l = 0; k < a->n; ++k) {
+	for (k = 0; k < a->n; ++k) {
 		mem_alnreg_t *p = &a->a[k];
-		mem_aln_t *q;
-		if (p->score < opt->T) continue;
-		if (p->secondary >= 0 && (p->is_alt || !(opt->flag&MEM_F_ALL))) continue;
-		if (p->secondary >= 0 && p->secondary < INT_MAX && p->score < a->a[p->secondary].score * opt->drop_ratio) continue;
-		// q = kv_pushp(mem_aln_t, aa);
-		q = (((aa.n == aa.m)
-			?(aa.m = (aa.m? aa.m<<1 : 2),
-				aa.a = (mem_aln_t*)CUDAKernelRealloc(d_buffer_ptr, aa.a, sizeof(mem_aln_t) * aa.m, 8), 0)
-			: 0), &aa.a[aa.n++]);
-
+		mem_aln_t *q = &aa.a[k];
 		*q = mem_reg2aln_GPU(opt, bns, pac, s->l_seq, s->seq, p, d_buffer_ptr);
-		// assert(q->rid >= 0); // this should not happen with the new code
 		q->XA = XA? XA[k] : 0;
 		q->flag |= extra_flag; // flag secondary
 		if (p->secondary >= 0) q->sub = -1; // don't output sub-optimal score
-		if (l && p->secondary < 0) // if supplementary
+		if (k>0 && p->secondary < 0) // if supplementary
 			q->flag |= (opt->flag&MEM_F_NO_MULTI)? 0x10000 : 0x800;
-		if (!(opt->flag & MEM_F_KEEP_SUPP_MAPQ) && l && !p->is_alt && q->mapq > aa.a[0].mapq)
+		if (!(opt->flag & MEM_F_KEEP_SUPP_MAPQ) && (k>0) && !p->is_alt && q->mapq > aa.a[0].mapq)
 			q->mapq = aa.a[0].mapq; // lower mapq for supplementary mappings, unless -5 or -q is applied
-		++l;
 	}
 	if (aa.n == 0) { // no alignments good enough; then write an unaligned record
 		mem_aln_t t;
@@ -1659,12 +1650,12 @@ __global__ void mem_chain_kernel(
 
 
 /* sort chains of each read by weight 
-	shared-mem is pre-allocated to 4096*int
-	assume that max(n_chn) is 4096
+	shared-mem is pre-allocated to 3072*int
+	assume that max(n_chn) is 3072
  */
-#define MAX_N_CHAIN 		4096
+#define MAX_N_CHAIN 		3072
 #define NKEYS_EACH_THREAD	16
-#define SORTCHAIN_BLOCKDIMX	256
+#define SORTCHAIN_BLOCKDIMX	192
 __global__ void sortChains(mem_chain_v* d_chains, void* d_buffer_pools){
 	// int seqID = blockIdx.x;
 	int n_chn = d_chains[blockIdx.x].n;
@@ -1988,7 +1979,7 @@ __global__ void pre_chain2aln_kernel1(
 		// prepare each seed on the chain
 		for (int k=0; k<chn_a[i].n; k++){	// k is seedID
 			// write basic info to seed records
-			d_seed_records[start+j].seqID = (uint16_t)seqID;
+			d_seed_records[start+j].seqID = seqID;
 			d_seed_records[start+j].chainID = (uint16_t)i;
 			d_seed_records[start+j].seedID = (uint16_t)k;
 			d_seed_records[start+j].regID = (uint16_t)j;
@@ -2022,7 +2013,7 @@ __global__ void pre_chain2aln_kernel2(
 	if (i>=d_Nseeds[0]) return;
 	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x%32);
 	// pull seed info
-	int seqID = (int)d_seed_records[i].seqID;
+	int seqID = d_seed_records[i].seqID;
 	int chainID = (int)d_seed_records[i].chainID;
 	int seedID = (int)d_seed_records[i].seedID;
 	int regID = (int)d_seed_records[i].regID;	// location of output on d_regs[seqID].a
@@ -2162,6 +2153,16 @@ __global__ void mem_chain2aln_kernel1(
 		query_end = d_chains[seqID].a[chainID].seeds[seedID].qbeg + d_chains[seqID].a[chainID].seeds[seedID].len; 
 		ref_end = d_chains[seqID].a[chainID].seeds[seedID].rbeg + d_chains[seqID].a[chainID].seeds[seedID].len; 
 	}
+
+	// compute seed coverage
+	int nseeds = d_chains[seqID].a[chainID].n; // number of seeds in chain 
+	int seedcov = 0;
+	for (int s=0; s<nseeds; s++){
+		mem_seed_t *t = &(d_chains[seqID].a[chainID].seeds[s]);
+		if (t->qbeg >= d_regs[seqID].a[regID].qb && t->qbeg + t->len <= d_regs[seqID].a[regID].qe && t->rbeg >= d_regs[seqID].a[regID].rb && t->rbeg + t->len <= d_regs[seqID].a[regID].re) // seed fully contained
+			seedcov += t->len;
+	}
+
 	// write output to global mem
 	if (threadIdx.x==0){
 		d_regs[seqID].a[regID].score = d_regs[seqID].a[regID].truesc = score;
@@ -2169,25 +2170,248 @@ __global__ void mem_chain2aln_kernel1(
 		d_regs[seqID].a[regID].re = ref_end;
 		d_regs[seqID].a[regID].w = 0;	// indicate that we didn't use bandwidth
 		d_regs[seqID].a[regID].seedlen0 = d_chains[seqID].a[chainID].seeds[seedID].len;
-		d_regs[seqID].a[regID].seedlen0 = d_chains[seqID].a[chainID].frac_rep;
+		d_regs[seqID].a[regID].frac_rep = d_chains[seqID].a[chainID].frac_rep;
+		d_regs[seqID].a[regID].seedcov = seedcov;
 	}
 }
 
-/* filter out overlapped alignments */
+/* post-processing SW kernel:
+	- filter out reference-overlapped alignments 
+	- also discard alignments whose score < opt->T
+	- compute seedcov
+	- check if alignment is alt
+	gridDim = n_seqs
+*/
+#define MAX_N_ALN 3072	// max number of alignments allowed per read
 __global__ void mem_aln_filter_kernel(
 	const mem_opt_t *d_opt,
 	const bntseq_t *d_bns,
-	const uint8_t *d_pac,
-	// int n, // number of reads
-	const bseq1_t* d_seqs,
-	mem_chain_v *d_chains, 	// input chains
-	mem_alnreg_v* d_regs,		// output array
-	void *d_buffer_pools
+	mem_chain_v *d_chains, 		// input chains
+	mem_alnreg_v* d_regs		// output array
 	)
 {
-	// compute seedcov
+	// seqID = blockIdx.x
+	int n = d_regs[blockIdx.x].n;	// n alignments
+	mem_alnreg_t *a = d_regs[blockIdx.x].a;
+
+	// filter out reference-overlapped alignments
+	__shared__ char S_kept_aln[MAX_N_ALN];	// array to keep track of which alignment to keep
+	int n_iter = ceil((float)n/blockDim.x);
+	for (int iter=0; iter<n_iter; iter++){
+		int i = iter*blockDim.x + threadIdx.x; // anchor point
+		if (i>n) break;
+		if (a[i].score < d_opt->T) S_kept_aln[i] = 0;
+		else S_kept_aln[i] = 1;
+	}
+	__syncthreads();
+	for (int iter=0; iter<n_iter; iter++){
+		int i = iter*blockDim.x + threadIdx.x; // anchor point
+		if (i>n) break;
+		if (S_kept_aln[i]==0) continue;	// alignment discarded due to low score
+		for (int j=i+1; j<n; j++){ // j is reference point
+			if (S_kept_aln[j]==0) continue;	// don't compare with discarded alignment
+			if (a[i].rid != a[j].rid) continue;	// no overlap if not on same strain
+			int64_t ai_rb, ai_re, aj_rb, aj_re;
+			ai_rb = a[i].rb; ai_re = a[i].re;
+			aj_rb = a[j].rb; aj_re = a[j].re;
+			if (ai_rb<aj_rb && ai_re<aj_rb) continue;	// no overlap
+			if (aj_rb<ai_rb && aj_re<ai_rb) continue;	// no overlap
+			// compare anchor and reference
+			int _or, _oq, _mr, _mq;	// overlap length on ref, on read, min ref len, min read len
+			int rli, rlj;				// reference length of alignment i and j
+			_or = (int)(ai_rb<aj_rb? ai_re-aj_rb : aj_re-ai_rb);
+			_oq = a[i].qb<a[j].qb? a[i].qe-a[j].qb : a[j].qe - a[i].qb;
+			rli = (int)(ai_re - ai_rb); rlj = (int)(aj_re - aj_rb);
+			_mr = rli<rlj ? rli : rlj;
+			_mq = (a[i].qe-a[i].qb < a[j].qe-a[j].qb)? a[i].qe-a[i].qb : a[j].qe-a[j].qb;
+			if (_or>d_opt->mask_level_redun*_mr && _oq>d_opt->mask_level_redun*_mq)	{// large overlap, discard one with lower score
+				if (a[i].score < a[j].score) {S_kept_aln[i] = 0; break;} 
+				else S_kept_aln[j] = 0;
+			}
+		}
+	}
+
+	// remove discarded alignments
+	int m = 0;
+	if (threadIdx.x==0){
+		for (int i=0; i<n; i++){
+			if (S_kept_aln[i]){
+				if (i!=m)
+					d_regs[blockIdx.x].a[m] = d_regs[blockIdx.x].a[i];
+				m++;
+			}
+		}
+		d_regs[blockIdx.x].n = m;
+	}
+	// check is_alt
+	for (int iter=0; iter<n_iter; iter++){
+		int i = iter*blockDim.x + threadIdx.x; // anchor point
+		if (i>m) break;
+		mem_alnreg_t *p = &a[i];
+		if (p->rid >= 0 && d_bns->anns[p->rid].is_alt)
+			p->is_alt = 1;
+	}
 }
 
+
+/* pairwise compare alignments
+	- mark primary/secondary alignments
+	- alignment is primary if:
+		+ it has no query-overlap with other alignments
+		+ it is not alt and has no query-overlap with non-alt alignment
+											| it is not alt | it is alt
+		no q-overlap or higher-score		|	primary 	| 	primary
+		q-overlap-lowerscore with non-alt 	|	secondary	|	secondary
+		q-overlap-lowerscore with alt 		|	primary		|	secondary
+
+	- mark whether alignments will be written using mem_alnreg_t.w
+	- alignments will not be written if:
+		+ it is secondary and is alt
+		+ it is secondary and MEM_F_ALL flag is not up
+		+ it is secondary and its score < its primary's score*opt->drop_ratio
+	- reorder reg_v, bring written aln to front and modify n
+ */
+__global__ void mem_aln_mark_primary_kernel(
+	const mem_opt_t *d_opt,
+	mem_alnreg_v* d_regs,		// intput & output array
+	void* d_buffer_pools
+	)
+{
+	// seqID = blockIdx.x
+	int n = d_regs[blockIdx.x].n;	// n alignments
+	mem_alnreg_t *a = d_regs[blockIdx.x].a;
+
+	// mark primary/secondary 	//TODO : test shared mem cache for alignment endpoints	// TODO: implement sub-score
+	__shared__ int16_t S_secondary[MAX_N_ALN];	// array to keep track of primary/secondary. -1=primary, otherwise indicate the primary alignment shadowing this alignment
+	int n_iter = ceil((float)n/blockDim.x);
+	for (int iter=0; iter<n_iter; iter++){
+		int i = iter*blockDim.x + threadIdx.x; // anchor point
+		if (i>n) break;
+		S_secondary[i] = -1;		// at start, all are primary
+	}
+	__syncthreads();
+	for (int iter=0; iter<n_iter; iter++){
+		int i = iter*blockDim.x + threadIdx.x; // anchor point
+		if (i>=n) break;
+		for (int j=i+1; j<n; j++){	// reference point
+			if (S_secondary[i]>=0) continue;	// don't anchor on secondary alignments
+			if (S_secondary[j]>=0) continue;	// don't compare with secondary alignments
+			int ai_qb, ai_qe, aj_qb, aj_qe, qb_max, qe_min;
+			ai_qb = a[i].qb; ai_qe = a[i].qe;
+			aj_qb = a[j].qb; aj_qe = a[j].qe;
+			qb_max = ai_qb>aj_qb ? ai_qb : aj_qb;
+			qe_min = ai_qe<aj_qe ? ai_qe : aj_qe;
+			if (qe_min > qb_max){	// have overlap
+				int min_l = ai_qe - ai_qb < aj_qe - aj_qb ? ai_qe - ai_qb : aj_qe - aj_qb;	// smaller length
+				if (qe_min - qb_max >= min_l * d_opt->mask_level){ // found significant overlap
+					if (a[i].score > a[j].score){
+						if (a[i].is_alt && a[j].is_alt) S_secondary[j] = i;	// mark j secondary if they are both alt
+						else if (!(a[i].is_alt)) S_secondary[j] = i;		// mark j secondary if i is not alt
+					} else {
+						if (a[j].is_alt && a[i].is_alt) S_secondary[i] = j;	// mark i secondary if they are both alt
+						else if (!(a[j].is_alt)) S_secondary[i] = j;		// mark i secondary if j is not alt
+					}
+				}
+			}
+		}
+	}
+
+	// discard secondary alignments whose score too low or is alt
+	__shared__ int new_n[1];		// new n of alignments
+	__shared__ mem_alnreg_t* new_a[1];	// new array of alignments
+	if (threadIdx.x==0) {
+		void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, blockIdx.x%32);
+		new_a[0] = (mem_alnreg_t*)CUDAKernelMalloc(d_buffer_ptr, n*sizeof(mem_alnreg_t), 8);
+		new_n[0] = 0;
+	}
+	__syncthreads();
+	for (int iter=0; iter<n_iter; iter++){
+		int i = iter*blockDim.x + threadIdx.x; // anchor point
+		if (i>=n) break;
+		if (S_secondary[i]>=0 && (a[i].is_alt || !(d_opt->flag&MEM_F_ALL))) continue;	// discard
+		if (S_secondary[i]>=0 && a[i].score<a[S_secondary[i]].score*d_opt->drop_ratio) continue; // discard
+		// write kept alignment
+		int k = atomicAdd(&new_n[0], 1);
+		new_a[0][k] = a[i]; 
+		new_a[0][k].secondary = (int)S_secondary[i];
+	}
+	__syncthreads();
+	if (threadIdx.x==0){
+		d_regs[blockIdx.x].a = new_a[0];
+		d_regs[blockIdx.x].n = new_n[0];
+	}
+// if (blockIdx.x==1633&&threadIdx.x==0) printf("n=%d\n", new_n[0]);
+// if (blockIdx.x==1633&&threadIdx.x==0) printf("0, %d, %d\n", d_regs[blockIdx.x].a[0].qb, d_regs[blockIdx.x].a[0].qe);
+// if (blockIdx.x==1633&&threadIdx.x==0) printf("1, %d, %d\n", d_regs[blockIdx.x].a[1].qb, d_regs[blockIdx.x].a[1].qe);
+}
+
+/* prepare ref sequence for global SW
+	allocate mem_aln_v array for each read
+	write to d_seed_records just like SW extension,
+		- seqID
+		- regID: index on d_regs and d_alns
+		- read_right
+		- readlen_right
+		- ref_right
+		- reflen_right
+ */
+__global__ void mem_reg2aln_pre(
+	const mem_opt_t *d_opt,
+	const bseq1_t *d_seqs,
+	int l_pac,
+	const uint8_t *d_pac,
+	mem_alnreg_v* d_regs,
+	mem_aln_v * d_alns,
+	seed_record_t *d_seed_records,
+	int *d_Nseeds,
+	void* d_buffer_pools)
+{
+	int seqID = blockIdx.x*blockDim.x + threadIdx.x;
+	uint8_t *query = (uint8_t*)d_seqs[seqID].seq;
+	int l_query = d_seqs[seqID].l_seq;
+	// allocate mem_aln_t array
+	int n_aln = d_regs[seqID].n;
+	void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x%32);
+	d_alns[seqID].n = n_aln;
+	d_alns[seqID].a = (mem_aln_t*)CUDAKernelMalloc(d_buffer_pools, n_aln*sizeof(mem_aln_t), 8);
+
+	for (int i=0; i<n_aln; i++){
+		d_alns[seqID].a[i].XA = 0;
+		d_alns[seqID].a[i].flag = 0;
+		if (d_regs[seqID].a[i].secondary>=0) {
+			d_alns[seqID].a[i].sub = -1; // don't output sub-optimal score
+			d_alns[seqID].a[i].flag |= 0x100;
+		}
+		if (d_regs[seqID].a[i].secondary<0) d_alns[seqID].a[i].mapq = mem_approx_mapq_se(d_opt, &d_regs[seqID].a[i]);
+		else d_alns[seqID].a[i].mapq = 0;
+		// prepare SW sequences
+		int64_t rb = d_regs[seqID].a[i].rb; 
+		int64_t re = d_regs[seqID].a[i].re; 
+		int qb = d_regs[seqID].a[i].qb;
+		int qe = d_regs[seqID].a[i].qe;
+		int64_t rlen;
+		uint8_t *rseq = bns_get_seq_gpu(l_pac, d_pac, rb, re, &rlen, d_buffer_ptr);
+		if (rb>=l_pac){ // then reverse both query and rseq; this is to ensure indels to be placed at the leftmost position
+			uint8_t *query2 = (uint8_t*)CUDAKernelMalloc(d_buffer_pools, l_query, 1);
+			uint8_t tmp;
+			for (int j = 0; j < l_query; ++j)
+				query2[l_query - 1 - j] = query[j];
+			for (int j = 0; j < rlen>>1; ++j)
+				tmp = rseq[j], rseq[j] = rseq[rlen - 1 - j], rseq[rlen - 1 - j] = tmp;
+			d_seed_records[seqID].read_right = query2;
+			d_seed_records[seqID].readlen_right = l_query;
+			d_seed_records[seqID].ref_right = rseq;
+			d_seed_records[seqID].reflen_right = rlen;
+		} else {
+			d_seed_records[seqID].read_right = query;
+			d_seed_records[seqID].readlen_right = l_query;
+			d_seed_records[seqID].ref_right = rseq;
+			d_seed_records[seqID].reflen_right = rlen;
+		}
+		d_seed_records[seqID].seqID = seqID;
+		d_seed_records[seqID].regID = i;
+	}
+}
 
 __global__ void mem_chain2aln_kernel(
 	const mem_opt_t *d_opt,
@@ -2256,7 +2480,6 @@ __global__ void generate_sam_kernel(
 	uint8_t *d_pac, 
 	bseq1_t* d_seqs,			// array of sequence info
 	int n, 						// number of reads being processed in a batch
-	mem_pestat_t* d_pes,		// statistics for paired end
 	mem_alnreg_v* d_regs,		// array of regs
 	void* d_buffer_pools 		// for CUDA kernel memory management
 	)
@@ -2267,12 +2490,11 @@ __global__ void generate_sam_kernel(
 	if (i>=n) return; 	// don't run the padded threads
 
 	if (!(d_opt->flag&MEM_F_PE)) {
-		mem_mark_primary_se_GPU(d_opt, d_regs[i].n, d_regs[i].a, i, d_buffer_ptr);
-		if (d_opt->flag & MEM_F_PRIMARY5) mem_reorder_primary5(d_opt->T, &d_regs[i]);
 		mem_reg2sam(d_opt, d_bns, d_pac, &d_seqs[i], &d_regs[i], 0, 0, d_buffer_ptr);
 		// free(w->regs[i].a);
 	} else {
-		mem_sam_pe(d_opt, d_bns, d_pac, d_pes, i, &d_seqs[i<<1], &d_regs[i<<1], d_buffer_ptr);
+		// FOR FUTURE DEVELOPMENT
+		// mem_sam_pe(d_opt, d_bns, d_pac, d_pes, i, &d_seqs[i<<1], &d_regs[i<<1], d_buffer_ptr);
 		// free(w->regs[i<<1|0].a); free(w->regs[i<<1|1].a);
 	}
 }
@@ -2381,7 +2603,7 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	cudaMemcpy(&n_seeds, gpu_data.d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost);
 	if (bwa_verbose>=4) fprintf(stderr, "%d seeds\n", n_seeds);
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] mem_chain2aln preprocessing2 ... \n", __func__);
-	pre_chain2aln_kernel2 <<< n_seeds, 32, 0 >>> (
+	pre_chain2aln_kernel2 <<< ceil((float)n_seeds/32.0), 32, 0 >>> (
 			gpu_data.d_opt,
 			gpu_data.d_bns,
 			gpu_data.d_pac,
@@ -2409,17 +2631,14 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
 
-	/* sixth kernel: mem_sort_dedup_patch */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel mem_sort_dedup_patch ...\n", __func__);
-	mem_sort_dedup_patch_kernel <<< dimGrid, dimBlock, 0 >>> (
-			gpu_data.d_opt,
-			gpu_data.d_bns,
-			gpu_data.d_pac,
-			gpu_data.n_seqs,
-			gpu_data.d_seqs,
-			gpu_data.d_regs,
-			gpu_data.d_buffer_pools
-	);
+	/* Post processing SW: remove duplicated alignments */
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] post-processing Smith-Waterman ... \n", __func__);
+	mem_aln_filter_kernel <<< gpu_data.n_seqs, 320 >>> (
+		gpu_data.d_opt,
+		gpu_data.d_bns,
+		gpu_data.d_chains,
+		gpu_data.d_regs
+		);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
 
@@ -2449,14 +2668,21 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	// 	free(h_regs); 
 	// }
 	
+	/* Mark alignments that we want to write to SAM */
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel mark_primary ...\n", __func__);
+	mem_aln_mark_primary_kernel <<< gpu_data.n_seqs, 256 >>> (gpu_data.d_opt, gpu_data.d_regs, gpu_data.d_buffer_pools);
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+
+	/* preprocessing for global SW alignments */
+
 	/* generate SAM alignment */
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel generate_sam ...\n", __func__);
 	generate_sam_kernel <<< dimGrid, dimBlock >>> 
 		(gpu_data.d_opt, gpu_data.d_bns, gpu_data.d_pac, 
-		 gpu_data.d_seqs, gpu_data.n_seqs, gpu_data.d_pes, gpu_data.d_regs, gpu_data.d_buffer_pools);
+		 gpu_data.d_seqs, gpu_data.n_seqs, gpu_data.d_regs, gpu_data.d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Finished kernel generate_sam ...\n", __func__);
 
 	/* copy sam output to host */
 	bseq1_t* h_seqs;
@@ -2522,7 +2748,7 @@ void prepare_batch_GPU(gpu_ptrs_t* gpu_data, const bseq1_t* seqs, int n_seqs, co
 		gpuErrchk(cudaMalloc((void**)&(gpu_data->d_chains), n_seqs*sizeof(mem_chain_v)));
 	}
 	if (gpu_data->d_seed_records == 0){
-		fprintf(stderr, "[M::%s] seed records ...... %d MB\n", __func__, (int)n_seqs*1000*sizeof(seed_record_t)/1000000);
+		fprintf(stderr, "[M::%s] seed records ...... %d MB\n", __func__, (int)n_seqs*500*sizeof(seed_record_t)/1000000);
 		gpuErrchk(cudaMalloc((void**)&(gpu_data->d_seed_records), n_seqs*500*sizeof(seed_record_t)));	// allocate enough for all seeds
 	}
 	if (gpu_data->d_Nseeds == 0) 

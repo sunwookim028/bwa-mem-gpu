@@ -1,5 +1,5 @@
 #define NBUFFERPOOLS 32 	// number of buffer pools
-#define POOLSIZE 100000000	// size of each buffer pool is 190MB
+#define POOLSIZE 100000000	// size of each buffer pool
 #include "CUDAKernel_memmgnt.cuh"
 
 typedef struct

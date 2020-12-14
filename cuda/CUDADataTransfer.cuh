@@ -11,18 +11,18 @@ typedef struct {
 
 typedef struct
 {
-	uint16_t seqID;		// read ID
+	int seqID;			// read ID
 	uint16_t chainID;	// index on the chain vector of the read
 	uint16_t seedID	;	// index of seed on the chain
 	uint16_t regID;		// index on the (mem_alnreg_t)regs.a vector
 	// below are for SW extension
 	uint8_t* read_left; 	// string of read on the left of seed
-	uint16_t readlen_left; 	// length of read on the left of seed
 	uint8_t* ref_left;		// string of reference on the left of seed
-	uint16_t reflen_left;	// length of reference on the left of seed
 	uint8_t* read_right; 	// string of read on the right of seed
-	uint16_t readlen_right; // length of read on the right of seed
 	uint8_t* ref_right;		// string of reference on the right of seed
+	uint16_t readlen_left; 	// length of read on the left of seed
+	uint16_t reflen_left;	// length of reference on the left of seed
+	uint16_t readlen_right; // length of read on the right of seed
 	uint16_t reflen_right;	// length of reference on the right of seed
 } seed_record_t;
 

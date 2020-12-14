@@ -121,7 +121,7 @@ typedef struct {
 	int n_comp:30, is_alt:2; // number of sub-alignments chained together
 } mem_alnreg_t;
 
-typedef struct { size_t n, m; mem_alnreg_t *a; } mem_alnreg_v;
+typedef struct { int n, m; mem_alnreg_t *a; } mem_alnreg_v;
 
 typedef struct {
 	int low, high;   // lower and upper bounds within which a read pair is considered to be properly paired
@@ -140,6 +140,8 @@ typedef struct { // This struct is only used for the convenience of API.
 
 	int score, sub, alt_sc;
 } mem_aln_t;
+
+typedef struct { int n; mem_aln_t *a; } mem_aln_v;
 
 #ifdef __cplusplus
 extern "C" {

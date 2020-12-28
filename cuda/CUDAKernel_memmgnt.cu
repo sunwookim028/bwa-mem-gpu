@@ -132,18 +132,19 @@ __device__ void* CUDAKernelRealloc(void* d_buffer_pool, void* d_current_ptr, siz
 
 __device__ void cudaKernelMemcpy(void* from, void* to, size_t len){
 	/* a memcpy function that can be called within cuda kernel */
-	int i =0;	// byte counter
-	char *to_ptr, *from_ptr;
-	to_ptr = (char*)to;
-	from_ptr = (char*)from;
+	// int i =0;	// byte counter
+	// char *to_ptr, *from_ptr;
+	// to_ptr = (char*)to;
+	// from_ptr = (char*)from;
 
-	// // copy 4 bytes at a time 
-	// for (; i<len; i+=sizeof(int))
-	// 	((int*)to)[i/sizeof(int)] = ((int*)from)[i/sizeof(int)];
+	// // // copy 4 bytes at a time 
+	// // for (; i<len; i+=sizeof(int))
+	// // 	((int*)to)[i/sizeof(int)] = ((int*)from)[i/sizeof(int)];
 
-	// copy 1 byte at a time
-	for (; i<len; i+=1)
-		to_ptr[i] = from_ptr[i];
+	// // copy 1 byte at a time
+	// for (; i<len; i+=1)
+	// 	to_ptr[i] = from_ptr[i];
+	memcpy(to, from, len);
 }
 
 __device__ void cudaKernelMemmove(void* from, void* to, size_t len){

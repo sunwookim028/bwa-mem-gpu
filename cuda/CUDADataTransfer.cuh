@@ -45,6 +45,14 @@ typedef struct {
 	smem_aux_t* d_aux;		// collections of SA intervals, vector of size nseqs
 	mem_chain_v *d_chains;	// chain vectors of size nseqs
 	mem_alnreg_v *d_regs;	// alignment info vectors, size nseqs
+	mem_aln_v * d_alns;		// alignment vectors, size nseqs
+	// arrays for sorting, each has length = n_seqs
+	int *d_sortkeys_in;
+	int *d_seqIDs_in;
+	int *d_sortkeys_out;
+	int *d_seqIDs_out;
+	int n_sortkeys;
+
 } gpu_ptrs_t;
 
 #ifdef __cplusplus

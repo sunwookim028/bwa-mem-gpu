@@ -404,7 +404,7 @@ __device__ int ksw_extend2(int qlen, const uint8_t *query, int tlen, const uint8
 __device__ static inline int score(uint8_t A, uint8_t B, const int8_t *mat, int m){
 	return (int)mat[A*m+B];
 }
-/* SW extension for executing at warp level
+/* SW extension executing at warp level
 	BLOCKSIZE = WARPSIZE = 32
 	requires at least qlen*4 bytes of shared memory
 	currently implemented at 500*4 bytes of shared mem	
@@ -472,11 +472,10 @@ __device__ int ksw_extend_warp(int qlen, const uint8_t *query, int tlen, const u
 			if (h>max_score){
 				max_score = h; i_m = i; j_m = j;
 			}
-			if (j==qlen){
-				if (h>max_gscore){
-					max_gscore = h; i_gscore = i;
-				}
-			}
+		}
+		if (j==qlen-1){	// we have hit last column
+			if (h>max_gscore)	// record max to-end alignment score
+				max_gscore = h; i_gscore = i;
 		}
 	}
 
@@ -520,6 +519,10 @@ __device__ int ksw_extend_warp(int qlen, const uint8_t *query, int tlen, const u
 				// thread 31 need to write h and e to shared memory to serve thread 0 in the next tile
 				if (threadIdx.x==31){ SM_H[j] = h; SM_E[j] = e; }
 			}
+			if (j==qlen-1){	// we have hit last column
+				if (h>max_gscore)	// record max to-end alignment score
+					max_gscore = h; i_gscore = i;
+			}
 		}
 	}
 
@@ -547,8 +550,151 @@ __device__ int ksw_extend_warp(int qlen, const uint8_t *query, int tlen, const u
 /********************
  * Global alignment *
  ********************/
+ #define MINUS_INF -0x40000000
+ #define MINUS_INF16 -1000
 
-#define MINUS_INF -0x40000000
+ /* SW global executing at warp level
+	BLOCKSIZE = WARPSIZE = 32
+	requires at least qlen*4 bytes of shared memory
+	currently implemented at 500*4 bytes of shared mem	
+	return max score in the matrix, coordinates of max score, traceback matrix (we don't do traceback here because it's inefficient at warp level, should do at thread level)
+	NOTATIONS:
+		SM_H[], SM_E: shared memory arrays for storing H and E of thread 31 for transitioning between tiles
+		e, f, h     : E[i,j], F[i,j], H[i,j] to be calculated in an iteration
+		e1_			: E[i-1,j] during a cell calculation
+		h1_,h_1,h11 : // H[i-1,j], H[i,j-1], H[i-1,j-1]
+		max_score   : the max score that a thread has found
+		i_m, j_m	: the position where we found max_score
+		traceback   : traceback matrix. traceback[i,j] 	= 0 if score came from [i-1, j-1]	(cigar match)
+														= 1 if score came from [i  , j-1]	(cigar insert to target)
+														= 2 if score came from [i-1, j  ]	(cigar delete from target)
+					traceback has to be allocated prior to calling this function, with at least tlen*qlen, row-major order
+	CALCULATION:
+		E[i,j] = max(H[i-1,j]-gap_open_penalty, E[i-1,j]-gap_ext_penalty)
+		F[i,j] = max(H[i,j-1]-gap_open_penalty, F[i,j-1]-gap_ext_penalty)
+		H[i,j] = max(0, E[i,j], F[i,j], H[i-1.j-1]+score(query[j],target[i]))
+ */
+__device__ int ksw_global_warp(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int *i_max, int *j_max, uint8_t *traceback){
+	if (qlen>KSW_MAX_QLEN){printf("querry length is too long %d \n", qlen); __trap();}
+	__shared__	int16_t SM_H[KSW_MAX_QLEN], SM_E[KSW_MAX_QLEN];
+	int e, f, h;
+	int e1_;
+	int h1_, h_1, h11;
+	int max_score = 0;	// best score
+	int i_m=-1, j_m=-1;	// position of best score
+
+	// first row scoring
+	for (int j=threadIdx.x; j<qlen; j+=WARPSIZE){	// j is col index
+		SM_E[j] = MINUS_INF16;
+		SM_H[j] = 0 - o_ins - e_ins - j*e_ins;
+	}
+
+	// first we fill the top-left corner where we don't have enough parallelism
+	f = MINUS_INF16;	// first column of F
+	for (int anti_diag=0; anti_diag<WARPSIZE-1; anti_diag++){
+		int i = threadIdx.x; 				// row index on the matrix
+		int j = anti_diag - threadIdx.x;	// col index on the matrix
+		__syncwarp();
+		if (i<tlen && j<qlen && j>=0){ 		// safety check for small matrix
+			unsigned mask = __activemask();
+			// get previous cell data
+			e1_ = __shfl_up_sync(mask, e, 1); // get e from threadIdx-1, which is E[i-1,j]
+			if (threadIdx.x==0) e1_ = 0;
+			h1_ = __shfl_up_sync(mask, h, 1); // h from threadID-1 is H[i-1,j]
+			if (threadIdx.x==0) h1_ = SM_H[j];	   // but row 0 get initial scoring from shared mem
+			h11 = __shfl_up_sync(mask, h_1, 1); // h_1 from threadID-1 is H[i-1,j-1]
+			if (threadIdx.x==0 && j!=0) h11 = SM_H[j-1];	// row 0 get initial scoring from shared mem, except for first column
+			if (threadIdx.x==0 && j==0) h11 = 0;			// H[-1,-1] = 0
+			h_1 = h;							// H[i,j-1] from previous iteration of same thread 
+			if (j==0) h_1 = 0 - o_ins - (i+1)*e_ins;		// first column score
+			// calculate E[i,j], F[i,j], and H[i,j]
+			e = max2(h1_-o_del-e_del, e1_-e_del);
+			f = max2(h_1-o_ins-e_ins, f-e_ins);
+			h = h11 + score(target[i], query[j], mat, m);
+			// record traceback
+			if (h>=e && h>=f){	// traceback = 0 (match)
+				// h = h
+				traceback[i*qlen+j] = 0;
+			} else if (f>=e){	// traceback = 1 (insert on ref)
+				h = f;
+				traceback[i*qlen+j] = 1;
+			} else {			// traceback = 1 (delete from ref)
+				h = e;
+				traceback[i*qlen+j] = 2;
+			}
+			// record max scoring
+			if (h>max_score){
+				max_score = h; i_m = i; j_m = j;
+			}
+		}
+	}
+
+	// fill the rest of the matrix where we have enough parallelism
+	int Ntile = ceil(float(tlen/WARPSIZE));
+	int qlen_padded = qlen>=32? qlen : 32;	// pad qlen so that we have correct overflow for small matrix
+	for (int tile_ID=0; tile_ID<Ntile; tile_ID++){	// tile loop
+		int i, j;
+		for (int anti_diag=WARPSIZE-1; anti_diag<qlen_padded+WARPSIZE-1; anti_diag++){	// anti-diagonal loop
+			i = tile_ID*WARPSIZE + threadIdx.x;	// row index on matrix
+			j = anti_diag - threadIdx.x; 		// col index
+			if (j>=qlen_padded){			// when hit the end of this tile, overflow to next tile
+				i = i+WARPSIZE;		// over flow to its row on the next tile
+				j = j-qlen_padded;			// reset col index to the first 31 columns on next tile
+			}
+			__syncwarp();
+			if (i<tlen && j<qlen){ // j should be >=0
+				// get previous cell data
+				if (j==0) f = 0; 	// if we are processing first col, F[i,j-1] = 0. Otherwise, F[i,j-1] = f
+				unsigned mask = __activemask();
+				e1_ = __shfl_up_sync(mask, e, 1); 	// get e from threadIdx-1, which is E[i-1,j]
+				if (threadIdx.x==0) e1_ = SM_E[j];	// thread 0 get E[i-1] from shared mem, which came from thread 31 of previous tile
+				h1_ = __shfl_up_sync(mask, h, 1); 	// h from threadID-1 is H[i-1,j]
+				if (threadIdx.x==0) h1_ = SM_H[j];	// but row 0 get initial scoring from shared mem, which came from thread 31 of previous tile
+				h11 = __shfl_up_sync(mask, h_1, 1); // h_1 from threadID-1 is H[i-1,j-1]
+				if (threadIdx.x==0 && j!=0) h11 = SM_H[j-1];	// thread 0 get H[i-1,j-1] from shared mem, which came from thread 31
+				if (threadIdx.x==0 && j==0) h11 = 0 - o_ins - i*e_ins;	// first column scoring
+				h_1 = h;							// H[i,j-1] from previous iteration of same thread 
+				if (j==0) h_1 = 0 - o_ins - (i+1)*e_ins;	// first column score
+				// calculate E[i,j], F[i,j], and H[i,j]
+				e = max2(h1_-o_del-e_del, e1_-e_del);
+				f = max2(h_1-o_ins-e_ins, f-e_ins);
+				h = h11 + score(target[i], query[j], mat, m);
+				// record traceback
+				if (h>=e && h>=f){	// traceback = 0 (match)
+					// h = h
+					traceback[i*qlen+j] = 0;
+				} else if (f>=e){	// traceback = 1 (insert on ref)
+					h = f;
+					traceback[i*qlen+j] = 1;
+				} else {			// traceback = 1 (delete from ref)
+					h = e;
+					traceback[i*qlen+j] = 2;
+				}
+				// record max scoring
+				if (h>max_score){
+					max_score = h; i_m = i; j_m = j;
+				}
+				// thread 31 need to write h and e to shared memory to serve thread 0 in the next tile
+				if (threadIdx.x==31){ SM_H[j] = h; SM_E[j] = e; }
+			}
+		}
+	}
+
+	// finished filling the matrix, now we find the max of max_score across the warp
+	// use reduction to find the max of 32 max's
+	for (int i=0; i<5; i++){
+		int tmp = __shfl_down_sync(ALL_THREADS, max_score, 1<<i);
+		int tmp_i = __shfl_down_sync(ALL_THREADS, i_m, 1<<i);
+		int tmp_j = __shfl_down_sync(ALL_THREADS, j_m, 1<<i);
+		if (max_score < tmp) {max_score = tmp; i_m = tmp_i; j_m = tmp_j;}
+	}
+
+	// write max_score, i_m, j_m to output, only thread 0's result is valid
+	if (i_max) *i_max = i_m;
+	if (j_max) *j_max = j_m;
+	return max_score;	// only thread 0's result is valid
+}
+
 
 __device__ static inline uint32_t *push_cigar(int *n_cigar, int *m_cigar, uint32_t *cigar, int op, int len, void* d_buffer_ptr)
 {
@@ -647,8 +793,9 @@ __device__ int ksw_global2(int qlen, const uint8_t *query, int tlen, const uint8
 	}
 	score = eh[qlen].h;
 	if (n_cigar_ && cigar_) { // backtrack
-		int n_cigar = 0, m_cigar = 0, which = 0;
-		uint32_t *cigar = 0, tmp;
+		int n_cigar = 0, m_cigar = 10, which = 0;
+		uint32_t *cigar = (uint32_t*)CUDAKernelMalloc(d_buffer_ptr, m_cigar*sizeof(uint32_t), 4);
+		uint32_t tmp;
 		i = tlen - 1; k = (i + w + 1 < qlen? i + w + 1 : qlen) - 1; // (i,k) points to the last cell
 		while (i >= 0 && k >= 0) {
 			which = z[(long)i * n_col + (k - (i > w? i - w : 0))] >> (which<<1) & 3;

@@ -29,7 +29,10 @@ __device__ kswr_t ksw_align2(int qlen, uint8_t *query, int tlen, uint8_t *target
 
 __device__ int ksw_extend2(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int w, int end_bonus, int zdrop, int h0, int *_qle, int *_tle, int *_gtle, int *_gscore, int *_max_off, void* d_buffer_ptr);
 
-/* SW extension function to be executed at warp level. bandwidth not applied*/
+/* SW extension function to be executed at warp level. bandwidth not applied */
 __device__ int ksw_extend_warp(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int h0, int *_qle, int *_tle, int *_gtle, int *_gscore);
+/* SW global function to be executed at warp level. bandwidth not applied */
+__device__ int ksw_global_warp(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int *i_max, int *j_max, uint8_t *traceback);
 
 __device__ int ksw_global2(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int w, int *n_cigar_, uint32_t **cigar_, void* d_buffer_ptr);
+

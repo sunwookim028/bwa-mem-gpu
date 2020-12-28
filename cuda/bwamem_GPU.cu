@@ -2340,9 +2340,6 @@ __global__ void mem_aln_mark_primary_kernel(
 		d_regs[blockIdx.x].a = new_a[0];
 		d_regs[blockIdx.x].n = new_n[0];
 	}
-// if (blockIdx.x==1633&&threadIdx.x==0) printf("n=%d\n", new_n[0]);
-// if (blockIdx.x==1633&&threadIdx.x==0) printf("0, %d, %d\n", d_regs[blockIdx.x].a[0].qb, d_regs[blockIdx.x].a[0].qe);
-// if (blockIdx.x==1633&&threadIdx.x==0) printf("1, %d, %d\n", d_regs[blockIdx.x].a[1].qb, d_regs[blockIdx.x].a[1].qe);
 }
 
 /* prepare ref sequence for global SW
@@ -2350,16 +2347,8 @@ __global__ void mem_aln_mark_primary_kernel(
 	write to d_seed_records just like SW extension,
 		- seqID
 		- regID: index on d_regs and d_alns
-		- read_right
-		- readlen_right
-		- ref_right
-		- reflen_right
  */
-__global__ void mem_reg2aln_pre(
-	const mem_opt_t *d_opt,
-	const bseq1_t *d_seqs,
-	int l_pac,
-	const uint8_t *d_pac,
+__global__ void mem_reg2aln_pre1(
 	mem_alnreg_v* d_regs,
 	mem_aln_v * d_alns,
 	seed_record_t *d_seed_records,
@@ -2367,51 +2356,438 @@ __global__ void mem_reg2aln_pre(
 	void* d_buffer_pools)
 {
 	int seqID = blockIdx.x*blockDim.x + threadIdx.x;
-	uint8_t *query = (uint8_t*)d_seqs[seqID].seq;
-	int l_query = d_seqs[seqID].l_seq;
 	// allocate mem_aln_t array
 	int n_aln = d_regs[seqID].n;
 	void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x%32);
 	d_alns[seqID].n = n_aln;
-	d_alns[seqID].a = (mem_aln_t*)CUDAKernelMalloc(d_buffer_pools, n_aln*sizeof(mem_aln_t), 8);
+	d_alns[seqID].a = (mem_aln_t*)CUDAKernelMalloc(d_buffer_ptr, n_aln*sizeof(mem_aln_t), 8);
+	// atomic add to d_Nseeds at block level
+	__shared__ int S_block_nseeds[1];	// total seeds in this block
+	__shared__ int S_block_offset[1];	// block's offset on d_seed_records
+	if (threadIdx.x==0) S_block_nseeds[0] = 0;
+	__syncthreads();
+	int thread_offset = atomicAdd(&S_block_nseeds[0], n_aln);
+	__syncthreads();
+	if (threadIdx.x==0) S_block_offset[0] = atomicAdd(d_Nseeds, S_block_nseeds[0]);
+	__syncthreads();
 
 	for (int i=0; i<n_aln; i++){
-		d_alns[seqID].a[i].XA = 0;
-		d_alns[seqID].a[i].flag = 0;
-		if (d_regs[seqID].a[i].secondary>=0) {
-			d_alns[seqID].a[i].sub = -1; // don't output sub-optimal score
-			d_alns[seqID].a[i].flag |= 0x100;
-		}
-		if (d_regs[seqID].a[i].secondary<0) d_alns[seqID].a[i].mapq = mem_approx_mapq_se(d_opt, &d_regs[seqID].a[i]);
-		else d_alns[seqID].a[i].mapq = 0;
-		// prepare SW sequences
-		int64_t rb = d_regs[seqID].a[i].rb; 
-		int64_t re = d_regs[seqID].a[i].re; 
-		int qb = d_regs[seqID].a[i].qb;
-		int qe = d_regs[seqID].a[i].qe;
-		int64_t rlen;
-		uint8_t *rseq = bns_get_seq_gpu(l_pac, d_pac, rb, re, &rlen, d_buffer_ptr);
-		if (rb>=l_pac){ // then reverse both query and rseq; this is to ensure indels to be placed at the leftmost position
-			uint8_t *query2 = (uint8_t*)CUDAKernelMalloc(d_buffer_pools, l_query, 1);
-			uint8_t tmp;
-			for (int j = 0; j < l_query; ++j)
-				query2[l_query - 1 - j] = query[j];
-			for (int j = 0; j < rlen>>1; ++j)
-				tmp = rseq[j], rseq[j] = rseq[rlen - 1 - j], rseq[rlen - 1 - j] = tmp;
-			d_seed_records[seqID].read_right = query2;
-			d_seed_records[seqID].readlen_right = l_query;
-			d_seed_records[seqID].ref_right = rseq;
-			d_seed_records[seqID].reflen_right = rlen;
-		} else {
-			d_seed_records[seqID].read_right = query;
-			d_seed_records[seqID].readlen_right = l_query;
-			d_seed_records[seqID].ref_right = rseq;
-			d_seed_records[seqID].reflen_right = rlen;
-		}
-		d_seed_records[seqID].seqID = seqID;
-		d_seed_records[seqID].regID = i;
+		int offset = S_block_offset[0] + thread_offset + i;
+		d_seed_records[offset].seqID = seqID;
+		d_seed_records[offset].regID = i;	// alnID
 	}
 }
+
+
+/* run at aln level 
+	prepare seqs for SW global
+		- .read_right: query
+		- .readlen_right: lquery
+		- .ref_right: reference
+		- .reflen_right: lref
+		- .readlen_left: bandwidth
+		- .reflen_left: whether cigar should be reversed (1) or not (0)
+	calculate bandwidth for SW global
+	store l_ref*w to d_sortkeys_in and seqID to d_seqIDs_in
+*/
+
+__global__ void mem_reg2aln_pre2(
+	const mem_opt_t *d_opt,
+	const bseq1_t *d_seqs,
+	int64_t l_pac,
+	const uint8_t *d_pac,
+	mem_alnreg_v* d_regs,
+	mem_aln_v * d_alns,
+	seed_record_t *d_seed_records,
+	int Nseeds,
+	int *d_sortkeys_in,	// for sorting
+	int *d_seqIDs_in,	// for sorting
+	void* d_buffer_pools)
+{
+	int offset = blockIdx.x*blockDim.x + threadIdx.x;
+	if (offset>=Nseeds) return;
+	int seqID = d_seed_records[offset].seqID;
+	int alnID = d_seed_records[offset].regID;
+	void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x%32);
+	// prepare SW sequences
+	int64_t rb = d_regs[seqID].a[alnID].rb; 
+	int64_t re = d_regs[seqID].a[alnID].re; 
+	int qb = d_regs[seqID].a[alnID].qb;
+	int qe = d_regs[seqID].a[alnID].qe;
+	uint8_t *query = (uint8_t*)&(d_seqs[seqID].seq[qb]);
+	int l_query = qe - qb;
+	int64_t rlen;
+	uint8_t *rseq = bns_get_seq_gpu(l_pac, d_pac, rb, re, &rlen, d_buffer_ptr);	
+	// calculate bandwidth
+	int w;
+	if (l_query == re-rb){ w=0; }	// no gap, no need to do DP
+	else{
+		int min_l, tmp;
+		min_l = l_query<rlen? l_query : rlen;
+		w = ((min_l*d_opt->a-d_regs[seqID].a[alnID].score) - d_opt->o_ins)/d_opt->e_ins;
+		tmp = ((min_l*d_opt->a-d_regs[seqID].a[alnID].score) - d_opt->o_del)/d_opt->e_del;
+		w = tmp<w? tmp : w;
+		if (w<0) w=0;
+	}
+	// save these info to d_seed_records for next kernel
+	d_seed_records[offset].read_right = query;		// query for SW
+	d_seed_records[offset].readlen_right = l_query;	
+	d_seed_records[offset].ref_right = rseq;		// target for SW
+	d_seed_records[offset].reflen_right = rlen;
+	if (rb>=l_pac) d_seed_records[offset].reflen_left = 1; // signal that cigar need to be reversed
+	else d_seed_records[offset].reflen_left = 0;
+	d_seed_records[offset].readlen_left = (uint16_t)w;	// bandwidth
+	d_sortkeys_in[offset] = w*rlen;		// for sorting
+	d_seqIDs_in[offset] = offset;		// for sorting
+}
+
+// #define GLOBALSW_BANDWITH_CUTOFF 17
+#define GLOBALSW_BANDWITH_CUTOFF 500
+/* run at aln level:
+	- perform global SW, calculate cigar and score
+	- store score, cigar, n_cigar to d_alns
+*/
+__global__ void mem_globalSW_low_bandwidth_kernel(
+	const mem_opt_t *d_opt,
+	seed_record_t *d_seed_records,
+	int Nseeds,
+	mem_aln_v *d_alns,
+	int *d_seqIDs_out,
+	void *d_buffer_pools
+){
+	int ID = blockIdx.x*blockDim.x + threadIdx.x;	// ID on d_seed_records
+	if (ID>=Nseeds) return;
+	ID = d_seqIDs_out[ID];							// map to new ID after sorting
+	int seqID = d_seed_records[ID].seqID;
+	int alnID = d_seed_records[ID].regID;		// index on aln.a
+	int bandwidth = (int)d_seed_records[ID].readlen_left;
+	if (bandwidth>=GLOBALSW_BANDWITH_CUTOFF) {printf("bandwidth too large\n"); __trap();};
+	uint8_t *query = d_seed_records[ID].read_right;
+	int l_query = (int)d_seed_records[ID].readlen_right;
+	uint8_t *target = d_seed_records[ID].ref_right;
+	int l_target = (int)d_seed_records[ID].reflen_right;
+	void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x%32);
+	// calculate cigar and score
+	uint32_t *cigar; int n_cigar, score;
+	if (bandwidth==0){
+		cigar = (uint32_t*)CUDAKernelMalloc(d_buffer_ptr, 4, 4);
+		cigar[0] = l_query<<4 | 0;
+		n_cigar = 1;
+		for (int i = 0, score = 0; i < l_query; ++i)
+			score += d_opt->mat[target[i]*5 + query[i]];
+	} else {
+		score = ksw_global2(l_query, query, l_target, target, 5, d_opt->mat, d_opt->o_del, d_opt->e_del, d_opt->o_ins, d_opt->e_ins, bandwidth, &n_cigar, &cigar, d_buffer_ptr);
+	}
+	if (d_seed_records[ID].reflen_left==1){
+		// reverse CIGAR to ensure indels to be placed at the leftmost position
+		for (int i=0; i<n_cigar>>1; i++){
+			uint32_t tmp;
+			tmp = cigar[i]; cigar[i] = cigar[n_cigar-1-i]; cigar[n_cigar-1-i] = tmp;
+		}
+	}
+	// calculate NM
+	int NM;
+	{
+		int k, x, y, u, n_mm = 0, n_gap = 0;
+		kstring_t str; str.l = str.m = n_cigar*4; str.s = (char*)cigar;
+		const char *int2base = (d_seed_records[ID].reflen_left==0)? "ACGTN" : "TGCAN";
+		for (k = 0, x = y = u = 0; k < n_cigar; ++k) {
+			int op, len;
+			cigar = (uint32_t*)str.s;
+			op  = cigar[k]&0xf, len = cigar[k]>>4;
+			if (op == 0) { // match
+				for (int i = 0; i < len; ++i) {
+					if (query[x + i] != target[y + i]) {
+						kputw(u, &str, d_buffer_ptr);
+						kputc(int2base[target[y+i]], &str, d_buffer_ptr);
+						++n_mm; u = 0;
+					} else ++u;
+				}
+				x += len; y += len;
+			} else if (op == 2) { // deletion
+				if (k > 0 && k < n_cigar - 1) { // don't do the following if D is the first or the last CIGAR
+					kputw(u, &str, d_buffer_ptr); kputc('^', &str, d_buffer_ptr);
+					for (int i = 0; i < len; ++i)
+						kputc(int2base[target[y+i]], &str, d_buffer_ptr);
+					u = 0; n_gap += len;
+				}
+				y += len;
+			} else if (op == 1) x += len, n_gap += len; // insertion
+		}
+		kputw(u, &str, d_buffer_ptr); kputc(0, &str, d_buffer_ptr);
+		NM = n_mm + n_gap;
+		cigar = (uint32_t*)str.s;
+	}
+	// write output
+	d_alns[seqID].a[alnID].cigar = cigar;
+	d_alns[seqID].a[alnID].n_cigar = n_cigar;
+	d_alns[seqID].a[alnID].score = score;
+	d_alns[seqID].a[alnID].NM = NM;
+}
+
+
+
+// /* global SW on each alignment 
+// 	each warp performs 1 SW
+// */
+// __global__ void mem_globalSW_high_bandwidth_kernel(
+// 	const mem_opt_t *d_opt,
+// 	mem_aln_v * d_alns,
+// 	seed_record_t *d_seed_records,
+// 	void *d_buffer_pools
+// 	)
+// {
+// 	// ID = blockIdx.x
+// 	int bandwidth = (int)d_seed_records[blockIdx.x].readlen_left;
+// 	if (bandwidth<GLOBALSW_BANDWITH_CUTOFF) return;
+// 	uint8_t *query = d_seed_records[blockIdx.x].read_right;
+// 	int qlen = d_seed_records[blockIdx.x].readlen_right;
+// 	uint8_t *target = d_seed_records[blockIdx.x].ref_right;
+// 	int tlen = d_seed_records[blockIdx.x].reflen_right;
+
+// 	// perform global SW
+// 	__shared__ uint8_t* S_traceback[1];
+// 	if (threadIdx.x==0){
+// 		void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, blockIdx.x%32);
+// 		S_traceback[0] = (uint8_t*)CUDAKernelMalloc(d_buffer_ptr, tlen*qlen, 1);
+// 	}
+// 	__syncthreads();
+// 	int i_max, j_max;	// location of max score
+// 	int score = ksw_global_warp(qlen, query, tlen, target, 5, d_opt->mat, d_opt->o_del, d_opt->e_del, d_opt->o_ins, d_opt->e_ins, &i_max, &j_max, S_traceback[0]);
+// // if (threadIdx.x==0 && blockIdx.x==1249) printf("%d: score=%d, imax=%d, jmax=%d\n", blockIdx.x, score, i_max, j_max);
+// 	// save result
+// 	if (threadIdx.x==0){
+// 		int seqID = d_seed_records[blockIdx.x].seqID;
+// 		int alnID = d_seed_records[blockIdx.x].regID;
+// 		d_alns[seqID].a[alnID].score = score;
+// 		d_alns[seqID].a[alnID].rid = i_max;		// temporarily save these for traceback in next kernel
+// 		d_alns[seqID].a[alnID].n_cigar = j_max;
+// 		d_alns[seqID].a[alnID].XA = (char*)S_traceback[0];
+// 	}
+// 	// cigar generation through matrix traceback is done in next kernel aln2sam
+// }
+
+/* execute at aln level 
+	calculate mapq, pos, rid, is_rev, is_alt
+	mapq already calculated in mem_reg2aln_pre2
+	NM calculated in mem_globalSW_low_bandwidth_kernel
+*/
+__global__ void mem_finalize_aln_kernel(
+	const mem_opt_t *d_opt,
+	const bntseq_t *d_bns,
+	mem_alnreg_v *d_regs,
+	mem_aln_v *d_alns,
+	seed_record_t *d_seed_records,
+	int Nseeds
+	)
+{
+	int ID = blockIdx.x*blockDim.x + threadIdx.x;
+	if (ID>=Nseeds) return;
+	int seqID = d_seed_records[ID].seqID;
+	int alnID = d_seed_records[ID].regID;
+	mem_aln_t *a = &d_alns[seqID].a[alnID];	// output address
+	mem_alnreg_t *ar = &d_regs[seqID].a[alnID];
+	// mapq
+	if (ar->secondary<0) a->mapq = mem_approx_mapq_se(d_opt, ar);
+	else a->mapq = 0;
+	// calculate pos, rid, is_rev, is_alt
+	int is_rev; int64_t pos;
+	pos = bns_depos_GPU(d_bns, d_seed_records[ID].reflen_left==0? ar->rb : ar->re-1, &is_rev);
+	a->rid = bns_pos2rid_gpu(d_bns, pos);
+	a->pos = pos - d_bns->anns[ar->rid].offset;
+	a->is_rev = is_rev;
+	a->is_alt = ar->is_alt;
+	a->alt_sc = ar->alt_sc;
+	a->sub = ar->sub>ar->csub? ar->sub : ar->csub;
+	// flag and sub
+	int flag = 0;
+	if (ar->secondary>=0) {
+		a->sub = -1; // don't output sub-optimal score
+		flag |= 0x100;
+	}
+	if (ar->rid<0) flag |= 0x4;		// flag if mapped
+	if (is_rev) flag |= 0x10;		// is on reverse strand
+	a->flag = flag;
+}
+
+/* convert aln to SAM strings
+	run at aln level
+	assume that reads are not paired
+	outputs:
+	 - d_aln->XA = &SAM_string
+	 - d_aln->rid = len(SAM_string)
+ */
+__global__ void mem_aln2sam_single_kernel(
+	const mem_opt_t *d_opt,
+	const bntseq_t *d_bns,
+	const bseq1_t *d_seqs,
+	mem_aln_v *d_alns,
+	seed_record_t *d_seed_records,
+	int Nseeds,
+	void *d_buffer_pools
+	)
+{
+	int ID = blockIdx.x*blockDim.x + threadIdx.x;
+	if (ID>=Nseeds) return;	// don't run padded threads in last block
+	int seqID = d_seed_records[ID].seqID;
+	int alnID = d_seed_records[ID].regID;
+	mem_aln_t *a = &d_alns[seqID].a[alnID];
+	// prepare enough memory for SAM string
+	void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x%32);
+	kstring_t str;
+	str.l = 0; str.m = 512; str.s = (char*)CUDAKernelMalloc(d_buffer_ptr, str.m, 1);
+	// 1. QNAME
+	int l_name = strlen_GPU(d_seqs[seqID].name);
+	kputsn(d_seqs[seqID].name, l_name, &str, d_buffer_ptr); kputc('\t', &str, d_buffer_ptr);
+	// 2. FLAG
+	kputw((a->flag&0xffff)|(a->flag&0x10000? 0x100 : 0), &str, d_buffer_ptr); kputc('\t', &str, d_buffer_ptr);
+	
+	if (a->rid >= 0) { // with coordinate
+		// 3. RNAME
+		kputs(d_bns->anns[a->rid].name, &str, d_buffer_ptr); kputc('\t', &str, d_buffer_ptr);
+		// 4. POS
+		kputl(a->pos + 1, &str, d_buffer_ptr); kputc('\t', &str, d_buffer_ptr); // POS
+		// 5. MAPQ
+		kputw(a->mapq, &str, d_buffer_ptr); kputc('\t', &str, d_buffer_ptr); // MAPQ
+		// 6. CIGAR
+		add_cigar(d_opt, a, &str, alnID, d_buffer_ptr);
+	} else kputsn("*\t0\t0\t*", 7, &str, d_buffer_ptr); // without coordinte
+	kputc('\t', &str, d_buffer_ptr);
+
+	// MATE POSITION (7, 8, 9) NOT APPLICABLE
+	kputsn("*\t0\t0", 5, &str, d_buffer_ptr); kputc('\t', &str, d_buffer_ptr);
+
+	// 10,11. SEQ and QUAL
+	if (a->flag & 0x100) { // for secondary alignments, don't write SEQ and QUAL
+		kputsn("*\t*", 3, &str, d_buffer_ptr);
+	} else if (!a->is_rev) { // the forward strand
+		// SEQ
+		int i, qb = 0, qe = d_seqs[seqID].l_seq;
+		if (a->n_cigar && alnID && !(d_opt->flag&MEM_F_SOFTCLIP) && !a->is_alt) { // have cigar && not the primary alignment && not softclip all
+			if ((a->cigar[0]&0xf) == 4 || (a->cigar[0]&0xf) == 3) qb += a->cigar[0]>>4;
+			if ((a->cigar[a->n_cigar-1]&0xf) == 4 || (a->cigar[a->n_cigar-1]&0xf) == 3) qe -= a->cigar[a->n_cigar-1]>>4;
+		}
+		ks_resize(&str, str.l + (qe - qb) + 1, d_buffer_ptr);
+		for (i = qb; i < qe; ++i) str.s[str.l++] = "ACGTN"[(int)d_seqs[seqID].seq[i]];
+		kputc('\t', &str, d_buffer_ptr);
+		// QUAL
+		if (d_seqs[seqID].qual) {
+			ks_resize(&str, str.l + (qe - qb) + 1, d_buffer_ptr);
+			memcpy(&str.s[str.l], &d_seqs[seqID].qual[qb], qe-qb); str.l+=qe-qb;
+			str.s[str.l] = 0;
+		} else kputc('*', &str, d_buffer_ptr);
+	} else { // the reverse strand
+		int i, qb = 0, qe = d_seqs[seqID].l_seq;
+		if (a->n_cigar && alnID && !(d_opt->flag&MEM_F_SOFTCLIP) && !a->is_alt) {
+			if ((a->cigar[0]&0xf) == 4 || (a->cigar[0]&0xf) == 3) qe -= a->cigar[0]>>4;
+			if ((a->cigar[a->n_cigar-1]&0xf) == 4 || (a->cigar[a->n_cigar-1]&0xf) == 3) qb += a->cigar[a->n_cigar-1]>>4;
+		}
+		ks_resize(&str, str.l + (qe - qb) + 1, d_buffer_ptr);
+		for (i = qe-1; i >= qb; --i) str.s[str.l++] = "TGCAN"[(int)d_seqs[seqID].seq[i]];
+		kputc('\t', &str, d_buffer_ptr);
+		if (d_seqs[seqID].qual) { // printf qual
+			ks_resize(&str, str.l + (qe - qb) + 1, d_buffer_ptr);
+			for (i = qe-1; i >= qb; --i) str.s[str.l++] = d_seqs[seqID].qual[i];
+			str.s[str.l] = 0;
+		} else kputc('*', &str, d_buffer_ptr);
+	}
+
+	// print optional tags
+	if (a->n_cigar) {
+		kputsn("\tNM:i:", 6, &str, d_buffer_ptr); kputw(a->NM, &str, d_buffer_ptr);
+		kputsn("\tMD:Z:", 6, &str, d_buffer_ptr); kputs((char*)(a->cigar + a->n_cigar), &str, d_buffer_ptr);
+	}
+	if (a->score >= 0) { kputsn("\tAS:i:", 6, &str, d_buffer_ptr); kputw(a->score, &str, d_buffer_ptr); }
+	if (a->sub >= 0) { kputsn("\tXS:i:", 6, &str, d_buffer_ptr); kputw(a->sub, &str, d_buffer_ptr); }
+	// if (!(a->flag & 0x100)) { // not multi-hit
+	// 	for (i = 0; i < n; ++i)
+	// 		if (i != which && !(list[i].flag&0x100)) break;
+	// 	if (i < n) { // there are other primary hits; output them
+	// 		kputsn("\tSA:Z:", 6, str);
+	// 		for (i = 0; i < n; ++i) {
+	// 			const mem_aln_t *r = &list[i];
+	// 			int k;
+	// 			if (i == which || (r->flag&0x100)) continue; // proceed if: 1) different from the current; 2) not shadowed multi hit
+	// 			kputs(bns->anns[r->rid].name, str); kputc(',', str);
+	// 			kputl(r->pos+1, str); kputc(',', str);
+	// 			kputc("+-"[r->is_rev], str); kputc(',', str);
+	// 			for (k = 0; k < r->n_cigar; ++k) {
+	// 				kputw(r->cigar[k]>>4, str); kputc("MIDSH"[r->cigar[k]&0xf], str);
+	// 			}
+	// 			kputc(',', str); kputw(r->mapq, str);
+	// 			kputc(',', str); kputw(r->NM, str);
+	// 			kputc(';', str);
+	// 		}
+	// 	}
+	// 	if (p->alt_sc > 0)
+	// 		ksprintf(str, "\tpa:f:%.3f", (double)p->score / p->alt_sc);
+	// }
+	// if (a->XA) {
+	// 	kputsn((d_opt->flag&MEM_F_XB)? "\tXB:Z:" : "\tXA:Z:", 6, &str, d_buffer_ptr);
+	// 	kputs(a->XA, &str, d_buffer_ptr);
+	// }
+	if (d_seqs[seqID].comment) { kputc('\t', &str, d_buffer_ptr); kputs(d_seqs[seqID].comment, &str, d_buffer_ptr); }
+	if ((d_opt->flag&MEM_F_REF_HDR) && a->rid >= 0 && d_bns->anns[a->rid].anno != 0 && d_bns->anns[a->rid].anno[0] != 0) {
+		int tmp;
+		kputsn("\tXR:Z:", 6, &str, d_buffer_ptr);
+		tmp = str.l;
+		kputs(d_bns->anns[a->rid].anno, &str, d_buffer_ptr);
+		for (int i = tmp; i < str.l; ++i) // replace TAB in the comment to SPACE
+			if (str.s[i] == '\t') str.s[i] = ' ';
+	}
+	kputc('\n', &str, d_buffer_ptr);
+
+	// save output
+	d_alns[seqID].a[alnID].XA = str.s;
+	d_alns[seqID].a[alnID].rid = str.l;
+}
+
+/* concatenate all SAM strings from a read's alns and write to SAM output location 
+	at this point, d_aln->a->XA is SAM string, d_aln->a->rid is len(SAM string)
+	Copy all SAM strings to d_seq_sam_ptr[] as follows:
+		- atomicAdd on d_seq_sam_offset to reserve a location on the d_seq_sam_ptr array (this array is allocated with page-lock for faster transfer)
+		- copy SAM to the reserved location
+		- save the offset to seq->SAM for retrieval on host
+		- NOTE: the NULL-terminating character is also a part of the SAM string
+*/
+__global__ void mem_finalize_sam_kernel(
+	mem_aln_v *d_alns,
+	bseq1_t *d_seqs,
+	int n_seqs
+	)
+{
+	int seqID = blockIdx.x*blockDim.x + threadIdx.x;
+	if (seqID>=n_seqs) return;
+	int n_aln = d_alns[seqID].n;
+	mem_aln_t *a = d_alns[seqID].a;
+	// calculate total length of SAM strings
+	// then add them up at block level
+	__shared__ int S_total_l_sams[1];
+	if (threadIdx.x==0) S_total_l_sams[0] = 0;
+	__syncthreads();
+	int l_sams = 0;
+	for (int i=0; i<n_aln; i++)
+		l_sams+=a[i].rid;
+	l_sams++;	// add 1 for the terminating NULL
+	int thread_offset = atomicAdd(&S_total_l_sams[0], l_sams);
+	__syncthreads();
+	// now add the block's total to d_seq_sam_offset
+	__shared__ int S_block_offset[1];
+	if (threadIdx.x==0) S_block_offset[0] = atomicAdd(&d_seq_sam_offset, S_total_l_sams[0]);
+	__syncthreads();
+	// record offset to sam
+	d_seqs[seqID].sam = (char*)(S_block_offset[0] + thread_offset);
+	// copy all SAM strings to the designated location on d_seq_sam_ptr
+	int offset = S_block_offset[0] + thread_offset;	// actual offset on d_seq_sam_ptr
+	for (int i=0; i<n_aln; i++){
+		int l_sam = a[i].rid;	// length of this aln's SAM
+		char* sam = a[i].XA;	// SAM string of this aln
+		memcpy(&d_seq_sam_ptr[offset], sam, l_sam);	// transfer this aln's SAM, excluding the terminating NULL
+		offset+= l_sam;			// increment for next aln
+	}
+	d_seq_sam_ptr[offset] = 0;	// NULL-terminating char
+}
+
 
 __global__ void mem_chain2aln_kernel(
 	const mem_opt_t *d_opt,
@@ -2525,15 +2901,6 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	gpuErrchk( cudaDeviceSynchronize() );
 
 	/* second kernel: chaining seeds */
-	int* d_sortkey_in; 	 	// number of chains for each read
-	int* d_sortkey_out; 		// output for sorting nchains
-	int* d_seqids_in;		 	// seqids, should be 1, 2, 3, ..., N
-	int* d_seqids_out;  		// after sorting nchains
-	cudaMalloc((void**)&d_sortkey_in, gpu_data.n_seqs*sizeof(int));
-	cudaMalloc((void**)&d_sortkey_out, gpu_data.n_seqs*sizeof(int));
-	cudaMalloc((void**)&d_seqids_in, gpu_data.n_seqs*sizeof(int));
-	cudaMalloc((void**)&d_seqids_out, gpu_data.n_seqs*sizeof(int));
-
 	if (bwa_verbose>=4)  fprintf(stderr, "[M::%s] Launch kernel mem_chain ...\n", __func__);
 	dimGrid.x = ceil((double)gpu_data.n_seqs/CUDA_BLOCKSIZE);
 	dimBlock.x = CUDA_BLOCKSIZE;
@@ -2542,8 +2909,8 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 			gpu_data.n_seqs,
 			gpu_data.d_aux,
 			gpu_data.d_chains,			// output
-			d_sortkey_in,	// will save nchains for sorting after this kernel
-			d_seqids_in	,		// will save seqids for sorting according to nchains
+			gpu_data.d_sortkeys_in,		// will save nchains for sorting after this kernel
+			gpu_data.d_seqIDs_in	,				// will save seqids for sorting according to nchains
 			gpu_data.d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
@@ -2674,15 +3041,114 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
 
-	/* preprocessing for global SW alignments */
+/* preprocessing for global SW alignments */
+	cudaMemset(gpu_data.d_Nseeds, 0, sizeof(int));		// reset seed info
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel reg2aln preprocessing 1 ...\n", __func__);
+ 	mem_reg2aln_pre1 <<< dimGrid, dimBlock >>>(
+		gpu_data.d_regs,
+		gpu_data.d_alns,
+		gpu_data.d_seed_records,
+		gpu_data.d_Nseeds,
+		gpu_data.d_buffer_pools);
+ 	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+	cudaMemcpy(&n_seeds, gpu_data.d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost);
 
-	/* generate SAM alignment */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel generate_sam ...\n", __func__);
-	generate_sam_kernel <<< dimGrid, dimBlock >>> 
-		(gpu_data.d_opt, gpu_data.d_bns, gpu_data.d_pac, 
-		 gpu_data.d_seqs, gpu_data.n_seqs, gpu_data.d_regs, gpu_data.d_buffer_pools);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel reg2aln preprocessing 2 ...\n", __func__);
+ 	mem_reg2aln_pre2 <<< ceil((float)n_seeds/32), 32 >>>(
+ 		gpu_data.d_opt,
+ 		gpu_data.d_seqs,
+ 		bns->l_pac,
+ 		gpu_data.d_pac,
+		gpu_data.d_regs,
+		gpu_data.d_alns,
+		gpu_data.d_seed_records,
+		n_seeds,
+		gpu_data.d_sortkeys_in,	// sortkeys_in = bandwidth * rlen
+		gpu_data.d_seqIDs_in,
+		gpu_data.d_buffer_pools);
+ 	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+	gpu_data.n_sortkeys = n_seeds;
+
+	/* now we sort alignments for better warp efficiency in next kernel */
+	// determine temporary storage requirement
+	void* d_temp_storage = NULL;
+	size_t temp_storage_size = 0;
+	gpuErrchk( cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_size, gpu_data.d_sortkeys_in, gpu_data.d_sortkeys_out, gpu_data.d_seqIDs_in, gpu_data.d_seqIDs_out, gpu_data.n_sortkeys) );
+	// Allocate temporary storage
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] sorting storage ..... %.2f MB\n", __func__, (float)temp_storage_size/1000000);
+	gpuErrchk( cudaMalloc(&d_temp_storage, temp_storage_size) );
+	// perform radix sort
+	gpuErrchk( cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_size, gpu_data.d_sortkeys_in, gpu_data.d_sortkeys_out, gpu_data.d_seqIDs_in, gpu_data.d_seqIDs_out, gpu_data.n_sortkeys) );
+	cudaFree(d_temp_storage);
+
+	/* global SW */
+	// low banddiwth
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel globalSW_low_bandwidth_kernel  ...\n", __func__);
+	mem_globalSW_low_bandwidth_kernel <<< ceil((float)n_seeds/32), 32 >>> (
+		gpu_data.d_opt,
+		gpu_data.d_seed_records,
+		n_seeds,
+		gpu_data.d_alns,
+		gpu_data.d_seqIDs_out,
+		gpu_data.d_buffer_pools
+		);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
+	// high bandwidth
+	// if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel globalSW_high_bandwidth_kernel  ...\n", __func__);
+	// mem_globalSW_high_bandwidth_kernel <<< n_seeds, 32 >>> (
+	// 	gpu_data.d_opt,
+	// 	gpu_data.d_alns,
+	// 	gpu_data.d_seed_records,
+	// 	gpu_data.d_buffer_pools);
+	// gpuErrchk( cudaPeekAtLastError() );
+	// gpuErrchk( cudaDeviceSynchronize() );
+
+	/* finalize aln */
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] finalize aln ...\n", __func__);
+	mem_finalize_aln_kernel <<< ceil((float)n_seeds/32), 32 >>> (
+		gpu_data.d_opt,
+		gpu_data.d_bns,
+		gpu_data.d_regs,
+		gpu_data.d_alns,
+		gpu_data.d_seed_records,
+		n_seeds
+	);
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+
+	/* generate SAM for each aln */
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] generate SAM for each aln ...\n", __func__);
+	mem_aln2sam_single_kernel <<< ceil((float)n_seeds/32), 32 >>> (
+		gpu_data.d_opt,
+		gpu_data.d_bns,
+		gpu_data.d_seqs,
+		gpu_data.d_alns,
+		gpu_data.d_seed_records,
+		n_seeds,
+		gpu_data.d_buffer_pools
+	);
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+	/* finalize SAM strings for each read */
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] generate all SAM for each read ...\n", __func__);
+	mem_finalize_sam_kernel <<< ceil((float)gpu_data.n_seqs/32), 32 >>> (
+		gpu_data.d_alns,
+		gpu_data.d_seqs,
+		gpu_data.n_seqs
+	);
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+
+	// /* generate SAM alignment */
+	// if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel generate_sam ...\n", __func__);
+	// generate_sam_kernel <<< dimGrid, dimBlock >>> 
+	// 	(gpu_data.d_opt, gpu_data.d_bns, gpu_data.d_pac, 
+	// 	 gpu_data.d_seqs, gpu_data.n_seqs, gpu_data.d_regs, gpu_data.d_buffer_pools);
+	// gpuErrchk( cudaPeekAtLastError() );
+	// gpuErrchk( cudaDeviceSynchronize() );
 
 	/* copy sam output to host */
 	bseq1_t* h_seqs;
@@ -2697,9 +3163,8 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	for (int i=0; i<gpu_data.n_seqs; i++)
 		seqs[i].sam = &seq_sam_ptr[(long)h_seqs[i].sam];
 
-	// free intermediate data
-	cudaFree(d_sortkey_in); cudaFree(d_sortkey_out); cudaFree(d_seqids_in); cudaFree(d_seqids_out);
 	// free(h_seqs);
+// printBufferInfoHost(gpu_data.d_buffer_pools);
 };
 
 /* Function to set up GPU memory
@@ -2739,29 +3204,39 @@ void prepare_batch_GPU(gpu_ptrs_t* gpu_data, const bseq1_t* seqs, int n_seqs, co
 	gpu_data->n_seqs = n_seqs;
 
 	// allocate intermediate data if not done already
-	if (gpu_data->d_aux == 0){
-		fprintf(stderr, "[M::%s] aux intervals ..... %d MB\n", __func__, (int)n_seqs*sizeof(smem_aux_t)/1000000);
+	if (!gpu_data->d_aux){
+		fprintf(stderr, "[M::%s] aux intervals ..... %ld MB\n", __func__, n_seqs*sizeof(smem_aux_t)/1000000);
 		gpuErrchk(cudaMalloc((void**)&(gpu_data->d_aux), n_seqs*sizeof(smem_aux_t)));
 	}
-	if (gpu_data->d_chains == 0){
-		fprintf(stderr, "[M::%s] chains ............ %d MB\n", __func__, (int)n_seqs*sizeof(mem_chain_v)/1000000);
+	if (!gpu_data->d_chains){
+		fprintf(stderr, "[M::%s] chains ............ %ld MB\n", __func__, n_seqs*sizeof(mem_chain_v)/1000000);
 		gpuErrchk(cudaMalloc((void**)&(gpu_data->d_chains), n_seqs*sizeof(mem_chain_v)));
 	}
-	if (gpu_data->d_seed_records == 0){
-		fprintf(stderr, "[M::%s] seed records ...... %d MB\n", __func__, (int)n_seqs*500*sizeof(seed_record_t)/1000000);
+	if (!gpu_data->d_seed_records){
+		fprintf(stderr, "[M::%s] seed records ...... %ld MB\n", __func__, n_seqs*500*sizeof(seed_record_t)/1000000);
 		gpuErrchk(cudaMalloc((void**)&(gpu_data->d_seed_records), n_seqs*500*sizeof(seed_record_t)));	// allocate enough for all seeds
 	}
-	if (gpu_data->d_Nseeds == 0) 
+	if (!gpu_data->d_Nseeds) 
 		gpuErrchk(cudaMalloc((void**)&(gpu_data->d_Nseeds), sizeof(int)));
 	cudaMemset(gpu_data->d_Nseeds, 0, sizeof(int));
-	if (gpu_data->d_regs == 0){
-		fprintf(stderr, "[M::%s] alignment regs .... %d MB\n", __func__, (int)n_seqs*sizeof(mem_alnreg_v)/1000000);
+	if (!gpu_data->d_regs){
+		fprintf(stderr, "[M::%s] alignment regs .... %ld MB\n", __func__, n_seqs*sizeof(mem_alnreg_v)/1000000);
 		gpuErrchk(cudaMalloc((void**)&(gpu_data->d_regs), n_seqs*sizeof(mem_alnreg_v)));
+	}
+	if (!gpu_data->d_alns){
+		fprintf(stderr, "[M::%s] alignments ...... %ld MB\n", __func__, n_seqs*sizeof(mem_aln_v)/1000000);
+		gpuErrchk(cudaMalloc((void**)&(gpu_data->d_alns), n_seqs*sizeof(mem_aln_v)));
+	}
+	if (!gpu_data->d_sortkeys_in){
+		fprintf(stderr, "[M::%s] sorting keys .... %ld MB\n", __func__, 4*5*n_seqs*sizeof(int)/1000000);
+		gpuErrchk(cudaMalloc((void**)&gpu_data->d_sortkeys_in, n_seqs*5*sizeof(int)));
+		gpuErrchk(cudaMalloc((void**)&gpu_data->d_sortkeys_out, n_seqs*5*sizeof(int)));
+		gpuErrchk(cudaMalloc((void**)&gpu_data->d_seqIDs_in, n_seqs*5*sizeof(int)));
+		gpuErrchk(cudaMalloc((void**)&gpu_data->d_seqIDs_out, n_seqs*5*sizeof(int)));
 	}
 
 	// reset sam offset on device
 	int zero = 0;
-	// cudaGetSymbolAddress((void**)symbol_addr, "d_seq_sam_offset");
 	gpuErrchk(cudaMemcpyToSymbol(d_seq_sam_offset, &zero, sizeof(int), 0, cudaMemcpyHostToDevice));
 
 	// reset buffer pools

@@ -2096,7 +2096,7 @@ if (seqID==3977)
 #define MAX_N_CHAIN 		2048
 #define NKEYS_EACH_THREAD	16
 #define SORTCHAIN_BLOCKDIMX	128
-__global__ void sortChains(mem_chain_v* d_chains, void* d_buffer_pools){
+__global__ void CHAINFILTERING_sortChains_kernel(mem_chain_v* d_chains, void* d_buffer_pools){
 // if (blockIdx.x!=3921) return;
 	// int seqID = blockIdx.x;
 	int n_chn = d_chains[blockIdx.x].n;
@@ -2162,7 +2162,7 @@ __global__ void sortChains(mem_chain_v* d_chains, void* d_buffer_pools){
 #define SET_KEPT(i, val) (chn_info_SM[i]&=0b11111100)|=val
 #define GET_IS_ALT(i) ((chn_info_SM[i]&0x4)>>2) 	// 3rd bit
 #define SET_IS_ALT(i, val) (chn_info_SM[i]&=0b11111011)|=(val<<2)
-__global__ void mem_chain_flt_kernel1(
+__global__ void CHAINFILTERING_filter_kernel(
 	const mem_opt_t *opt, 
 	mem_chain_v *d_chains, 	// input and output
 	void* d_buffer_pools)
@@ -2347,7 +2347,7 @@ __global__ void mem_chain_flt_kernel(const mem_opt_t *opt,
 	d_chains[d_sorted_seqids[blockIdx.x*blockDim.x + threadIdx.x]].n = k;
 }
 
-__global__ void mem_flt_chained_seeds_kernel(
+__global__ void CHAINFILTERING_flt_chained_seeds_kernel(
 	const mem_opt_t *d_opt, const bntseq_t *d_bns, const uint8_t *d_pac, const bseq1_t *d_seqs,
 	mem_chain_v *d_chains, 	// input and output
 	int n,		// number of seqs
@@ -2383,7 +2383,7 @@ __global__ void mem_flt_chained_seeds_kernel(
 /* preprocessing 1 for SW extension 
   count the number of seeds for each read and write to global records, allocate output regs vector
 */
-__global__ void pre_chain2aln_kernel1(
+__global__ void SMITHWATERMAN_preprocessing1_kernel(
 	mem_chain_v *d_chains, 
 	mem_alnreg_v *d_regs,
 	seed_record_t *d_seed_records,
@@ -2438,7 +2438,7 @@ __global__ void pre_chain2aln_kernel1(
 	each thread process 1 seed
 	prepare target and query strings for SW extension
 */
-__global__ void pre_chain2aln_kernel2(
+__global__ void SMITHWATERMAN_preprocessing2_kernel(
 	const mem_opt_t *d_opt,
 	bntseq_t *d_bns,
 	uint8_t *d_pac,
@@ -2524,7 +2524,7 @@ __global__ void pre_chain2aln_kernel2(
 	REQUIREMENT: BLOCKSIZE = WARPSIZE = 32
 	Each block perform 2 SW extensions on 1 seed
  */
-__global__ void mem_chain2aln_kernel1(
+__global__ void SMITHWATERMAN_extend_kernel(
 	const mem_opt_t *d_opt,
 	mem_chain_v *d_chains, 
 	seed_record_t *d_seed_records,
@@ -2625,7 +2625,7 @@ __global__ void mem_chain2aln_kernel1(
 	gridDim = n_seqs
 */
 #define MAX_N_ALN 3072	// max number of alignments allowed per read
-__global__ void mem_aln_filter_kernel(
+__global__ void SMITHWATERMAN_postprocessing_kernel(
 	const mem_opt_t *d_opt,
 	const bntseq_t *d_bns,
 	mem_chain_v *d_chains, 		// input chains
@@ -2713,7 +2713,7 @@ __global__ void mem_aln_filter_kernel(
 		+ it is secondary and its score < its primary's score*opt->drop_ratio
 	- reorder reg_v, bring written aln to front and modify n
  */
-__global__ void mem_aln_mark_primary_kernel(
+__global__ void FINALIZEALN_mark_primary_kernel(
 	const mem_opt_t *d_opt,
 	mem_alnreg_v* d_regs,		// intput & output array
 	void* d_buffer_pools
@@ -2791,7 +2791,7 @@ __global__ void mem_aln_mark_primary_kernel(
 		- seqID
 		- regID: index on d_regs and d_alns
  */
-__global__ void mem_reg2aln_pre1(
+__global__ void FINALIZEALN_preprocessing1_kernel(
 	mem_alnreg_v* d_regs,
 	mem_aln_v * d_alns,
 	seed_record_t *d_seed_records,
@@ -2836,7 +2836,7 @@ __global__ void mem_reg2aln_pre1(
 	store l_ref*w to d_sortkeys_in and seqID to d_seqIDs_in
 */
 
-__global__ void mem_reg2aln_pre2(
+__global__ void FINALIZEALN_preprocessing2_kernel(
 	const mem_opt_t *d_opt,
 	const bseq1_t *d_seqs,
 	int64_t l_pac,
@@ -2892,7 +2892,7 @@ __global__ void mem_reg2aln_pre2(
 	- perform global SW, calculate cigar and score
 	- store score, cigar, n_cigar to d_alns
 */
-__global__ void mem_globalSW_low_bandwidth_kernel(
+__global__ void FINALIZEALN_globalSW_kernel(
 	const mem_opt_t *d_opt,
 	seed_record_t *d_seed_records,
 	int Nseeds,
@@ -3017,7 +3017,7 @@ __global__ void mem_globalSW_low_bandwidth_kernel(
 	mapq already calculated in mem_reg2aln_pre2
 	NM calculated in mem_globalSW_low_bandwidth_kernel
 */
-__global__ void mem_finalize_aln_kernel(
+__global__ void FINALIZEALN_final_kernel(
 	const mem_opt_t *d_opt,
 	const bntseq_t *d_bns,
 	mem_alnreg_v *d_regs,
@@ -3062,7 +3062,7 @@ __global__ void mem_finalize_aln_kernel(
 	 - d_aln->XA = &SAM_string
 	 - d_aln->rid = len(SAM_string)
  */
-__global__ void mem_aln2sam_single_kernel(
+__global__ void SAMGEN_aln2sam_finegrain_kernel(
 	const mem_opt_t *d_opt,
 	const bntseq_t *d_bns,
 	const bseq1_t *d_seqs,
@@ -3195,7 +3195,7 @@ __global__ void mem_aln2sam_single_kernel(
 		- save the offset to seq->SAM for retrieval on host
 		- NOTE: the NULL-terminating character is also a part of the SAM string
 */
-__global__ void mem_finalize_sam_kernel(
+__global__ void SAMGEN_concatenate_kernel(
 	mem_aln_v *d_alns,
 	bseq1_t *d_seqs,
 	int n_seqs
@@ -3416,13 +3416,13 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	/* ----------------------- Third part of pipeline: Filtering chains --------------------------------------*/
 	/* sort chains */
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [CHAIN FILTERING]: sorting chains ...\n", __func__);
-	sortChains <<< gpu_data.n_seqs, SORTCHAIN_BLOCKDIMX, MAX_N_CHAIN*2*sizeof(uint16_t)+sizeof(mem_chain_t**) >>> (gpu_data.d_chains, gpu_data.d_buffer_pools);
+	CHAINFILTERING_sortChains_kernel <<< gpu_data.n_seqs, SORTCHAIN_BLOCKDIMX, MAX_N_CHAIN*2*sizeof(uint16_t)+sizeof(mem_chain_t**) >>> (gpu_data.d_chains, gpu_data.d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError());
 	gpuErrchk( cudaDeviceSynchronize());
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [CHAIN FILTERING]: Launch kernel mem_chain_flt ...\n", __func__);
 
 	/* filter chains */
-	mem_chain_flt_kernel1 <<< gpu_data.n_seqs, CHAIN_FLT_BLOCKSIZE, MAX_N_CHAIN*(3*sizeof(uint16_t)+sizeof(uint8_t)) >>> (
+	CHAINFILTERING_filter_kernel <<< gpu_data.n_seqs, CHAIN_FLT_BLOCKSIZE, MAX_N_CHAIN*(3*sizeof(uint16_t)+sizeof(uint8_t)) >>> (
 			gpu_data.d_opt, 
 			gpu_data.d_chains, 	// input and output
 			gpu_data.d_buffer_pools);
@@ -3431,7 +3431,7 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 
 	/* fourth kernel: mem_flt_chained_seeds */
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [CHAIN FILTERING]: Launch kernel mem_flt_chained_seeds ...\n", __func__);
-	mem_flt_chained_seeds_kernel <<< dimGrid_readlevel, dimBlock_readlevel, 0 >>> (
+	CHAINFILTERING_flt_chained_seeds_kernel <<< dimGrid_readlevel, dimBlock_readlevel, 0 >>> (
 			gpu_data.d_opt, 
 			gpu_data.d_bns,
 			gpu_data.d_pac,
@@ -3444,8 +3444,8 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 
 	/* ----------------------- Fourth part of pipeline: Smith-Waterman extension --------------------------------------*/
 	/* pre-processing for SW extension: count number of seeds a read has, write seed_record to global mem, and allocate vector mem_alnreg_t for each read */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] mem_chain2aln preprocessing1 ... ", __func__);
-	pre_chain2aln_kernel1 <<< dimGrid_readlevel, dimBlock_readlevel, 0 >>> (
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [SMITHEWATERMAN]: preprocessing1 ... ", __func__);
+	SMITHWATERMAN_preprocessing1_kernel <<< dimGrid_readlevel, dimBlock_readlevel, 0 >>> (
 			gpu_data.d_chains, 
 			gpu_data.d_regs,
 			gpu_data.d_seed_records,
@@ -3455,13 +3455,14 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 			);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
+
 	/* pre-processing for SW extension: prepare target and query strings for each seed */
 	// find number of seeds
 	int n_seeds;
 	cudaMemcpy(&n_seeds, gpu_data.d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost);
 	if (bwa_verbose>=4) fprintf(stderr, "%d seeds\n", n_seeds);
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] mem_chain2aln preprocessing2 ... \n", __func__);
-	pre_chain2aln_kernel2 <<< ceil((float)n_seeds/32.0), 32, 0 >>> (
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [SMITHWATERMAN]: preprocessing2 ... \n", __func__);
+	SMITHWATERMAN_preprocessing2_kernel <<< ceil((float)n_seeds/32.0), 32, 0 >>> (
 			gpu_data.d_opt,
 			gpu_data.d_bns,
 			gpu_data.d_pac,
@@ -3479,8 +3480,8 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	/* fifth kernel: SW extension 
 	launch n_seeds threads, each thread extend 1 seed
 	*/
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel mem_chain2aln ... \n", __func__);
-	mem_chain2aln_kernel1 <<< n_seeds, WARPSIZE, 0 >>> (
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [SMITHWATERMAN]: Launch kernel extend ... \n", __func__);
+	SMITHWATERMAN_extend_kernel <<< n_seeds, WARPSIZE, 0 >>> (
 			gpu_data.d_opt,
 			gpu_data.d_chains, 		// input chains
 			gpu_data.d_seed_records,
@@ -3490,8 +3491,8 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	gpuErrchk( cudaDeviceSynchronize() );
 
 	/* Post processing SW: remove duplicated alignments */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] post-processing Smith-Waterman ... \n", __func__);
-	mem_aln_filter_kernel <<< gpu_data.n_seqs, 320 >>> (
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [SMITHWATERMAN]: post-processing remove duplicated alignments ... \n", __func__);
+	SMITHWATERMAN_postprocessing_kernel <<< gpu_data.n_seqs, 320 >>> (
 		gpu_data.d_opt,
 		gpu_data.d_bns,
 		gpu_data.d_chains,
@@ -3527,15 +3528,15 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	// }
 	
 	/* Mark alignments that we want to write to SAM */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel mark_primary ...\n", __func__);
-	mem_aln_mark_primary_kernel <<< gpu_data.n_seqs, 256 >>> (gpu_data.d_opt, gpu_data.d_regs, gpu_data.d_buffer_pools);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: Launch kernel mark_primary ...\n", __func__);
+	FINALIZEALN_mark_primary_kernel <<< gpu_data.n_seqs, 256 >>> (gpu_data.d_opt, gpu_data.d_regs, gpu_data.d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
 
 	/* preprocessing for global SW alignments */
 	cudaMemset(gpu_data.d_Nseeds, 0, sizeof(int));		// reset seed info
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel reg2aln preprocessing 1 ...\n", __func__);
- 	mem_reg2aln_pre1 <<< dimGrid_readlevel, dimBlock_readlevel >>>(
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: Launch kernel preprocessing 1 ...\n", __func__);
+ 	FINALIZEALN_preprocessing1_kernel <<< dimGrid_readlevel, dimBlock_readlevel >>>(
 		gpu_data.d_regs,
 		gpu_data.d_alns,
 		gpu_data.d_seed_records,
@@ -3545,8 +3546,8 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	gpuErrchk( cudaDeviceSynchronize() );
 	cudaMemcpy(&n_seeds, gpu_data.d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost);
 
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel reg2aln preprocessing 2 ...\n", __func__);
- 	mem_reg2aln_pre2 <<< ceil((float)n_seeds/32), 32 >>>(
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: Launch kernel preprocessing 2 ...\n", __func__);
+ 	FINALIZEALN_preprocessing2_kernel <<< ceil((float)n_seeds/32), 32 >>>(
  		gpu_data.d_opt,
  		gpu_data.d_seqs,
  		bns->l_pac,
@@ -3563,12 +3564,12 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	gpu_data.n_sortkeys = n_seeds;
 
 	/* now we sort alignments for better warp efficiency in next kernel */
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: sort by bandwidth*ref_length ..... %.2f MB\n", __func__, (float)temp_storage_size/1000000);
 	// determine temporary storage requirement
 	void *d_temp_storage = NULL;
 	size_t temp_storage_size = 0;
 	gpuErrchk( cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_size, gpu_data.d_sortkeys_in, gpu_data.d_sortkeys_out, gpu_data.d_seqIDs_in, gpu_data.d_seqIDs_out, gpu_data.n_sortkeys) );
 	// Allocate temporary storage
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] sorting storage ..... %.2f MB\n", __func__, (float)temp_storage_size/1000000);
 	gpuErrchk( cudaMalloc(&d_temp_storage, temp_storage_size) );
 	// perform radix sort
 	gpuErrchk( cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_size, gpu_data.d_sortkeys_in, gpu_data.d_sortkeys_out, gpu_data.d_seqIDs_in, gpu_data.d_seqIDs_out, gpu_data.n_sortkeys) );
@@ -3576,8 +3577,8 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 
 	/* global SW */
 	// low banddiwth
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] Launch kernel globalSW_low_bandwidth_kernel  ...\n", __func__);
-	mem_globalSW_low_bandwidth_kernel <<< ceil((float)n_seeds/32), 32 >>> (
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: Launch kernel global Smith-Waterman  ...\n", __func__);
+	FINALIZEALN_globalSW_kernel <<< ceil((float)n_seeds/32), 32 >>> (
 		gpu_data.d_opt,
 		gpu_data.d_seed_records,
 		n_seeds,
@@ -3598,8 +3599,8 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	// gpuErrchk( cudaDeviceSynchronize() );
 
 	/* finalize aln */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] finalize aln ...\n", __func__);
-	mem_finalize_aln_kernel <<< ceil((float)n_seeds/32), 32 >>> (
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: gather all info and finalize aln ...\n", __func__);
+	FINALIZEALN_final_kernel <<< ceil((float)n_seeds/32), 32 >>> (
 		gpu_data.d_opt,
 		gpu_data.d_bns,
 		gpu_data.d_regs,
@@ -3611,8 +3612,8 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	gpuErrchk( cudaDeviceSynchronize() );
 
 	/* generate SAM for each aln */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] generate SAM for each aln ...\n", __func__);
-	mem_aln2sam_single_kernel <<< ceil((float)n_seeds/32), 32 >>> (
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [SAMGEN]: generate SAM for each aln ...\n", __func__);
+	SAMGEN_aln2sam_finegrain_kernel <<< ceil((float)n_seeds/32), 32 >>> (
 		gpu_data.d_opt,
 		gpu_data.d_bns,
 		gpu_data.d_seqs,
@@ -3624,8 +3625,8 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
 	/* finalize SAM strings for each read */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] generate all SAM for each read ...\n", __func__);
-	mem_finalize_sam_kernel <<< ceil((float)gpu_data.n_seqs/32), 32 >>> (
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [SAMGEN]: concatenate all SAM for each read ...\n", __func__);
+	SAMGEN_concatenate_kernel <<< ceil((float)gpu_data.n_seqs/32), 32 >>> (
 		gpu_data.d_alns,
 		gpu_data.d_seqs,
 		gpu_data.n_seqs

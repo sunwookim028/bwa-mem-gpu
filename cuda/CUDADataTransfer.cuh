@@ -43,6 +43,7 @@ typedef struct {
 	seed_record_t *d_seed_records; 	// global records of seeds, a big chunk of memory
 	int *d_Nseeds;			// total number of seeds
 	smem_aux_t* d_aux;		// collections of SA intervals, vector of size nseqs
+	mem_seed_v* d_seq_seeds;// seeds array for each read
 	mem_chain_v *d_chains;	// chain vectors of size nseqs
 	mem_alnreg_v *d_regs;	// alignment info vectors, size nseqs
 	mem_aln_v * d_alns;		// alignment vectors, size nseqs

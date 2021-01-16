@@ -88,8 +88,15 @@ typedef struct {
 	int64_t rbeg;
 	int32_t qbeg, len;
 	int score;
-	int This_is_padding_for_CUDA_alignment;
+	float frac_rep;
+	int rid;
+	int CUDA_PADDING;
 } mem_seed_t; // unaligned memory
+
+typedef struct {
+	int n;
+	mem_seed_t *a;
+} mem_seed_v;
 
 typedef struct {
 	mem_seed_t *seeds;

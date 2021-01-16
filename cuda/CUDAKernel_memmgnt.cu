@@ -66,6 +66,8 @@ __device__ void* CUDAKernelMalloc(void* d_buffer_pool, size_t size, uint8_t alig
 	   align_size: size of alignment of the chunk. The returned pointer is divisible by align_size (expect 1, 2, 4, 8, power of 2)
 	   The 4 bytes before the returned pointer is the size of the chunk
 	*/
+	if (size==0) return 0;
+	// if (size==0){printf("WARNING: thread request malloc with size=0\n"); __trap();}
 	CUDAKernel_mem_info* d_pool_info = (CUDAKernel_mem_info*)d_buffer_pool;
 	unsigned offset = atomicAdd(&d_pool_info->current_offset, 3+4+(align_size-1)+size); // 3+4 is padding for size + its alignment
 
@@ -97,6 +99,7 @@ __device__ void* CUDAKernelCalloc(void* d_buffer_pool, size_t num, size_t size, 
 	   return pointer to first block
 	   d_buffer_pool: pointer to a chunk in global memory that was allocated by CUDA_BufferInit
 	*/
+	if (size==0) return 0;
 	void* out_ptr = CUDAKernelMalloc(d_buffer_pool, num*size, align_size);
 
 	// initialize with 0

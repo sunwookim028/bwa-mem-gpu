@@ -1,3 +1,4 @@
+MAKEFLAGS += -j10
 CC=			gcc
 #CC=			clang --analyze
 CFLAGS=		-g -Wall -Wno-unused-function -O2

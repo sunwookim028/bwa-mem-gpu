@@ -1,5 +1,4 @@
 #define CUDA_BLOCKSIZE 32
-#define MAX_SEQLEN 300 		// max seq len we can process 
 
 #include "../bwa.h"
 #include "../bwt.h"

@@ -197,7 +197,7 @@ __device__ static void bwt_reverse_intvs(bwtintv_v *p)
 }
 
 // extend furthest to the right from a position and save that one seed
-__device__ void bwt_smem_right(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, int min_seed_len, bwtintv_v *mem)
+__device__ void bwt_smem_right(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, int min_seed_len, bwtintv_t *mem_a)
 {
 	bwtintv_t ik, ok[4];
 	if (q[x] > 3) return;			// dont do N base
@@ -222,7 +222,7 @@ __device__ void bwt_smem_right(const bwt_t *bwt, int len, const uint8_t *q, int 
 	if (!(i-x>=min_seed_len)){
 		ik.info = 0;
 	}
-	mem->a[x] = ik;
+	mem_a[x] = ik;
 }
 // extend furthest to the left from a position and save that one seed
 __device__ void bwt_smem_left(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, int min_seed_len, bwtintv_v *mem)

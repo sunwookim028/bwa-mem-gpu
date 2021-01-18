@@ -1394,51 +1394,61 @@ no_pairing:
 	return n;
 }
 
+/* find the SMEM starting at each position of the read 
+	for each position, only extend to the right
+	each block process a read
+*/
 #define start_width 1
-// find the longest SMEM starting at each position of the read
-__global__ void MEMFINDING_collect_intv_kernel(const mem_opt_t *opt, const bwt_t *bwt, const bseq1_t *d_seqs, 
+__global__ void MEMFINDING_collect_intv_kernel(
+	const mem_opt_t *d_opt, 
+	const bwt_t *d_bwt, 
+	const bseq1_t *d_seqs, 
 	smem_aux_t *d_aux, 			// aux output
-	int n,						// total number of reads
 	void* d_buffer_pools)
 {
-	char *seq1; uint8_t *seq; int l_seq;
-	int i = blockIdx.x;		// ID of the read to process
-	int j = threadIdx.x;	// position on read to process
-	if (i>=n) return;
-	seq1 = d_seqs[i].seq; 	// get seq from global mem
-	l_seq  = d_seqs[i].l_seq;
-	if (j>=l_seq) return;
+	// seqID = blockIdx.x
+	char *seq1; int l_seq;
+	int j;	// position on read to process
+	seq1 = d_seqs[blockIdx.x].seq; 		// get read from global mem
+	l_seq  = d_seqs[blockIdx.x].l_seq;	// read length
+	smem_aux_t* a = &d_aux[blockIdx.x];	// aux output for this read
+	int min_seed_len = d_opt->min_seed_len;
+	if (l_seq < min_seed_len){ 	// if the query is shorter than the seed length, no match
+		if (threadIdx.x==0){
+			a->mem.n = a->mem.m = 0;
+			a->mem.a = 0;
+		}
+		return;
+	}
+
+	// cache read in shared mem
+	extern __shared__ int SM[];
+	uint8_t *S_seq = (uint8_t*)SM;
+
 	// convert to 2-bit encoding if we have not done so
-	seq1[j] = seq1[j] < 4? seq1[j] : d_nst_nt4_table[(int)seq1[j]];
+	#pragma unroll
+	for (j=threadIdx.x; j<l_seq; j+=blockDim.x){
+		S_seq[j] = seq1[j] < 4? (uint8_t)seq1[j] : (uint8_t)d_nst_nt4_table[(int)seq1[j]];
+		seq1[j] = (char)S_seq[j];
+	}
 
-	seq = (uint8_t*)seq1;
-	int min_seed_len = opt->min_seed_len;
-	if (l_seq < opt->min_seed_len) return; 	// if the query is shorter than the seed length, no match
-	if (j>=(l_seq-min_seed_len)) return;	// these threads would produce shorter reads anyways	
-	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, i % 32);	// set buffer pool	
-	smem_aux_t* a = &d_aux[i];						// get the aux for this read
-
-	// init aux mem
+	// allocate memory for SMEM intervals
+	__shared__ bwtintv_t* S_mem_a[1];
 	if (threadIdx.x == 0){
-		a->mem.m = a->mem.n = l_seq-min_seed_len+1;
-		a->mem.a = (bwtintv_t*)CUDAKernelMalloc(d_buffer_ptr, a->mem.m*sizeof(bwtintv_t), 8);	
+		void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, blockIdx.x % 32);
+		S_mem_a[0] = (bwtintv_t*)CUDAKernelMalloc(d_buffer_ptr, (l_seq-min_seed_len+1)*sizeof(bwtintv_t), 8);
+		a->mem.n = a->mem.m = l_seq-min_seed_len+1;
+		a->mem.a = S_mem_a[0];
 	}
 	__syncthreads();
-	
+	bwtintv_t *mem_a = S_mem_a[0];
+
 	// extend to the right and find the longest seed
-	bwt_smem_right(bwt, l_seq, seq, j, start_width, 0, min_seed_len, &(a->mem));
-	// re-organize a->mem.a
-	// __syncthreads();
-	// if (threadIdx.x == 0){
-	// 	n = 0; // counter for a->mem.n
-	// 	for (i=0; i<a->mem.m; i++){
-	// 		if (a->mem.a[i].info != 0){
-	// 			if (i!=n) a->mem.a[n] = a->mem.a[i];
-	// 			n++;
-	// 		}
-	// 	}
-	// 	a->mem.n = n;
-	// }
+	// positions higher than l_seq-min_seed_len would produce unqualified seds anyways
+	#pragma unroll
+	for (j=threadIdx.x; j<=(l_seq-min_seed_len); j+=blockDim.x){
+		bwt_smem_right(d_bwt, l_seq, S_seq, j, start_width, 0, min_seed_len, mem_a);
+	}
 }
 
 // first pass: find all SMEMs
@@ -3331,10 +3341,11 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 
 	/* ----------------------- First part of pipeline: find SMEM intervals --------------------------------------*/
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [MEM FINDING]: collect MEM intervals ...\n", __func__);
-	MEMFINDING_collect_intv_kernel <<< gpu_data.n_seqs, MAX_SEQLEN, 0 >>> (
-			gpu_data.d_opt, gpu_data.d_bwt, gpu_data.d_seqs, 
+	MEMFINDING_collect_intv_kernel <<< gpu_data.n_seqs, 320, 512 >>> (
+			gpu_data.d_opt,
+			gpu_data.d_bwt,
+			gpu_data.d_seqs,
 			gpu_data.d_aux,	// output
-			gpu_data.n_seqs,
 			gpu_data.d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
@@ -3564,10 +3575,10 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	gpu_data.n_sortkeys = n_seeds;
 
 	/* now we sort alignments for better warp efficiency in next kernel */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: sort by bandwidth*ref_length ..... %.2f MB\n", __func__, (float)temp_storage_size/1000000);
-	// determine temporary storage requirement
 	void *d_temp_storage = NULL;
 	size_t temp_storage_size = 0;
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: sort by bandwidth*ref_length ..... %.2f MB\n", __func__, (float)temp_storage_size/1000000);
+	// determine temporary storage requirement
 	gpuErrchk( cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_size, gpu_data.d_sortkeys_in, gpu_data.d_sortkeys_out, gpu_data.d_seqIDs_in, gpu_data.d_seqIDs_out, gpu_data.n_sortkeys) );
 	// Allocate temporary storage
 	gpuErrchk( cudaMalloc(&d_temp_storage, temp_storage_size) );

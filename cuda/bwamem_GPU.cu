@@ -161,105 +161,6 @@ __device__ static inline int cal_max_gap(const mem_opt_t *opt, int qlen)
 
 #define MAX_BAND_TRY  2
 
-/* extend and make alignment on 1 seed of a chain
-	seedID: index of the seed on chain c
- */
-__device__ mem_alnreg_t mem_chain2aln_1seed(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const uint8_t *query, mem_chain_t *c, mem_seed_t *s, void *d_buffer_ptr){
-	int i, k, rid, max_off[2], aw[2]; // aw: actual bandwidth used in extension
-	int64_t l_pac = bns->l_pac, rmax[2], tmp, max = 0;
-	uint8_t *rseq = 0;
-	uint64_t *srt;
-	mem_alnreg_t a; // output alignment
-
-	// get the max possible span
-	rmax[0] = l_pac<<1; rmax[1] = 0;
-	for (i = 0; i < c->n; ++i) {
-		int64_t b, e;
-		const mem_seed_t *t = &c->seeds[i];
-		b = t->rbeg - (t->qbeg + cal_max_gap(opt, t->qbeg));
-		e = t->rbeg + t->len + ((l_query - t->qbeg - t->len) + cal_max_gap(opt, l_query - t->qbeg - t->len));
-		rmax[0] = rmax[0] < b? rmax[0] : b;
-		rmax[1] = rmax[1] > e? rmax[1] : e;
-		if (t->len > max) max = t->len;
-	}
-	rmax[0] = rmax[0] > 0? rmax[0] : 0;
-	rmax[1] = rmax[1] < l_pac<<1? rmax[1] : l_pac<<1;
-	if (rmax[0] < l_pac && l_pac < rmax[1]) { // crossing the forward-reverse boundary; then choose one side
-		if (c->seeds[0].rbeg < l_pac) rmax[1] = l_pac; // this works because all seeds are guaranteed to be on the same strand
-		else rmax[0] = l_pac;
-	}
-	// retrieve the reference sequence
-	rseq = bns_fetch_seq_gpu(bns, pac, &rmax[0], c->seeds[0].rbeg, &rmax[1], &rid, d_buffer_ptr);
-	// setup output alignment
-	a.w = aw[0] = aw[1] = opt->w;
-	a.score = a.truesc = -1;
-	a.rid = c->rid;
-
-	// left extension
-	if (s->qbeg) {
-		uint8_t *rs, *qs;
-		int qle, tle, gtle, gscore;
-		qs = (uint8_t*)CUDAKernelMalloc(d_buffer_ptr, s->qbeg, 1);
-		for (i = 0; i < s->qbeg; ++i) qs[i] = query[s->qbeg - 1 - i];
-		tmp = s->rbeg - rmax[0];
-		rs = (uint8_t*)CUDAKernelMalloc(d_buffer_ptr, tmp, 1);
-		for (i = 0; i < tmp; ++i) rs[i] = rseq[tmp - 1 - i];
-		for (i = 0; i < MAX_BAND_TRY; ++i) {
-			int prev = a.score;
-			aw[0] = opt->w << i;
-			a.score = ksw_extend2(s->qbeg, qs, tmp, rs, 5, opt->mat, opt->o_del, opt->e_del, opt->o_ins, opt->e_ins, aw[0], opt->pen_clip5, opt->zdrop, s->len * opt->a, &qle, &tle, &gtle, &gscore, &max_off[0], d_buffer_ptr);
-printf("left: lquery=qbeg=%d, ltarget=%ld, rbeg=%ld, score=%d\n", s->qbeg, tmp, s->rbeg, a.score);
-			if (a.score == prev || max_off[0] < (aw[0]>>1) + (aw[0]>>2)) break;
-		}
-		// check whether we prefer to reach the end of the query
-		if (gscore <= 0 || gscore <= a.score - opt->pen_clip5) { // local extension
-			a.qb = s->qbeg - qle, a.rb = s->rbeg - tle;
-			a.truesc = a.score;
-		} else { // to-end extension
-			a.qb = 0, a.rb = s->rbeg - gtle;
-			a.truesc = gscore;
-		}
-// 		free(qs); free(rs);
-	} else a.score = a.truesc = s->len * opt->a, a.qb = 0, a.rb = s->rbeg;
-
-	// right extension
-	if (s->qbeg + s->len != l_query) {
-		int qle, tle, qe, re, gtle, gscore, sc0 = a.score;
-		qe = s->qbeg + s->len;
-		re = s->rbeg + s->len - rmax[0];
-		for (i = 0; i < MAX_BAND_TRY; ++i) {
-			int prev = a.score;
-			aw[1] = opt->w << i;
-			a.score = ksw_extend2(l_query - qe, query + qe, rmax[1] - rmax[0] - re, rseq + re, 5, opt->mat, opt->o_del, opt->e_del, opt->o_ins, opt->e_ins, aw[1], opt->pen_clip3, opt->zdrop, sc0, &qle, &tle, &gtle, &gscore, &max_off[1], d_buffer_ptr);
-printf("right: lquery=%d, qbeg=%d, ltarget=%ld, rbeg=%ld, score=%d\n", l_query-qe, qe, rmax[1]-rmax[0]-re, s->rbeg + s->len, a.score);
-			if (a.score == prev || max_off[1] < (aw[1]>>1) + (aw[1]>>2)) break;
-		}
-		// similar to the above
-		if (gscore <= 0 || gscore <= a.score - opt->pen_clip3) { // local extension
-			a.qe = qe + qle, a.re = rmax[0] + re + tle;
-			a.truesc += a.score - sc0;
-		} else { // to-end extension
-			a.qe = l_query, a.re = rmax[0] + re + gtle;
-			a.truesc += gscore - sc0;
-		}
-	} else a.qe = l_query, a.re = s->rbeg + s->len;
-
-	// compute seedcov
-	for (i = 0, a.seedcov = 0; i < c->n; ++i) {
-		const mem_seed_t *t = &c->seeds[i];
-		if (t->qbeg >= a.qb && t->qbeg + t->len <= a.qe && t->rbeg >= a.rb && t->rbeg + t->len <= a.re) // seed fully contained
-			a.seedcov += t->len; // this is not very accurate, but for approx. mapQ, this is good enough
-	}
-	a.w = aw[0] > aw[1]? aw[0] : aw[1];
-	a.seedlen0 = s->len;
-
-	a.frac_rep = c->frac_rep;
-
-	return a;
-}
-
-
-
 __device__ void mem_chain2aln(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const uint8_t *query, const mem_chain_t *c, mem_alnreg_v *av, void* d_buffer_ptr)
 {
 	int i, k, rid, max_off[2], aw[2]; // aw: actual bandwidth used in extension
@@ -1572,7 +1473,7 @@ __global__ void mem_collect_intv_kernel3(const mem_opt_t *opt, const bwt_t *bwt,
 
 /* this kernel is to filter out dups and count the actual number of seeds
 	also spthread out the seeds inside the same bwt interval
-	output: d_aux such that each interval has length 1
+	output: d_aux such that each interval has length 1, aux->x[1] = l_rep
 	if a bwt interval has length > opt->max_occ, only take max_occ seeds from it
 	each warp process all seeds of a seq
  */
@@ -1605,7 +1506,7 @@ __global__ void SEEDCHAINING_filter_seeds_kernel(
 			if (mem_a[memID].x[2] > max_occ) {
 				S_nseeds[memID] = (uint16_t)max_occ;
 				uint64_t info = mem_a[memID].info;
-				uint32_t length = (uint32_t)info - info>>32;
+				uint32_t length = (uint32_t)info - (uint32_t)(info>>32);
 				atomicAdd(&S_l_rep[0], length);
 			}
 			else S_nseeds[memID] = (uint16_t)mem_a[memID].x[2];
@@ -1667,7 +1568,7 @@ __global__ void SEEDCHAINING_filter_seeds_kernel(
 		intv_ID = (seedID - cumulative_total)*step;
 		bwtintv_t p;	// create a new point to write
 		p.x[0] = mem_a[memID].x[0] + intv_ID;
-		p.x[1] = S_l_rep[0];	// we will not need this later, so we use it to store l_rep
+		p.x[1] = (bwtint_t)S_l_rep[0];	// we will not need this later, so we use it to store l_rep
 		p.x[2] = 1;		// only a single seed in this interval
 		p.info = mem_a[memID].info;	// same match interval on read
 		new_a[seedID] = p;	// write to global mem
@@ -1680,12 +1581,13 @@ __global__ void SEEDCHAINING_filter_seeds_kernel(
 	- calculate qbeg
 	- calculate seed length = score
 	- calculate rid
-	- calculate frac_rep
+	- calculate frac_rep = l_rep/l_seq
 	- sort seeds by rbeg
 	1 block process all seeds of a read
 	write output to d_seq_seeds
  */
 __global__ void SEEDCHAINING_translate_seedinfo_kernel(
+	const mem_opt_t *d_opt,
 	const bwt_t *d_bwt,
 	const bntseq_t *d_bns,
 	const bseq1_t *d_seqs,
@@ -1702,6 +1604,7 @@ __global__ void SEEDCHAINING_translate_seedinfo_kernel(
 		return;
 	} 
 
+	// allocate seed array
 	__shared__ mem_seed_t* S_seq_seeds_a[1];
 	if (threadIdx.x==0){
 		void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, blockIdx.x%32);
@@ -1710,11 +1613,17 @@ __global__ void SEEDCHAINING_translate_seedinfo_kernel(
 		d_seq_seeds[blockIdx.x].a = S_seq_seeds_a[0];
 	}
 	__syncthreads();
+	// calculate frac_rep
+	float frac_rep;
+	int l_rep = (int)mem_a[0].x[1];
+	int l_seq = d_seqs[blockIdx.x].l_seq;
+	frac_rep = l_rep<l_seq ? (float)l_rep/l_seq : 1;
+
+	// other info
 	mem_seed_t *seed_a = S_seq_seeds_a[0];	// array for output
 	for (int seedID=threadIdx.x; seedID<n_seeds; seedID+=blockDim.x){
 		bwtint_t p0 = mem_a[seedID].x[0];
 		bwtint_t p_info = mem_a[seedID].info;
-		int l_rep = (int)mem_a[seedID].x[1];
 		int64_t rbeg;
 		uint32_t qbeg, qend, rid;
 		// calculate qbeg, qend
@@ -1724,10 +1633,7 @@ __global__ void SEEDCHAINING_translate_seedinfo_kernel(
 		rbeg = bwt_sa_gpu(d_bwt, p0);
 		// calculate rid
 		rid = bns_intv2rid_gpu(d_bns, rbeg, rbeg + qend - qbeg);
-		// calculate frac_rep
-		float frac_rep; int l_seq = d_seqs[blockIdx.x].l_seq;
-		if (l_rep > l_seq) frac_rep = 1;
-		else frac_rep = (float)l_rep/l_seq;
+		// save output		
 		seed_a[seedID].rbeg = rbeg;
 		seed_a[seedID].qbeg = qbeg;
 		seed_a[seedID].len = seed_a[seedID].score = qend - qbeg;
@@ -2557,7 +2463,6 @@ __global__ void SMITHWATERMAN_extend_kernel(
 	int gtle;		// length of the target if query is aligned to the end
 	int query_end;	// endpoint on query after extension
 	int64_t ref_end;// endpoint on ref after extension
-
 	// left extension
 	int h0 = d_chains[seqID].a[chainID].seeds[seedID].len * d_opt->a; 	// initial score = seedlength*a
 	uint8_t *query = d_seed_records[i].read_left;
@@ -2703,6 +2608,12 @@ __global__ void SMITHWATERMAN_postprocessing_kernel(
 		if (p->rid >= 0 && d_bns->anns[p->rid].is_alt)
 			p->is_alt = 1;
 	}
+
+if (blockIdx.x==566 && threadIdx.x==0){
+	for (int i=0; i<m; i++)
+		printf("%d: %d: qb=%d, qe=%d, rb=%ld, score=%d\n", blockIdx.x, i, a[i].qb, a[i].qe, a[i].rb, a[i].score);
+}
+
 }
 
 
@@ -2800,6 +2711,10 @@ __global__ void FINALIZEALN_mark_primary_kernel(
 	write to d_seed_records just like SW extension,
 		- seqID
 		- regID: index on d_regs and d_alns
+	if read has no good alignment, write an unmapped record:
+		- rid = -1
+		- pos = -1
+		- flag = 0x4
  */
 __global__ void FINALIZEALN_preprocessing1_kernel(
 	mem_alnreg_v* d_regs,
@@ -2812,16 +2727,27 @@ __global__ void FINALIZEALN_preprocessing1_kernel(
 	// allocate mem_aln_t array
 	int n_aln = d_regs[seqID].n;
 
+	// first create record on d_alns
 	void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x%32);
 	d_alns[seqID].n = n_aln;
-	if (n_aln>0) d_alns[seqID].a = (mem_aln_t*)CUDAKernelMalloc(d_buffer_ptr, n_aln*sizeof(mem_aln_t), 8);
-	// atomic add to d_Nseeds at block level
+	// legit records if n_aln>0
+	if (n_aln>0) d_alns[seqID].a = (mem_aln_t*)CUDAKernelCalloc(d_buffer_ptr, n_aln, sizeof(mem_aln_t), 8);
+	// create unmapped records otherwise
+	else {
+		d_alns[seqID].a = (mem_aln_t*)CUDAKernelCalloc(d_buffer_ptr, 1, sizeof(mem_aln_t), 8);
+		d_alns[seqID].a[0].rid = -1;
+		d_alns[seqID].a[0].pos = -1;
+		d_alns[seqID].a[0].flag = 0x4;
+	}
+	// atomic add n_seeds at block level
 	__shared__ int S_block_nseeds[1];	// total seeds in this block
 	__shared__ int S_block_offset[1];	// block's offset on d_seed_records
 	if (threadIdx.x==0) S_block_nseeds[0] = 0;
 	__syncthreads();
 	int thread_offset;
-	if (n_aln>0) thread_offset = atomicAdd(&S_block_nseeds[0], n_aln);
+	// create an unmapped record if no good aln
+	if (n_aln<=0) n_aln = 1;
+	thread_offset = atomicAdd(&S_block_nseeds[0], n_aln);
 	__syncthreads();
 	if (threadIdx.x==0) S_block_offset[0] = atomicAdd(d_Nseeds, S_block_nseeds[0]);
 	__syncthreads();
@@ -2863,6 +2789,8 @@ __global__ void FINALIZEALN_preprocessing2_kernel(
 	if (offset>=Nseeds) return;
 	int seqID = d_seed_records[offset].seqID;
 	int alnID = d_seed_records[offset].regID;
+	if (d_alns[seqID].a[alnID].rid == -1) return; // ignore unmapped records
+
 	void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x%32);
 	// prepare SW sequences
 	int64_t rb = d_regs[seqID].a[alnID].rb; 
@@ -2915,6 +2843,8 @@ __global__ void FINALIZEALN_globalSW_kernel(
 	ID = d_seqIDs_out[ID];							// map to new ID after sorting
 	int seqID = d_seed_records[ID].seqID;
 	int alnID = d_seed_records[ID].regID;		// index on aln.a
+	if (d_alns[seqID].a[alnID].rid == -1) return; // ignore unmapped records
+
 	int bandwidth = (int)d_seed_records[ID].readlen_left;
 	if (bandwidth>=GLOBALSW_BANDWITH_CUTOFF) {printf("bandwidth too large\n"); __trap();};
 	uint8_t *query = d_seed_records[ID].read_right;
@@ -3024,36 +2954,81 @@ __global__ void FINALIZEALN_globalSW_kernel(
 
 /* execute at aln level 
 	calculate mapq, pos, rid, is_rev, is_alt
+	fix cigar: remove leading or trailing del, add clipping
 	mapq already calculated in mem_reg2aln_pre2
 	NM calculated in mem_globalSW_low_bandwidth_kernel
 */
 __global__ void FINALIZEALN_final_kernel(
 	const mem_opt_t *d_opt,
 	const bntseq_t *d_bns,
+	const bseq1_t *d_seqs, 
 	mem_alnreg_v *d_regs,
 	mem_aln_v *d_alns,
 	seed_record_t *d_seed_records,
-	int Nseeds
+	int Nseeds,
+	void *d_buffer_pools
 	)
 {
 	int ID = blockIdx.x*blockDim.x + threadIdx.x;
 	if (ID>=Nseeds) return;
 	int seqID = d_seed_records[ID].seqID;
 	int alnID = d_seed_records[ID].regID;
+	if (d_alns[seqID].a[alnID].rid == -1) return; // ignore unmapped records
+
 	mem_aln_t *a = &d_alns[seqID].a[alnID];	// output address
 	mem_alnreg_t *ar = &d_regs[seqID].a[alnID];
 	// mapq
 	if (ar->secondary<0) a->mapq = mem_approx_mapq_se(d_opt, ar);
 	else a->mapq = 0;
-	// calculate pos, rid, is_rev, is_alt
+	// calculate pos
 	int is_rev; int64_t pos;
 	pos = bns_depos_GPU(d_bns, d_seed_records[ID].reflen_left==0? ar->rb : ar->re-1, &is_rev);
+	
+	// fix cigar
+	// squeeze out leading or trailing deletions
+	int n_cigar = a->n_cigar;
+	uint32_t *cigar = a->cigar;
+	if (n_cigar > 0) {
+		if ((cigar[0]&0xf) == 2) {	// leading del
+			pos += cigar[0]>>4;
+			--n_cigar;
+			cigar = &cigar[1];
+		} else if ((cigar[n_cigar-1]&0xf) == 2) {	// trailing del
+			--n_cigar;
+		}
+	}
+	// add clipping to cigar
+	int qb = ar->qb; int qe = ar->qe; int l_query = d_seqs[seqID].l_seq;
+	if (qb != 0 || qe != l_query) {
+		void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x%32);
+		int clip5, clip3;
+		clip5 = is_rev? l_query - qe : qb;
+		clip3 = is_rev? qb : l_query - qe;
+		uint32_t *new_cigar = (uint32_t*)CUDAKernelMalloc(d_buffer_ptr, 4 * (n_cigar + 2), 4);
+		if (clip5) {
+			new_cigar[0] = clip5<<4 | 3;
+			// copy the existing cigars to [1] location
+			memcpy(&new_cigar[1], cigar, n_cigar*4);
+			++n_cigar;
+		} else // copy the existing cigars to [0] location
+			memcpy(new_cigar, cigar, n_cigar*4);
+		if (clip3) {
+			new_cigar[n_cigar++] = clip3<<4 | 3;
+		}
+		// save new cigars to global mem
+		a->n_cigar = n_cigar;
+		a->cigar = new_cigar;
+	}
+	
+
+	// calculate rid, is_alt
 	a->rid = bns_pos2rid_gpu(d_bns, pos);
-	a->pos = pos - d_bns->anns[ar->rid].offset;
+	a->pos = pos - d_bns->anns[a->rid].offset;
 	a->is_rev = is_rev;
 	a->is_alt = ar->is_alt;
 	a->alt_sc = ar->alt_sc;
 	a->sub = ar->sub>ar->csub? ar->sub : ar->csub;
+
 	// flag and sub
 	int flag = 0;
 	if (ar->secondary>=0) {
@@ -3214,6 +3189,7 @@ __global__ void SAMGEN_concatenate_kernel(
 	int seqID = blockIdx.x*blockDim.x + threadIdx.x;
 	if (seqID>=n_seqs) return;
 	int n_aln = d_alns[seqID].n;
+	if (n_aln<=0) n_aln = 1;	// to process unmapped records
 	mem_aln_t *a = d_alns[seqID].a;
 	// calculate total length of SAM strings
 	// then add them up at block level
@@ -3363,6 +3339,7 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	/* translate seed info from bwt index */
 	if (bwa_verbose>=4)  fprintf(stderr, "[M::%s] [SEED CHAINING]: translating seed info ...\n", __func__);
 	SEEDCHAINING_translate_seedinfo_kernel <<< gpu_data.n_seqs, 128 >>> (
+		gpu_data.d_opt,
 		gpu_data.d_bwt,
 		gpu_data.d_bns,
 		gpu_data.d_seqs,
@@ -3430,9 +3407,9 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	CHAINFILTERING_sortChains_kernel <<< gpu_data.n_seqs, SORTCHAIN_BLOCKDIMX, MAX_N_CHAIN*2*sizeof(uint16_t)+sizeof(mem_chain_t**) >>> (gpu_data.d_chains, gpu_data.d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError());
 	gpuErrchk( cudaDeviceSynchronize());
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [CHAIN FILTERING]: Launch kernel mem_chain_flt ...\n", __func__);
 
 	/* filter chains */
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [CHAIN FILTERING]: Launch kernel mem_chain_flt ...\n", __func__);
 	CHAINFILTERING_filter_kernel <<< gpu_data.n_seqs, CHAIN_FLT_BLOCKSIZE, MAX_N_CHAIN*(3*sizeof(uint16_t)+sizeof(uint8_t)) >>> (
 			gpu_data.d_opt, 
 			gpu_data.d_chains, 	// input and output
@@ -3614,10 +3591,12 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	FINALIZEALN_final_kernel <<< ceil((float)n_seeds/32), 32 >>> (
 		gpu_data.d_opt,
 		gpu_data.d_bns,
+		gpu_data.d_seqs,
 		gpu_data.d_regs,
 		gpu_data.d_alns,
 		gpu_data.d_seed_records,
-		n_seeds
+		n_seeds,
+		gpu_data.d_buffer_pools
 	);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );

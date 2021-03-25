@@ -442,26 +442,23 @@ __device__ int ksw_extend_warp(int qlen, const uint8_t *query, int tlen, const u
 		h = h0 - o_ins - e_ins - j*e_ins;
 		SM_H[j] = (h>0)? h : 0;
 	}
-
 	// first we fill the top-left corner where we don't have enough parallelism
 	f = 0;	// first column of F
 	for (int anti_diag=0; anti_diag<WARPSIZE-1; anti_diag++){
 		int i = threadIdx.x; 				// row index on the matrix
 		int j = anti_diag - threadIdx.x;	// col index on the matrix
-		__syncwarp();
+		// get previous cell data
+		e1_ = __shfl_up_sync(ALL_THREADS, e, 1); // get e from threadIdx-1, which is E[i-1,j]
+		if (threadIdx.x==0) e1_ = 0;
+		h1_ = __shfl_up_sync(ALL_THREADS, h, 1); // h from threadID-1 is H[i-1,j]
+		if (threadIdx.x==0) h1_ = SM_H[j];	   // but row 0 get initial scoring from shared mem
+		h11 = __shfl_up_sync(ALL_THREADS, h_1, 1); // h_1 from threadID-1 is H[i-1,j-1]
+		if (threadIdx.x==0 && j!=0) h11 = SM_H[j-1];	// row 0 get initial scoring from shared mem, except for first column
+		if (threadIdx.x==0 && j==0) h11 = h0;			// H[-1,-1] = h0
+		h_1 = h;							// H[i,j-1] from previous iteration of same thread 
+		if (j==0) h_1 = h0 - o_ins - (i+1)*e_ins;		// first column score
+		// calculate E[i,j], F[i,j], and H[i,j]
 		if (i<tlen && j<qlen && j>=0){ 		// safety check for small matrix
-			unsigned mask = __activemask();
-			// get previous cell data
-			e1_ = __shfl_up_sync(mask, e, 1); // get e from threadIdx-1, which is E[i-1,j]
-			if (threadIdx.x==0) e1_ = 0;
-			h1_ = __shfl_up_sync(mask, h, 1); // h from threadID-1 is H[i-1,j]
-			if (threadIdx.x==0) h1_ = SM_H[j];	   // but row 0 get initial scoring from shared mem
-			h11 = __shfl_up_sync(mask, h_1, 1); // h_1 from threadID-1 is H[i-1,j-1]
-			if (threadIdx.x==0 && j!=0) h11 = SM_H[j-1];	// row 0 get initial scoring from shared mem, except for first column
-			if (threadIdx.x==0 && j==0) h11 = h0;			// H[-1,-1] = h0
-			h_1 = h;							// H[i,j-1] from previous iteration of same thread 
-			if (j==0) h_1 = h0 - o_ins - (i+1)*e_ins;		// first column score
-			// calculate E[i,j], F[i,j], and H[i,j]
 			e = max2(h1_-o_del-e_del, e1_-e_del);
 			f = max2(h_1-o_ins-e_ins, f-e_ins);
 			h = h11 + score(target[i], query[j], mat, m);
@@ -472,15 +469,15 @@ __device__ int ksw_extend_warp(int qlen, const uint8_t *query, int tlen, const u
 			if (h>max_score){
 				max_score = h; i_m = i; j_m = j;
 			}
-		}
-		if (j==qlen-1){	// we have hit last column
-			if (h>max_gscore)	// record max to-end alignment score
-				max_gscore = h; i_gscore = i;
+			if (j==qlen-1){	// we have hit last column
+				if (h>max_gscore)	// record max to-end alignment score
+					max_gscore = h; i_gscore = i;
+			}
 		}
 	}
 
 	// fill the rest of the matrix where we have enough parallelism
-	int Ntile = ceil(float(tlen/WARPSIZE));
+	int Ntile = ceil((float)tlen/WARPSIZE);
 	int qlen_padded = qlen>=32? qlen : 32;	// pad qlen so that we have correct overflow for small matrix
 	for (int tile_ID=0; tile_ID<Ntile; tile_ID++){	// tile loop
 		int i, j;
@@ -491,21 +488,20 @@ __device__ int ksw_extend_warp(int qlen, const uint8_t *query, int tlen, const u
 				i = i+WARPSIZE;		// over flow to its row on the next tile
 				j = j-qlen_padded;			// reset col index to the first 31 columns on next tile
 			}
-			__syncwarp();
+			// __syncwarp();
+			// get previous cell data
+			if (j==0) f = 0; 	// if we are processing first col, F[i,j-1] = 0. Otherwise, F[i,j-1] = f
+			e1_ = __shfl_up_sync(ALL_THREADS, e, 1); 	// get e from threadIdx-1, which is E[i-1,j]
+			if (threadIdx.x==0) e1_ = SM_E[j];	// thread 0 get E[i-1] from shared mem, which came from thread 31 of previous tile
+			h1_ = __shfl_up_sync(ALL_THREADS, h, 1); 	// h from threadID-1 is H[i-1,j]
+			if (threadIdx.x==0) h1_ = SM_H[j];	// but row 0 get initial scoring from shared mem, which came from thread 31 of previous tile
+			h11 = __shfl_up_sync(ALL_THREADS, h_1, 1); // h_1 from threadID-1 is H[i-1,j-1]
+			if (threadIdx.x==0 && j!=0) h11 = SM_H[j-1];	// thread 0 get H[i-1,j-1] from shared mem, which came from thread 31
+			if (threadIdx.x==0 && j==0) h11 = h0 - o_ins - i*e_ins;	// first column scoring
+			h_1 = h;							// H[i,j-1] from previous iteration of same thread 
+			if (j==0) h_1 = h0 - o_ins - (i+1)*e_ins;	// first column score
+			// calculate E[i,j], F[i,j], and H[i,j]
 			if (i<tlen && j<qlen){ // j should be >=0
-				// get previous cell data
-				if (j==0) f = 0; 	// if we are processing first col, F[i,j-1] = 0. Otherwise, F[i,j-1] = f
-				unsigned mask = __activemask();
-				e1_ = __shfl_up_sync(mask, e, 1); 	// get e from threadIdx-1, which is E[i-1,j]
-				if (threadIdx.x==0) e1_ = SM_E[j];	// thread 0 get E[i-1] from shared mem, which came from thread 31 of previous tile
-				h1_ = __shfl_up_sync(mask, h, 1); 	// h from threadID-1 is H[i-1,j]
-				if (threadIdx.x==0) h1_ = SM_H[j];	// but row 0 get initial scoring from shared mem, which came from thread 31 of previous tile
-				h11 = __shfl_up_sync(mask, h_1, 1); // h_1 from threadID-1 is H[i-1,j-1]
-				if (threadIdx.x==0 && j!=0) h11 = SM_H[j-1];	// thread 0 get H[i-1,j-1] from shared mem, which came from thread 31
-				if (threadIdx.x==0 && j==0) h11 = h0 - o_ins - i*e_ins;	// first column scoring
-				h_1 = h;							// H[i,j-1] from previous iteration of same thread 
-				if (j==0) h_1 = h0 - o_ins - (i+1)*e_ins;	// first column score
-				// calculate E[i,j], F[i,j], and H[i,j]
 				e = max2(h1_-o_del-e_del, e1_-e_del);
 				f = max2(h_1-o_ins-e_ins, f-e_ins);
 				h = h11 + score(target[i], query[j], mat, m);
@@ -518,14 +514,13 @@ __device__ int ksw_extend_warp(int qlen, const uint8_t *query, int tlen, const u
 				}
 				// thread 31 need to write h and e to shared memory to serve thread 0 in the next tile
 				if (threadIdx.x==31){ SM_H[j] = h; SM_E[j] = e; }
-			}
-			if (j==qlen-1){	// we have hit last column
-				if (h>max_gscore)	// record max to-end alignment score
-					max_gscore = h; i_gscore = i;
+				if (j==qlen-1){	// we have hit last column
+					if (h>max_gscore)	// record max to-end alignment score
+						max_gscore = h; i_gscore = i;
+				}
 			}
 		}
 	}
-
 	// finished filling the matrix, now we find the max of max_score across the warp
 	// use reduction to find the max of 32 max's
 	for (int i=0; i<5; i++){

@@ -3034,8 +3034,10 @@ __global__ void FINALIZEALN_final_kernel(
 	if (ar->secondary>=0) {
 		a->sub = -1; // don't output sub-optimal score
 		flag |= 0x100;
+	} else if (alnID>0){	// supplementary
+		flag |= (d_opt->flag&MEM_F_NO_MULTI)? 0x10000 : 0x800;
 	}
-	if (ar->rid<0) flag |= 0x4;		// flag if mapped
+	if (ar->rid<0) flag |= 0x4;		// flag if unmapped
 	if (is_rev) flag |= 0x10;		// is on reverse strand
 	a->flag = flag;
 }
@@ -3644,8 +3646,9 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	cudaMemcpy(seq_sam_ptr, d_temp, L_sam, cudaMemcpyDeviceToHost);
 	for (int i=0; i<gpu_data.n_seqs; i++)
 		seqs[i].sam = &seq_sam_ptr[(long)h_seqs[i].sam];
+	free(h_seqs);
+	// TODO: create page-lock memory for h_seqs for faster output transfer
 
-	// free(h_seqs);
 // printBufferInfoHost(gpu_data.d_buffer_pools);
 };
 

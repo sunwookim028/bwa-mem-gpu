@@ -121,6 +121,7 @@ static void *process(void *shared, int step, void *_data)
 			mem_align_GPU(aux->gpu_data, data->seqs, opt, idx->bns);
 		}
 		aux->n_processed += data->n_seqs;
+		aux->gpu_data.n_processed += data->n_seqs;
 		fprintf(stderr, "[M::%s] finished processing %'ld seqs\n", __func__, aux->n_processed);
 		return data;
 	} else if (step == 2) {

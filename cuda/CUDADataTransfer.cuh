@@ -38,6 +38,7 @@ typedef struct {
 	mem_pestat_t* h_pes0;	// pes0 on host for paired-end stats
 	// pointers that will change each batch
 	int n_seqs;				// number of reads
+	int n_processed;		// number of reads processed prior to this batch
 	bseq1_t *d_seqs;		// reads
 	// intermediate data
 	seed_record_t *d_seed_records; 	// global records of seeds, a big chunk of memory

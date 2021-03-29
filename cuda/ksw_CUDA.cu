@@ -471,7 +471,7 @@ __device__ int ksw_extend_warp(int qlen, const uint8_t *query, int tlen, const u
 			}
 			if (j==qlen-1){	// we have hit last column
 				if (h>max_gscore)	// record max to-end alignment score
-					max_gscore = h; i_gscore = i;
+					{max_gscore = h; i_gscore = i;}
 			}
 		}
 	}
@@ -516,7 +516,7 @@ __device__ int ksw_extend_warp(int qlen, const uint8_t *query, int tlen, const u
 				if (threadIdx.x==31){ SM_H[j] = h; SM_E[j] = e; }
 				if (j==qlen-1){	// we have hit last column
 					if (h>max_gscore)	// record max to-end alignment score
-						max_gscore = h; i_gscore = i;
+						{max_gscore = h; i_gscore = i;}
 				}
 			}
 		}

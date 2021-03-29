@@ -2608,12 +2608,6 @@ __global__ void SMITHWATERMAN_postprocessing_kernel(
 		if (p->rid >= 0 && d_bns->anns[p->rid].is_alt)
 			p->is_alt = 1;
 	}
-
-if (blockIdx.x==566 && threadIdx.x==0){
-	for (int i=0; i<m; i++)
-		printf("%d: %d: qb=%d, qe=%d, rb=%ld, score=%d\n", blockIdx.x, i, a[i].qb, a[i].qe, a[i].rb, a[i].score);
-}
-
 }
 
 
@@ -2703,6 +2697,65 @@ __global__ void FINALIZEALN_mark_primary_kernel(
 	if (threadIdx.x==0){
 		d_regs[blockIdx.x].a = new_a[0];
 		d_regs[blockIdx.x].n = new_n[0];
+	}
+}
+
+/*
+reorder alignments: sorting by increasing is_alt, then decreasing score
+run at thread level: each thread process all aligments of a read
+*/
+__global__ void FINALIZEALN_reorderAlns_kernel(
+	mem_alnreg_v *d_regs,
+	int n_seqs,
+	void *d_buffer_pools
+	)
+{
+	int seqID = blockIdx.x*blockDim.x+threadIdx.x;
+	if (seqID>=n_seqs) return;
+	int n_alns = d_regs[seqID].n;
+	mem_alnreg_t *a = d_regs[seqID].a;
+
+	if (n_alns==1) return;
+	else if (n_alns==2){
+		if (a[0].is_alt > a[1].is_alt){	// swap so that non-alt alignment is first
+			void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x%32);
+			mem_alnreg_t *new_a = (mem_alnreg_t*)CUDAKernelMalloc(d_buffer_ptr, 2*sizeof(mem_alnreg_t), 8);
+			memcpy(&new_a[0], &a[1], sizeof(mem_alnreg_t));
+			memcpy(&new_a[1], &a[0], sizeof(mem_alnreg_t));
+			// save new array
+			d_regs[seqID].a = new_a;
+		} else if (a[0].score < a[1].score){	// swap so that higher score is first
+			void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x%32);
+			mem_alnreg_t *new_a = (mem_alnreg_t*)CUDAKernelMalloc(d_buffer_ptr, 2*sizeof(mem_alnreg_t), 8);
+			memcpy(&new_a[0], &a[1], sizeof(mem_alnreg_t));
+			memcpy(&new_a[1], &a[0], sizeof(mem_alnreg_t));
+			// save new array
+			d_regs[seqID].a = new_a;
+		}
+		return;
+	} else {
+		__shared__ mem_alnreg_t S_tmp[1];	// to avoid using more registers
+		// perform bubble sort, probably not too bad. I don't want to use other sorts to avoid recursion in GPU
+		bool swapped;
+		for (int i=0; i<n_alns-1; i++){
+			swapped = false;
+			for (int j=0; j<n_alns-1-i; j++){
+				// swap if smaller is_alt is later
+				if (a[j].is_alt > a[j+1].is_alt){
+					memcpy(S_tmp, &a[j], sizeof(mem_alnreg_t));
+					memcpy(&a[j], &a[j+1], sizeof(mem_alnreg_t));
+					memcpy(&a[j+1], S_tmp, sizeof(mem_alnreg_t));
+					swapped = true;
+				// swap if higher score is later
+				} else if (a[j].score < a[j+1].score){
+					memcpy(S_tmp, &a[j], sizeof(mem_alnreg_t));
+					memcpy(&a[j], &a[j+1], sizeof(mem_alnreg_t));
+					memcpy(&a[j+1], S_tmp, sizeof(mem_alnreg_t));
+					swapped = true;
+				}
+			}
+			if (swapped==false) break;	// stop early if no swap was found
+		}
 	}
 }
 
@@ -3124,49 +3177,49 @@ __global__ void SAMGEN_aln2sam_finegrain_kernel(
 		} else kputc('*', &str, d_buffer_ptr);
 	}
 
-	// print optional tags
-	if (a->n_cigar) {
-		kputsn("\tNM:i:", 6, &str, d_buffer_ptr); kputw(a->NM, &str, d_buffer_ptr);
-		kputsn("\tMD:Z:", 6, &str, d_buffer_ptr); kputs((char*)(a->cigar + a->n_cigar), &str, d_buffer_ptr);
-	}
-	if (a->score >= 0) { kputsn("\tAS:i:", 6, &str, d_buffer_ptr); kputw(a->score, &str, d_buffer_ptr); }
-	if (a->sub >= 0) { kputsn("\tXS:i:", 6, &str, d_buffer_ptr); kputw(a->sub, &str, d_buffer_ptr); }
-	// if (!(a->flag & 0x100)) { // not multi-hit
-	// 	for (i = 0; i < n; ++i)
-	// 		if (i != which && !(list[i].flag&0x100)) break;
-	// 	if (i < n) { // there are other primary hits; output them
-	// 		kputsn("\tSA:Z:", 6, str);
-	// 		for (i = 0; i < n; ++i) {
-	// 			const mem_aln_t *r = &list[i];
-	// 			int k;
-	// 			if (i == which || (r->flag&0x100)) continue; // proceed if: 1) different from the current; 2) not shadowed multi hit
-	// 			kputs(bns->anns[r->rid].name, str); kputc(',', str);
-	// 			kputl(r->pos+1, str); kputc(',', str);
-	// 			kputc("+-"[r->is_rev], str); kputc(',', str);
-	// 			for (k = 0; k < r->n_cigar; ++k) {
-	// 				kputw(r->cigar[k]>>4, str); kputc("MIDSH"[r->cigar[k]&0xf], str);
-	// 			}
-	// 			kputc(',', str); kputw(r->mapq, str);
-	// 			kputc(',', str); kputw(r->NM, str);
-	// 			kputc(';', str);
-	// 		}
-	// 	}
-	// 	if (p->alt_sc > 0)
-	// 		ksprintf(str, "\tpa:f:%.3f", (double)p->score / p->alt_sc);
+	// // print optional tags
+	// if (a->n_cigar) {
+	// 	kputsn("\tNM:i:", 6, &str, d_buffer_ptr); kputw(a->NM, &str, d_buffer_ptr);
+	// 	kputsn("\tMD:Z:", 6, &str, d_buffer_ptr); kputs((char*)(a->cigar + a->n_cigar), &str, d_buffer_ptr);
 	// }
-	// if (a->XA) {
-	// 	kputsn((d_opt->flag&MEM_F_XB)? "\tXB:Z:" : "\tXA:Z:", 6, &str, d_buffer_ptr);
-	// 	kputs(a->XA, &str, d_buffer_ptr);
+	// if (a->score >= 0) { kputsn("\tAS:i:", 6, &str, d_buffer_ptr); kputw(a->score, &str, d_buffer_ptr); }
+	// if (a->sub >= 0) { kputsn("\tXS:i:", 6, &str, d_buffer_ptr); kputw(a->sub, &str, d_buffer_ptr); }
+	// // if (!(a->flag & 0x100)) { // not multi-hit
+	// // 	for (i = 0; i < n; ++i)
+	// // 		if (i != which && !(list[i].flag&0x100)) break;
+	// // 	if (i < n) { // there are other primary hits; output them
+	// // 		kputsn("\tSA:Z:", 6, str);
+	// // 		for (i = 0; i < n; ++i) {
+	// // 			const mem_aln_t *r = &list[i];
+	// // 			int k;
+	// // 			if (i == which || (r->flag&0x100)) continue; // proceed if: 1) different from the current; 2) not shadowed multi hit
+	// // 			kputs(bns->anns[r->rid].name, str); kputc(',', str);
+	// // 			kputl(r->pos+1, str); kputc(',', str);
+	// // 			kputc("+-"[r->is_rev], str); kputc(',', str);
+	// // 			for (k = 0; k < r->n_cigar; ++k) {
+	// // 				kputw(r->cigar[k]>>4, str); kputc("MIDSH"[r->cigar[k]&0xf], str);
+	// // 			}
+	// // 			kputc(',', str); kputw(r->mapq, str);
+	// // 			kputc(',', str); kputw(r->NM, str);
+	// // 			kputc(';', str);
+	// // 		}
+	// // 	}
+	// // 	if (p->alt_sc > 0)
+	// // 		ksprintf(str, "\tpa:f:%.3f", (double)p->score / p->alt_sc);
+	// // }
+	// // if (a->XA) {
+	// // 	kputsn((d_opt->flag&MEM_F_XB)? "\tXB:Z:" : "\tXA:Z:", 6, &str, d_buffer_ptr);
+	// // 	kputs(a->XA, &str, d_buffer_ptr);
+	// // }
+	// if (d_seqs[seqID].comment) { kputc('\t', &str, d_buffer_ptr); kputs(d_seqs[seqID].comment, &str, d_buffer_ptr); }
+	// if ((d_opt->flag&MEM_F_REF_HDR) && a->rid >= 0 && d_bns->anns[a->rid].anno != 0 && d_bns->anns[a->rid].anno[0] != 0) {
+	// 	int tmp;
+	// 	kputsn("\tXR:Z:", 6, &str, d_buffer_ptr);
+	// 	tmp = str.l;
+	// 	kputs(d_bns->anns[a->rid].anno, &str, d_buffer_ptr);
+	// 	for (int i = tmp; i < str.l; ++i) // replace TAB in the comment to SPACE
+	// 		if (str.s[i] == '\t') str.s[i] = ' ';
 	// }
-	if (d_seqs[seqID].comment) { kputc('\t', &str, d_buffer_ptr); kputs(d_seqs[seqID].comment, &str, d_buffer_ptr); }
-	if ((d_opt->flag&MEM_F_REF_HDR) && a->rid >= 0 && d_bns->anns[a->rid].anno != 0 && d_bns->anns[a->rid].anno[0] != 0) {
-		int tmp;
-		kputsn("\tXR:Z:", 6, &str, d_buffer_ptr);
-		tmp = str.l;
-		kputs(d_bns->anns[a->rid].anno, &str, d_buffer_ptr);
-		for (int i = tmp; i < str.l; ++i) // replace TAB in the comment to SPACE
-			if (str.s[i] == '\t') str.s[i] = ' ';
-	}
 	kputc('\n', &str, d_buffer_ptr);
 
 	// save output
@@ -3521,6 +3574,15 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: Launch kernel mark_primary ...\n", __func__);
 	FINALIZEALN_mark_primary_kernel <<< gpu_data.n_seqs, 256 >>> (gpu_data.d_opt, gpu_data.d_regs, gpu_data.d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+
+	/* reorder alignments so that alt alignments are placed lower and higher score are placed higher */
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: Launch kernel reorder alignments ...\n", __func__);
+ 	FINALIZEALN_reorderAlns_kernel <<< dimGrid_readlevel, dimBlock_readlevel >>>(
+		gpu_data.d_regs,
+		gpu_data.n_seqs,
+		gpu_data.d_buffer_pools);
+ 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
 
 	/* preprocessing for global SW alignments */

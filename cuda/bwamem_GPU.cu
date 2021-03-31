@@ -2483,7 +2483,7 @@ __global__ void SMITHWATERMAN_extend_kernel(
 	} else {score = h0; query_end = 0; ref_end = d_chains[seqID].a[chainID].seeds[seedID].rbeg; }
 	// write output to global mem
 	if (threadIdx.x==0){
-		d_regs[seqID].a[regID].score = d_regs[seqID].a[regID].truesc = score;
+		d_regs[seqID].a[regID].score = score;
 		d_regs[seqID].a[regID].qb = query_end;
 		d_regs[seqID].a[regID].rb = ref_end;
 	}
@@ -2503,7 +2503,6 @@ __global__ void SMITHWATERMAN_extend_kernel(
 		} else { // use to-end extension
 			query_end = d_chains[seqID].a[chainID].seeds[seedID].qbeg + d_chains[seqID].a[chainID].seeds[seedID].len + qlen;
 			ref_end   = d_chains[seqID].a[chainID].seeds[seedID].rbeg + d_chains[seqID].a[chainID].seeds[seedID].len + gtle;
-			score = gscore;
 		}
 	} else {
 		score = h0; 
@@ -2522,7 +2521,7 @@ __global__ void SMITHWATERMAN_extend_kernel(
 
 	// write output to global mem
 	if (threadIdx.x==0){
-		d_regs[seqID].a[regID].score = d_regs[seqID].a[regID].truesc = score;
+		d_regs[seqID].a[regID].score = score;
 		d_regs[seqID].a[regID].qe = query_end;
 		d_regs[seqID].a[regID].re = ref_end;
 		d_regs[seqID].a[regID].w = 0;	// indicate that we didn't use bandwidth

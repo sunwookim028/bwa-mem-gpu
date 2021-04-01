@@ -2478,7 +2478,6 @@ __global__ void SMITHWATERMAN_extend_kernel(
 		} else { // use to-end extension
 			query_end = 0;
 			ref_end   = d_chains[seqID].a[chainID].seeds[seedID].rbeg - gtle;
-			score = gscore;
 		}
 	} else {score = h0; query_end = 0; ref_end = d_chains[seqID].a[chainID].seeds[seedID].rbeg; }
 	// write output to global mem

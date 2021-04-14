@@ -2873,7 +2873,40 @@ __global__ void FINALIZEALN_preprocessing2_kernel(
 	d_seed_records[offset].readlen_left = (uint16_t)w;	// bandwidth
 	d_sortkeys_in[offset] = w*rlen;		// for sorting
 	d_seqIDs_in[offset] = offset;		// for sorting
+if (d_seed_records[offset].ref_right==0) printf("seqID=%d alnID=%d\n", seqID, alnID);
 }
+
+/*
+	this kernel reverse both the query and reference for alns whose position is on the reverse strand
+	this is to ensure indels to be placed at the leftmost position
+	each block process one aln
+*/
+__global__ void FINALIZEALN_reverseSeq_kernel(seed_record_t *d_seed_records, mem_aln_v *d_alns){
+	// ID = blockIdx.x;
+	if (d_seed_records[blockIdx.x].reflen_left==0) return; // no need to reverse
+	int seqID = d_seed_records[blockIdx.x].seqID;
+	int alnID = d_seed_records[blockIdx.x].regID;		// index on aln.a
+	if (d_alns[seqID].a[alnID].rid == -1) return; // ignore unmapped records
+
+	uint8_t *query = d_seed_records[blockIdx.x].read_right;
+	int l_query = (int)d_seed_records[blockIdx.x].readlen_right;
+	uint8_t *target = d_seed_records[blockIdx.x].ref_right;
+	int l_target = (int)d_seed_records[blockIdx.x].reflen_right;
+	// reverse query
+	uint8_t tmp;
+	for (int i=threadIdx.x; i<l_query>>1; i+=blockDim.x){
+		tmp = query[i];
+		query[i] = query[l_query-1-i];
+		query[l_query-1-i] = tmp;
+	}
+	// reverse reference
+	for (int i=threadIdx.x; i<l_target>>1; i+=blockDim.x){
+		tmp = target[i];
+		target[i] = target[l_target-1-i];
+		target[l_target-1-i] = tmp;
+	}
+}
+
 
 // #define GLOBALSW_BANDWITH_CUTOFF 17
 #define GLOBALSW_BANDWITH_CUTOFF 500
@@ -2913,13 +2946,6 @@ __global__ void FINALIZEALN_globalSW_kernel(
 			score += d_opt->mat[target[i]*5 + query[i]];
 	} else {
 		score = ksw_global2(l_query, query, l_target, target, 5, d_opt->mat, d_opt->o_del, d_opt->e_del, d_opt->o_ins, d_opt->e_ins, bandwidth, &n_cigar, &cigar, d_buffer_ptr);
-	}
-	if (d_seed_records[ID].reflen_left==1){
-		// reverse CIGAR to ensure indels to be placed at the leftmost position
-		for (int i=0; i<n_cigar>>1; i++){
-			uint32_t tmp;
-			tmp = cigar[i]; cigar[i] = cigar[n_cigar-1-i]; cigar[n_cigar-1-i] = tmp;
-		}
 	}
 	// calculate NM
 	int NM;
@@ -3500,7 +3526,7 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 	/* pre-processing for SW extension: prepare target and query strings for each seed */
 	// find number of seeds
 	int n_seeds;
-	cudaMemcpy(&n_seeds, gpu_data.d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost);
+	gpuErrchk( cudaMemcpy(&n_seeds, gpu_data.d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost) );
 	if (bwa_verbose>=4) fprintf(stderr, "%d seeds\n", n_seeds);
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [SMITHWATERMAN]: preprocessing2 ... \n", __func__);
 	SMITHWATERMAN_preprocessing2_kernel <<< ceil((float)n_seeds/32.0), 32, 0 >>> (
@@ -3585,7 +3611,7 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 
 	/* preprocessing for global SW alignments */
 	cudaMemset(gpu_data.d_Nseeds, 0, sizeof(int));		// reset seed info
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: Launch kernel preprocessing 1 ...\n", __func__);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: Launch kernel preprocessing 1 ... ", __func__);
  	FINALIZEALN_preprocessing1_kernel <<< dimGrid_readlevel, dimBlock_readlevel >>>(
 		gpu_data.d_regs,
 		gpu_data.d_alns,
@@ -3594,7 +3620,9 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 		gpu_data.d_buffer_pools);
  	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
-	cudaMemcpy(&n_seeds, gpu_data.d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost);
+	gpuErrchk( cudaMemcpy(&n_seeds, gpu_data.d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost) );
+	gpuErrchk( cudaDeviceSynchronize() );
+	if (bwa_verbose>=4) fprintf(stderr, "%d aligments\n", n_seeds);
 
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: Launch kernel preprocessing 2 ...\n", __func__);
  	FINALIZEALN_preprocessing2_kernel <<< ceil((float)n_seeds/32), 32 >>>(
@@ -3612,6 +3640,12 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
  	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
 	gpu_data.n_sortkeys = n_seeds;
+
+	// reverse query and target if aln position is on reverse strand
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: reverse seqs ...\n", __func__);
+ 	FINALIZEALN_reverseSeq_kernel <<< n_seeds, 32 >>> (gpu_data.d_seed_records, gpu_data.d_alns);
+ 	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
 
 	/* now we sort alignments for better warp efficiency in next kernel */
 	void *d_temp_storage = NULL;

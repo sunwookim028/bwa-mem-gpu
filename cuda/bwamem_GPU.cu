@@ -2856,10 +2856,9 @@ __global__ void FINALIZEALN_preprocessing2_kernel(
 	int w;
 	if (l_query == re-rb){ w=0; }	// no gap, no need to do DP
 	else{
-		int min_l, tmp;
-		min_l = l_query<rlen? l_query : rlen;
-		w = ((min_l*d_opt->a-d_regs[seqID].a[alnID].score) - d_opt->o_ins)/d_opt->e_ins;
-		tmp = ((min_l*d_opt->a-d_regs[seqID].a[alnID].score) - d_opt->o_del)/d_opt->e_del;
+		int tmp;
+		w = ((l_query*d_opt->a-d_regs[seqID].a[alnID].score) - d_opt->o_ins)/d_opt->e_ins;
+		tmp = ((l_query*d_opt->a-d_regs[seqID].a[alnID].score) - d_opt->o_del)/d_opt->e_del;
 		w = tmp<w? tmp : w;
 		if (w<0) w=0;
 	}
@@ -2873,7 +2872,6 @@ __global__ void FINALIZEALN_preprocessing2_kernel(
 	d_seed_records[offset].readlen_left = (uint16_t)w;	// bandwidth
 	d_sortkeys_in[offset] = w*rlen;		// for sorting
 	d_seqIDs_in[offset] = offset;		// for sorting
-if (d_seed_records[offset].ref_right==0) printf("seqID=%d alnID=%d\n", seqID, alnID);
 }
 
 /*

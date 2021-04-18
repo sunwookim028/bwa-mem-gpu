@@ -2856,11 +2856,30 @@ __global__ void FINALIZEALN_preprocessing2_kernel(
 	int w;
 	if (l_query == re-rb){ w=0; }	// no gap, no need to do DP
 	else{
+		int a = d_opt->a;
+		int o_del = d_opt->o_del;
+		int e_del = d_opt->e_del;
+		int o_ins = d_opt->o_ins;
+		int e_ins = d_opt->e_ins;
 		int tmp;
-		w = ((l_query*d_opt->a-d_regs[seqID].a[alnID].score) - d_opt->o_ins)/d_opt->e_ins;
-		tmp = ((l_query*d_opt->a-d_regs[seqID].a[alnID].score) - d_opt->o_del)/d_opt->e_del;
-		w = tmp<w? tmp : w;
-		if (w<0) w=0;
+		// inferred bandwidth
+		w   = infer_bw(l_query, re-rb, d_regs[seqID].a[alnID].score, a, o_del, e_del);
+		tmp = infer_bw(l_query, re-rb, d_regs[seqID].a[alnID].score, a, o_ins, e_ins);
+		w = w>tmp? w : tmp;
+		// global bandwidth
+		int max_gap, max_ins, max_del;
+		max_ins = (int)((double)(((l_query+1)>>1) * a - o_ins) / e_ins + 1.);
+		max_del = (int)((double)(((l_query+1)>>1) * a - o_del) / e_del + 1.);
+		max_gap = max_ins > max_del? max_ins : max_del;
+		max_gap = max_gap > 1? max_gap : 1;
+		tmp = (max_gap + abs((int)rlen - l_query) + 1) >> 1;
+		w = w<tmp? w : tmp;
+		tmp = abs((int)rlen - l_query) + 3;
+		w = w>tmp? w : tmp;
+		// w = ((l_query*d_opt->a-d_regs[seqID].a[alnID].score) - d_opt->o_ins)/d_opt->e_ins + 1;
+		// tmp = ((l_query*d_opt->a-d_regs[seqID].a[alnID].score) - d_opt->o_del)/d_opt->e_del + 1;
+		// w = tmp<w? tmp : w;
+		// if (w<0) w=0;
 	}
 	// save these info to d_seed_records for next kernel
 	d_seed_records[offset].read_right = query;		// query for SW
@@ -2879,7 +2898,7 @@ __global__ void FINALIZEALN_preprocessing2_kernel(
 	this is to ensure indels to be placed at the leftmost position
 	each block process one aln
 */
-__global__ void FINALIZEALN_reverseSeq_kernel(seed_record_t *d_seed_records, mem_aln_v *d_alns){
+__global__ void FINALIZEALN_reverseSeq_kernel(seed_record_t *d_seed_records, mem_aln_v *d_alns, void *d_buffer_pools){
 	// ID = blockIdx.x;
 	if (d_seed_records[blockIdx.x].reflen_left==0) return; // no need to reverse
 	int seqID = d_seed_records[blockIdx.x].seqID;
@@ -2890,19 +2909,23 @@ __global__ void FINALIZEALN_reverseSeq_kernel(seed_record_t *d_seed_records, mem
 	int l_query = (int)d_seed_records[blockIdx.x].readlen_right;
 	uint8_t *target = d_seed_records[blockIdx.x].ref_right;
 	int l_target = (int)d_seed_records[blockIdx.x].reflen_right;
+	// allocate memory for reversed sequences
+	__shared__ uint8_t* S_new_array[1];
+	if (threadIdx.x==0){
+		void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, blockIdx.x%32);
+		S_new_array[0] = (uint8_t*)CUDAKernelMalloc(d_buffer_ptr, l_query+l_target, 1);
+	}
+	__syncthreads();
+	uint8_t *new_query = S_new_array[0];
+	uint8_t *new_target = &new_query[l_query];
+
 	// reverse query
-	uint8_t tmp;
-	for (int i=threadIdx.x; i<l_query>>1; i+=blockDim.x){
-		tmp = query[i];
-		query[i] = query[l_query-1-i];
-		query[l_query-1-i] = tmp;
-	}
+	for (int i=threadIdx.x; i<l_query>>1; i+=blockDim.x)
+		new_query[l_query-1-i] = query[i];
+
 	// reverse reference
-	for (int i=threadIdx.x; i<l_target>>1; i+=blockDim.x){
-		tmp = target[i];
-		target[i] = target[l_target-1-i];
-		target[l_target-1-i] = tmp;
-	}
+	for (int i=threadIdx.x; i<l_target>>1; i+=blockDim.x)
+		new_target[l_target-1-i] = target[i];
 }
 
 
@@ -3094,7 +3117,6 @@ __global__ void FINALIZEALN_final_kernel(
 		a->n_cigar = n_cigar;
 		a->cigar = new_cigar;
 	}
-	
 
 	// calculate rid, is_alt
 	a->rid = bns_pos2rid_gpu(d_bns, pos);
@@ -3641,7 +3663,7 @@ void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, con
 
 	// reverse query and target if aln position is on reverse strand
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] [FINALIZEALN]: reverse seqs ...\n", __func__);
- 	FINALIZEALN_reverseSeq_kernel <<< n_seeds, 32 >>> (gpu_data.d_seed_records, gpu_data.d_alns);
+ 	FINALIZEALN_reverseSeq_kernel <<< n_seeds, 32 >>> (gpu_data.d_seed_records, gpu_data.d_alns, gpu_data.d_buffer_pools);
  	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
 

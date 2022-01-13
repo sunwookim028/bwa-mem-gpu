@@ -3,22 +3,49 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "CUDAKernel_memmgnt.cuh"
+#include "errHandler.cuh"
 
+/* first set of reads pointer to transfer data in/out 
+	CUDATransferSeqsIn transfer data into this set
+ */
 char *seq_name_ptr = 0; int seq_name_offset = 0;
 char *seq_comment_ptr = 0; int seq_comment_offset = 0;
 char *seq_ptr = 0; int seq_offset = 0;
 char *seq_qual_ptr = 0; int seq_qual_offset = 0;
 char *seq_sam_ptr = 0;
-__device__ char *d_seq_sam_ptr = 0;
+
 char *d_seq_name_ptr = 0;
 char *d_seq_comment_ptr = 0;
 char *d_seq_ptr = 0;
 char *d_seq_qual_ptr = 0;
+__device__ char *d_seq_sam_ptr = 0;
 bseq1_t *preallocated_seqs=0, *d_preallocated_seqs=0;
+cudaStream_t data_CUDAStream;	// stream for transfer
 
-/* Allocate big chunks of strings for seqs and seqs members name, comment, seq, qual */
+/* second set of reads pointer to process
+	gpu_ptrs_t gpu_data should have this set
+ */
+char *seq_name_ptr2 = 0;
+char *seq_comment_ptr2 = 0;
+char *seq_ptr2 = 0;
+char *seq_qual_ptr2 = 0;
+char *seq_sam_ptr2 = 0;
+
+char *d_seq_name_ptr2 = 0;
+char *d_seq_comment_ptr2 = 0;
+char *d_seq_ptr2 = 0;
+char *d_seq_qual_ptr2 = 0;
+__device__ char *d_seq_sam_ptr2 = 0;
+bseq1_t *preallocated_seqs2=0, *d_preallocated_seqs2=0;
+cudaStream_t process_CUDAStream;	// stream for processing
+
+/* Initialize 2 pairs of (host_seqs, device_seqs), each seqs has:
+		Pinned memory for bseq1_t and its members (name, comment, seq, qual) 
+	Initialize 2 CUDA streams: one for kernel call and one for data transfer
+ */
 void CUDAInitSeqsMemory()
 {
+	// first set for data transfer
 	// allocate big chunks of memory as pinned memory on host
 	gpuErrchk(cudaMallocHost((void**)&seq_name_ptr, SEQ_NAME_LIMIT));
 	gpuErrchk(cudaMallocHost((void**)&seq_comment_ptr, SEQ_COMMENT_LIMIT));
@@ -37,12 +64,32 @@ void CUDAInitSeqsMemory()
 	char* d_temp;
 	gpuErrchk(cudaMalloc((void**)&d_temp, SEQ_SAM_LIMIT));
 	gpuErrchk(cudaMemcpy(symbol_addr, &d_temp, sizeof(char*), cudaMemcpyHostToDevice));
-	fprintf(stderr, "[M::%s] seq name ......... %d MB\n", __func__, (int)SEQ_NAME_LIMIT/1000000);
-	fprintf(stderr, "[M::%s] seq comment ...... %d MB\n", __func__, (int)SEQ_COMMENT_LIMIT/1000000);
-	fprintf(stderr, "[M::%s] seq  ............. %d MB\n", __func__, (int)SEQ_LIMIT/1000000);
-	fprintf(stderr, "[M::%s] seq qual ......... %d MB\n", __func__, (int)SEQ_QUAL_LIMIT/1000000);
-	fprintf(stderr, "[M::%s] seq info ......... %d MB\n", __func__, (int)SEQ_MAX_COUNT*sizeof(bseq1_t)/1000000);
-	fprintf(stderr, "[M::%s] sam .............. %d MB\n", __func__, (int)SEQ_SAM_LIMIT/1000000);
+
+	// second set for processing
+	// allocate big chunks of memory as pinned memory on host
+	gpuErrchk(cudaMallocHost((void**)&seq_name_ptr2, SEQ_NAME_LIMIT));
+	gpuErrchk(cudaMallocHost((void**)&seq_comment_ptr2, SEQ_COMMENT_LIMIT));
+	gpuErrchk(cudaMallocHost((void**)&seq_ptr2, SEQ_LIMIT));
+	gpuErrchk(cudaMallocHost((void**)&seq_qual_ptr2, SEQ_QUAL_LIMIT));
+	gpuErrchk(cudaMallocHost((void**)&preallocated_seqs2, SEQ_MAX_COUNT*sizeof(bseq1_t)));
+	gpuErrchk(cudaMallocHost((void**)&seq_sam_ptr2, SEQ_SAM_LIMIT));
+	// allocate corresponding chunks on device
+	gpuErrchk(cudaMalloc((void**)&d_seq_name_ptr2, SEQ_NAME_LIMIT));
+	gpuErrchk(cudaMalloc((void**)&d_seq_comment_ptr2, SEQ_COMMENT_LIMIT));
+	gpuErrchk(cudaMalloc((void**)&d_seq_ptr2, SEQ_LIMIT));
+	gpuErrchk(cudaMalloc((void**)&d_seq_qual_ptr2, SEQ_QUAL_LIMIT));
+	gpuErrchk(cudaMalloc((void**)&d_preallocated_seqs2, SEQ_MAX_COUNT*sizeof(bseq1_t)));
+	gpuErrchk(cudaGetSymbolAddress((void**)&symbol_addr, d_seq_sam_ptr2));
+	gpuErrchk(cudaMalloc((void**)&d_temp, SEQ_SAM_LIMIT));
+	gpuErrchk(cudaMemcpy(symbol_addr, &d_temp, sizeof(char*), cudaMemcpyHostToDevice));
+
+	// print info
+	fprintf(stderr, "[M::%s] seq name ......... %d MB\n", __func__, (int)SEQ_NAME_LIMIT*2/1000000);
+	fprintf(stderr, "[M::%s] seq comment ...... %d MB\n", __func__, (int)SEQ_COMMENT_LIMIT*2/1000000);
+	fprintf(stderr, "[M::%s] seq  ............. %d MB\n", __func__, (int)SEQ_LIMIT*2/1000000);
+	fprintf(stderr, "[M::%s] seq qual ......... %d MB\n", __func__, (int)SEQ_QUAL_LIMIT*2/1000000);
+	fprintf(stderr, "[M::%s] seq info ......... %lu MB\n", __func__, (int)SEQ_MAX_COUNT*sizeof(bseq1_t)*2/1000000);
+	fprintf(stderr, "[M::%s] sam .............. %d MB\n", __func__, (int)SEQ_SAM_LIMIT*2/1000000);
 }
 
 /* transfer one-time static data */
@@ -152,26 +199,110 @@ void CUDATransferStaticData(
 	gpu_data->h_pes0 = pes0;
 }
 
-/* transfer seqs */
-void CUDATransferSeqs(int n_seqs)
+/* transfer seqs into device's IO set
+ */
+void CUDATransferSeqsIn(int n_seqs)
 {
 	// copy name to device
-	gpuErrchk(cudaMemcpy(d_seq_name_ptr, seq_name_ptr, seq_name_offset, cudaMemcpyHostToDevice));
+	gpuErrchk(cudaMemcpyAsync(d_seq_name_ptr, seq_name_ptr, seq_name_offset, cudaMemcpyHostToDevice, data_CUDAStream));
 	// copy seq to device
-	gpuErrchk(cudaMemcpy(d_seq_ptr, seq_ptr, seq_offset, cudaMemcpyHostToDevice));
+	gpuErrchk(cudaMemcpyAsync(d_seq_ptr, seq_ptr, seq_offset, cudaMemcpyHostToDevice, data_CUDAStream));
 	// copy comment to device
-	gpuErrchk(cudaMemcpy(d_seq_comment_ptr, seq_comment_ptr, seq_comment_offset, cudaMemcpyHostToDevice));
+	gpuErrchk(cudaMemcpyAsync(d_seq_comment_ptr, seq_comment_ptr, seq_comment_offset, cudaMemcpyHostToDevice, data_CUDAStream));
 	// copy qual to device
-	gpuErrchk(cudaMemcpy(d_seq_qual_ptr, seq_qual_ptr, seq_qual_offset, cudaMemcpyHostToDevice));
+	gpuErrchk(cudaMemcpyAsync(d_seq_qual_ptr, seq_qual_ptr, seq_qual_offset, cudaMemcpyHostToDevice, data_CUDAStream));
 	// copy seqs to device
-	gpuErrchk(cudaMemcpy(d_preallocated_seqs, preallocated_seqs, n_seqs*sizeof(bseq1_t), cudaMemcpyHostToDevice));
+	gpuErrchk(cudaMemcpyAsync(d_preallocated_seqs, preallocated_seqs, n_seqs*sizeof(bseq1_t), cudaMemcpyHostToDevice, data_CUDAStream));
+
+	gpuErrchk( cudaStreamSynchronize(data_CUDAStream) );
 }
 
-/* transfer SAM output */
+void ResetSeqsCounter(){
+	seq_name_offset = 0; seq_offset = 0; seq_comment_offset = 0; seq_qual_offset = 0;
+}
 
+/* transfer SAM output from the process set on device to the process set on host
+	n_seqs: number of seqs to be transfered
+	d_samSize: size of the chunk of SAM output
+	seqs: output pointer
+*/
+void CUDATransferSamOut(int n_seqs, int samSize){
+	/* copy sam output to host */
+	bseq1_t* h_seqs;
+	h_seqs = (bseq1_t*)malloc(n_seqs*sizeof(bseq1_t));
+	cudaMemcpyAsync(h_seqs, d_preallocated_seqs2, n_seqs*sizeof(bseq1_t), cudaMemcpyDeviceToHost, data_CUDAStream);
+	// transfer d_seq_sam_ptr2 -> seq_sam_ptr2
+	char *symbol_addr, *d_temp;
+	gpuErrchk(cudaGetSymbolAddress((void**)&symbol_addr, d_seq_sam_ptr2));
+	gpuErrchk(cudaMemcpyAsync(&d_temp, symbol_addr, sizeof(char*), cudaMemcpyDeviceToHost, data_CUDAStream));
+	gpuErrchk( cudaMemcpyAsync(seq_sam_ptr2, d_temp, samSize, cudaMemcpyDeviceToHost, data_CUDAStream) );
+	cudaStreamSynchronize(data_CUDAStream);
+	for (int i=0; i<n_seqs; i++)
+		preallocated_seqs2[i].sam = &seq_sam_ptr2[(long)h_seqs[i].sam];
+	free(h_seqs);
+}
+
+/* swap the data and process pointer sets on both host and device */
+void SwapPtrs(){
+	// swap on host
+	{ auto tmp = preallocated_seqs2; preallocated_seqs2 = preallocated_seqs; preallocated_seqs = tmp; }
+	{ auto tmp = seq_name_ptr2; seq_name_ptr2 = seq_name_ptr; seq_name_ptr = tmp; }
+	{ auto tmp = seq_comment_ptr2; seq_comment_ptr2 = seq_comment_ptr; seq_comment_ptr = tmp; }
+	{ auto tmp = seq_ptr2; seq_ptr2 = seq_ptr; seq_ptr = tmp; }
+	{ auto tmp = seq_qual_ptr2; seq_qual_ptr2 = seq_qual_ptr; seq_qual_ptr = tmp; }
+	{ auto tmp = seq_sam_ptr2; seq_sam_ptr2 = seq_sam_ptr; seq_sam_ptr = tmp; }
+	// swap on device
+	{ auto tmp = d_preallocated_seqs2; d_preallocated_seqs2 = d_preallocated_seqs; d_preallocated_seqs = tmp; }
+	{ auto tmp = d_seq_name_ptr2; d_seq_name_ptr2 = d_seq_name_ptr; d_seq_name_ptr = tmp; }
+	{ auto tmp = d_seq_comment_ptr2; d_seq_comment_ptr2 = d_seq_comment_ptr; d_seq_comment_ptr = tmp; }
+	{ auto tmp = d_seq_ptr2; d_seq_ptr2 = d_seq_ptr; d_seq_ptr = tmp; }
+	{ auto tmp = d_seq_qual_ptr2; d_seq_qual_ptr2 = d_seq_qual_ptr; d_seq_qual_ptr = tmp; }
+	// since d_sam is on device, we need to do some cudaMemCpy
+	char *symbol_addr_sam, *symbol_addr_sam2, *h_tmp;
+	gpuErrchk(cudaGetSymbolAddress((void**)&symbol_addr_sam, d_seq_sam_ptr));
+	gpuErrchk(cudaGetSymbolAddress((void**)&symbol_addr_sam2, d_seq_sam_ptr2));
+	// d_seq_sam_ptr -> h_tmp
+	gpuErrchk(cudaMemcpyAsync(&h_tmp, symbol_addr_sam, sizeof(char*), cudaMemcpyDeviceToHost, data_CUDAStream));
+	// d_seq_sam_ptr2 -> d_seq_sam_ptr
+	gpuErrchk(cudaMemcpyAsync(symbol_addr_sam, symbol_addr_sam2, sizeof(char*), cudaMemcpyDeviceToDevice, data_CUDAStream));
+	// h_tmp -> d_seq_sam_ptr2
+	gpuErrchk( cudaMemcpyAsync(symbol_addr_sam2, &h_tmp, sizeof(char*), cudaMemcpyHostToDevice, data_CUDAStream) );
+	cudaStreamSynchronize(data_CUDAStream);
+}
+
+/* update gpu_data with the new batch */
+void updateGPUData(gpu_ptrs_t *gpu_data, int n_seqs){
+	gpu_data->n_seqs = n_seqs;
+	gpu_data->d_seqs = d_preallocated_seqs2;
+}
+
+cudaStream_t getDataStream(){
+	return data_CUDAStream;
+}
+
+cudaStream_t getProcessStream(){
+	return process_CUDAStream;
+}
+
+void printDevPtrDebugInfo(){
+	char *h_tmp, *h_tmp2;
+	fprintf(stderr, "******** d_seq1=%p dseq2=%p dseq.seq1=%p dseq.seq2=%p", preallocated_seqs, preallocated_seqs2, d_seq_ptr, d_seq_ptr2);
+
+	char *symbol_addr_sam, *symbol_addr_sam2;
+	gpuErrchk(cudaGetSymbolAddress((void**)&symbol_addr_sam, d_seq_sam_ptr));
+	gpuErrchk(cudaGetSymbolAddress((void**)&symbol_addr_sam2, d_seq_sam_ptr2));
+	gpuErrchk(cudaMemcpyAsync(&h_tmp, symbol_addr_sam, sizeof(char*), cudaMemcpyDeviceToHost, data_CUDAStream));
+	gpuErrchk(cudaMemcpyAsync(&h_tmp2, symbol_addr_sam2, sizeof(char*), cudaMemcpyDeviceToHost, data_CUDAStream));
+	fprintf(stderr, " d_sam1=%p d_sam2=%p \n", h_tmp, h_tmp2);
+
+}
+
+/* Free */
 void CUDADataFree(){
 	cudaFreeHost(preallocated_seqs);
 	cudaFree(d_preallocated_seqs);
 	cudaFreeHost(seq_name_ptr); cudaFreeHost(seq_comment_ptr), cudaFreeHost(seq_ptr), cudaFreeHost(seq_qual_ptr); cudaFreeHost(seq_sam_ptr);
 	cudaFree(d_seq_name_ptr); cudaFree(d_seq_comment_ptr); cudaFree(d_seq_ptr); cudaFree(d_seq_qual_ptr);
+	cudaFreeHost(seq_name_ptr2); cudaFreeHost(seq_comment_ptr2), cudaFreeHost(seq_ptr2), cudaFreeHost(seq_qual_ptr2); cudaFreeHost(seq_sam_ptr2);
+	cudaFree(d_seq_name_ptr2); cudaFree(d_seq_comment_ptr2); cudaFree(d_seq_ptr2); cudaFree(d_seq_qual_ptr2);
 }

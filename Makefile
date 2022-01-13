@@ -1,12 +1,13 @@
 MAKEFLAGS += -j10
 CC=			gcc
+CPPCC=		g++
 #CC=			clang --analyze
 CFLAGS=		-g -Wall -Wno-unused-function -O2
 WRAP_MALLOC=-DUSE_MALLOC_WRAPPERS
 AR=			ar
 DFLAGS=		-DHAVE_PTHREAD $(WRAP_MALLOC)
 LOBJS=		utils.o kthread.o kstring.o ksw.o bwt.o bntseq.o bwa.o bwamem.o bwamem_pair.o bwamem_extra.o malloc_wrap.o \
-			QSufSort.o bwt_gen.o rope.o rle.o is.o bwtindex.o CUDADataTransfer.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o bwamem_GPU.o GPULink.o
+			QSufSort.o bwt_gen.o rope.o rle.o is.o bwtindex.o CUDADataTransfer.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o bwamem_GPU.o GPULink.o process.o
 AOBJS=		bwashm.o bwase.o bwaseqio.o bwtgap.o bwtaln.o bamlite.o \
 			bwape.o kopen.o pemerge.o maxk.o \
 			bwtsw2_core.o bwtsw2_main.o bwtsw2_aux.o bwt_lite.o \
@@ -75,7 +76,8 @@ bwamem_GPU.o: bwamem.h bwa.h bntseq.h $(CUDADIR)/bwamem_GPU.cuh kbtree.h $(CUDAD
 	nvcc -I./cuda/cub $(NVCC_FLAGS) $(CUDADIR)/bwamem_GPU.cu -o bwamem_GPU.o
 GPULink.o: bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o CUDADataTransfer.o
 	nvcc -I. --device-link -arch=$(CUDA_ARCH) bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o CUDADataTransfer.o --output-file GPULink.o
-
+process.o: cuda/process.cpp
+	nvcc -I. $(NVCC_FLAGS) -o process.o cuda/process.cpp
 
 QSufSort.o: QSufSort.h
 bamlite.o: bamlite.h malloc_wrap.h
@@ -123,10 +125,10 @@ utils.o: utils.h ksort.h malloc_wrap.h kseq.h
 
 .PHONY: test debug
 test:
-	./bwa mem -o out -v4 ../gaivi_test/HG38/GCF_000001405.39_GRCh38.p13_genomic.fna ../gaivi_test/SRR043348_small.fastq
+	./bwa mem -o out -v4 ../gaivi_test/HG38/GCF_000001405.39_GRCh38.p13_genomic.fna ../SRR043348_80K.fastq
 
 debug:
-	make clean && make -j10 debug=1 && CUDA_VISIBLE_DEVICES=0 cuda-gdb --args bwa mem -v4 -o out ../gaivi_test/HG38/GCF_000001405.39_GRCh38.p13_genomic.fna ../gaivi_test/SRR043348_small.fastq
+	make clean && make -j10 debug=1 && CUDA_VISIBLE_DEVICES=0 cuda-gdb --args bwa mem -v4 -o out ../gaivi_test/HG38/GCF_000001405.39_GRCh38.p13_genomic.fna ../SRR043348_5M.fastq
 
 profile:
 	nsys profile --stat=true ./bwa mem -v4  ./GCF_000008865.2_ASM886v2_genomic.fna ./SRR10896389.fastq

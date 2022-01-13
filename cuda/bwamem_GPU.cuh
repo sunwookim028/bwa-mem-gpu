@@ -16,8 +16,11 @@ extern "C"{
 		const uint8_t *pac,
 		mem_pestat_t *pes0
 	);
+	
 	void prepare_batch_GPU(gpu_ptrs_t* gpu_data, const bseq1_t* seqs, int n_seqs, const mem_opt_t *opt);
-	void mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, const bntseq_t *bns);
+	
+	/* align reads and return the size of SAM output */
+	int mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, const bntseq_t *bns);
 #ifdef __cplusplus
 } // end extern "C"
 #endif

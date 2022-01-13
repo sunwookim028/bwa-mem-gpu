@@ -1,3 +1,6 @@
+#ifndef CUDADATATRANSFER_H
+#define CUDADATATRANSFER_H
+
 #include "../bwa.h"
 #include "../bwt.h"
 #include "../bntseq.h"
@@ -9,6 +12,7 @@ typedef struct {
 	bwtintv_v mem, mem1, *tmpv[2];
 } smem_aux_t;
 
+// temporary processing data
 typedef struct
 {
 	int seqID;			// read ID
@@ -26,7 +30,7 @@ typedef struct
 	uint16_t reflen_right;	// length of reference on the right of seed
 } seed_record_t;
 
-/* list of pointers to data on GPU */
+/* list of pointers to data on GPU for processing*/
 typedef struct {
 	// constant pointers
 	mem_opt_t* d_opt;		// user-defined options
@@ -38,7 +42,7 @@ typedef struct {
 	mem_pestat_t* h_pes0;	// pes0 on host for paired-end stats
 	// pointers that will change each batch
 	int n_seqs;				// number of reads
-	int n_processed;		// number of reads processed prior to this batch
+	int64_t n_processed;		// number of reads processed prior to this batch
 	bseq1_t *d_seqs;		// reads
 	// intermediate data
 	seed_record_t *d_seed_records; 	// global records of seeds, a big chunk of memory
@@ -69,10 +73,32 @@ extern "C"{
 		const uint8_t *pac,
 		mem_pestat_t *pes0,
 		gpu_ptrs_t *gpu_data);
+	
+	void ResetSeqsCounter();
 
-	void CUDATransferSeqs(int n_seqs);
+	/* transfer seqs into device's IO set
+ 	*/
+	void CUDATransferSeqsIn(int n_seqs);
+
+	/* transfer SAM output from the IO set on device to the IO set on host
+		n_seqs: number of seqs to be transfered
+		d_samSize: size of the chunk of SAM output
+		seqs: output pointer
+	*/
+	void CUDATransferSamOut(int n_seqs, int samSize);
+
+	/* swap the data and process pointer sets on both host and device */
+	void SwapPtrs();
+	void printDevPtrDebugInfo();
+
+	/* update gpu_data with the new batch */
+	void updateGPUData(gpu_ptrs_t *gpu_data, int n_seqs);
 
 	void CUDADataFree();
+
+	
 #ifdef __cplusplus
 }
+#endif
+
 #endif

@@ -5,3 +5,5 @@ test64
 .*.swp
 Makefile.bak
 bwamem-lite
+.vscode*
+out*

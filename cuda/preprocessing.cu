@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "preprocessing.cuh"
 #define HASH_LEN 7
+#include "errHandler.cuh"
 
 __device__ __constant__ unsigned char d_nst_nt4_table[256] = {
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
@@ -21,16 +22,6 @@ __device__ __constant__ unsigned char d_nst_nt4_table[256] = {
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4
 };
 
-#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
-/*CUDA ERROR HANDLER*/
-inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
-{
-   if (code != cudaSuccess) 
-   {
-      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
-      if (abort) exit(code);
-   }
-}
 
 /* function to calculate power of base 5*/
 __device__ inline int pow5(int x){

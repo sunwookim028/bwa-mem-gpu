@@ -1,6 +1,7 @@
 #define NBUFFERPOOLS 32 	// number of buffer pools
 #define POOLSIZE 100000000	// size of each buffer pool
 #include "CUDAKernel_memmgnt.cuh"
+#include "errHandler.cuh"
 
 typedef struct
 {
@@ -32,11 +33,11 @@ __host__ void* CUDA_BufferInit(){
 	return (void*)d_pools;
 }
 
-__host__ void CUDAResetBufferPool(void* d_buffer_pools){
+__host__ void CUDAResetBufferPool(void* d_buffer_pools, cudaStream_t stream){
 	// first coppy the array of pool pointers to host
 	void** h_pools;
 	h_pools = (void**)malloc(NBUFFERPOOLS*sizeof(void*));
-	gpuErrchk(cudaMemcpy(h_pools, d_buffer_pools, NBUFFERPOOLS*sizeof(void*), cudaMemcpyDeviceToHost));
+	gpuErrchk( cudaMemcpyAsync(h_pools, d_buffer_pools, NBUFFERPOOLS*sizeof(void*), cudaMemcpyDeviceToHost, stream) );
 
 	// reset memory info at the head of each pool
 	CUDAKernel_mem_info d_pool_info;		// intermediate data on host
@@ -48,7 +49,7 @@ __host__ void CUDAResetBufferPool(void* d_buffer_pools){
 		// set limit of the pool
 		d_pool_info.end_offset = (unsigned)POOLSIZE;
 		// copy d_pool_info to the start of the pool
-		gpuErrchk(cudaMemcpy(pool_addr, &d_pool_info, sizeof(CUDAKernel_mem_info), cudaMemcpyHostToDevice));
+		gpuErrchk( cudaMemcpyAsync(pool_addr, &d_pool_info, sizeof(CUDAKernel_mem_info), cudaMemcpyHostToDevice, stream) );
 	}
 
 	free(h_pools);

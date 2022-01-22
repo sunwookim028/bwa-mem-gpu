@@ -4,23 +4,13 @@
 #include "../bwt.h"
 #include "../bntseq.h"
 #include "../bwamem.h"
-#include "CUDADataTransfer.cuh"
+#include "streams.cuh"
 
 #ifdef __cplusplus
 extern "C"{
 #endif
-	gpu_ptrs_t GPU_Init(
-		const mem_opt_t *opt, 
-		const bwt_t *bwt, 
-		const bntseq_t *bns, 
-		const uint8_t *pac,
-		mem_pestat_t *pes0
-	);
-	
-	void prepare_batch_GPU(gpu_ptrs_t* gpu_data, const bseq1_t* seqs, int n_seqs, const mem_opt_t *opt);
-	
 	/* align reads and return the size of SAM output */
-	int mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, const bntseq_t *bns);
+	void mem_align_GPU(process_data_t *process_data);
 #ifdef __cplusplus
 } // end extern "C"
 #endif

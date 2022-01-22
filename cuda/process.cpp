@@ -1,6 +1,7 @@
 /* functions that drive the main process (hiding IO, parallel GPUs, etc.) */
 
 #include "process.h"
+#include "streams.cuh"
 #include <future>
 
 
@@ -8,28 +9,30 @@
 	currently only support single-end reads
 	read up to actual_chunk_size
 	then transfer these new reads to the seq_io on device
-	return the number of reads and write new batch of seqs to preallocated_seqs
+	return the number of reads and write new batch of seqs to transfer_data->h_seqs and then transfer_data->d_seqs
  */
-static int readInput(kseq_t *ks, kseq_t *ks2, int actual_chunk_size, int copy_comment){
+static int readInput(kseq_t *ks, kseq_t *ks2, int actual_chunk_size, int copy_comment, transfer_data_t *transfer_data){
 	int64_t size = 0;
-	ResetSeqsCounter(); // reset seq counter defined globally
+	resetTransfer(transfer_data);
 	int n_seqs_read;
-	bseq1_t *seqs = bseq_read(actual_chunk_size, &n_seqs_read, ks, ks2);	// this will write to preallocated_seqs
+	bseq_read2(actual_chunk_size, &n_seqs_read, ks, ks2, transfer_data);	// this will write to transfer_data
+	bseq1_t *seqs = transfer_data->h_seqs;
 	if (n_seqs_read == 0) {
 		return 0;
 	}
 	if (copy_comment)
 		for (int i = 0; i<n_seqs_read; ++i) {
-			// free(ret->seqs[i].comment);
 			seqs[i].comment = 0;
 		}
 	for (int i = 0; i<n_seqs_read; ++i) size += seqs[i].l_seq;
 	if (bwa_verbose >= 3)
-		fprintf(stderr, "[M::%s] *** read %d sequences (%ld bp)...\n", __func__, n_seqs_read, (long)size);
-	
-	CUDATransferSeqsIn(n_seqs_read);
+		fprintf(stderr, "[M::%-25s] *** read sequences %'ld - %'ld (%ld bp)\n", __func__, transfer_data->total_input, transfer_data->total_input+n_seqs_read-1, (long)size);
+
+	transfer_data->n_seqs = n_seqs_read;
+	CUDATransferSeqsIn(transfer_data);
 	if (bwa_verbose >= 3)
-		fprintf(stderr, "[M::%s] *** transferred %d sequences to device...\n", __func__, n_seqs_read);
+		fprintf(stderr, "[M::%-25s] *** transferred sequences %'ld - %'ld to device\n", __func__, transfer_data->total_input, transfer_data->total_input+n_seqs_read-1);
+	transfer_data->total_input += n_seqs_read;
 	
 	return n_seqs_read;
 }
@@ -38,17 +41,20 @@ static int readInput(kseq_t *ks, kseq_t *ks2, int actual_chunk_size, int copy_co
 	first transfer device's seqio to host's seq_io
 	then write from host's seq_io to output
  */
-static void writeOutput(int n_seqs, bool first_batch, int samSize){
+static void writeOutput(bool first_batch, transfer_data_t *transfer_data){
 	if (first_batch) return;
-	if (n_seqs==0) return;
-	bseq1_t *seqs = preallocated_seqs;	// host's seqio
-	// transfer from device's seq_io to host's seq_io
-	CUDATransferSamOut(n_seqs, samSize);
+	if (transfer_data->n_seqs==0) return;
+	// transfer from device's to host's
+	CUDATransferSamOut(transfer_data);
 	// write from host's seq_io to output
+	int n_seqs = transfer_data->n_seqs;
+	bseq1_t *seqs = transfer_data->h_seqs;
 	for (int i = 0; i < n_seqs; ++i)
 		if (seqs[i].sam) err_fputs(seqs[i].sam, stdout);
 	if (bwa_verbose >= 3)
-		fprintf(stderr, "[M::%s] wrote output for  %'d seqs\n", __func__, n_seqs);
+		fprintf(stderr, "[M::%-25s] *** wrote output for sequences %'ld - %'ld\n", __func__, transfer_data->total_output, transfer_data->total_output+n_seqs);
+	fprintf(stderr, "[M::%-25s] finised %'ld read\n", __func__, transfer_data->total_output);
+	transfer_data->total_output += n_seqs;
 }
 
 
@@ -64,45 +70,39 @@ static void writeOutput(int n_seqs, bool first_batch, int samSize){
 		swap corresponding 2 sets of pointers on device
  */
 void processHideIO(ktp_aux_t *aux){
-	int n_seqs_io = 0;			// number of seqs currently in the allocated memory for IO
-	int n_seqs_process = 0;		// number of seqs to be processed
-	// io memory and process memory are pre-allocated (preallocated_seqs and preallocated_seqs2 respectively)
-	int samSize_io = 0;		// total size of SAM on the device's seqs_io
+	transfer_data_t *transfer_data = newTransfer();
+	process_data_t *process_data = newProcess(aux->opt, aux->pes0, aux->idx->bwt, aux->idx->bns, aux->idx->pac);
 	bool first_batch = true;
-	
-	while (first_batch || n_seqs_io!=0 || n_seqs_process!=0 ){		// kernel, process until IO is empty
+	while (first_batch || transfer_data->n_seqs!=0 || process_data->n_seqs!=0 ){		// kernel, process until IO is empty
+		if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** seqs in transfer=%'d, seqs in process=%'d \n", __func__, transfer_data->n_seqs, process_data->n_seqs);
 		// async output previous batch (process 0)
-		auto outputAsync = std::async(std::launch::async, &writeOutput, n_seqs_io, first_batch, samSize_io); //does nothing if first_batch
+		auto outputAsync = std::async(std::launch::async, &writeOutput, first_batch, transfer_data); //does nothing if first_batch
 			// synchronous version for debug
 			// writeOutput(n_seqs_io, first_batch, samSize_io);
 
 		// async process current batch (process 1)
-		prepare_batch_GPU(&aux->gpu_data, preallocated_seqs2, n_seqs_process, aux->opt);	// does nothing if n_seqs is 0
-		auto processAsync = std::async(std::launch::async, mem_align_GPU, aux->gpu_data, preallocated_seqs2, aux->opt, aux->idx->bns);	// does nothing if gpu_data->n_seqs is 0
+		auto processAsync = std::async(std::launch::async, mem_align_GPU, process_data);	// does nothing if process_data->n_seqs is 0
 			// synchronous version for debug
 			// samSize_io = mem_align_GPU(aux->gpu_data, preallocated_seqs2, aux->opt, aux->idx->bns);
-		if (n_seqs_process){
-			aux->n_processed += n_seqs_process;
-			aux->gpu_data.n_processed += n_seqs_process;
-		}
 
 		// async input next batch (process 0)
 		outputAsync.wait();
-		auto inputAsync = std::async(std::launch::async, readInput, aux->ks, aux->ks2, aux->actual_chunk_size, aux->copy_comment);
+		auto inputAsync = std::async(std::launch::async, readInput, aux->ks, aux->ks2, aux->actual_chunk_size, aux->copy_comment, transfer_data);
 			// synchronous version for debug
 			// n_seqs_io = readInput(aux->ks, aux->ks2, aux->actual_chunk_size, aux->copy_comment);
 
 		// swap output of current processed batch to IO, and IO to process for next loop
 		// i.e., swap seqs_io <-> seqs_processed on host, and swap pointers on device
-		n_seqs_io = inputAsync.get();		// number of seqs to process in next iteration
-		samSize_io = processAsync.get();	// size of SAM output in next iteration
-											// n_seqs_process is now the number of seqs to output in next iteration
-		auto tmp = n_seqs_io; n_seqs_io = n_seqs_process; n_seqs_process = tmp; // after this swap, n_seqs_io is the number of seqs to out, n_seqs_process is the number of seqs to process
-		SwapPtrs();
+		inputAsync.wait();
+		processAsync.wait();
+			// process_data->n_seqs is now the number of seqs to output in next iteration
+			// transfer_data->n_seqs is now the number of seqs to process in next interation
+		swapData(process_data, transfer_data);
+			// after this swap, process_data->n_seqs is the number of seqs to process in next iteration
+			// 					transfer_data->n_seqs is the number of seqs to output in next iteration
 		first_batch = false;
-		if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** n_seqs_io=%d, n_seqs_process=%d \n", __func__, n_seqs_io, n_seqs_process);
+		if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** data swapped \n", __func__);
+		if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** seqs in transfer=%'d, seqs in process=%'d \n", __func__, transfer_data->n_seqs, process_data->n_seqs);
 	}
-
 	return;
-
 }

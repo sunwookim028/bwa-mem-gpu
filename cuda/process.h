@@ -16,7 +16,6 @@ typedef struct {
 	int64_t n_processed;
 	int copy_comment, actual_chunk_size;
 	bwaidx_t *idx;
-	gpu_ptrs_t gpu_data;
 } ktp_aux_t;
 
 typedef struct {

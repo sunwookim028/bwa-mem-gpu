@@ -1,7 +1,6 @@
 #include "errHandler.cuh"
 #include "kbtree_CUDA.cuh"
 #include "../bwa.h"
-#include "batch_config.h"
 #include "bwamem_GPU.cuh"
 #include "CUDAKernel_memmgnt.cuh"
 #include "bwt_CUDA.cuh"
@@ -12,6 +11,7 @@
 #include "kstring_CUDA.cuh"
 #include <string.h>
 #include <cub/cub.cuh>
+#include "streams.cuh"
 
 __device__ __constant__ unsigned char d_nst_nt4_table[256] = {
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
@@ -505,16 +505,16 @@ __device__ static inline int infer_bw(int l1, int l2, int score, int a, int q, i
 	return w;
 }
 
-__device__ static inline int get_rlen(int n_cigar, const uint32_t *cigar)
-{
-	int k, l;
-	for (k = l = 0; k < n_cigar; ++k) {
-		int op = cigar[k]&0xf;
-		if (op == 0 || op == 2)
-			l += cigar[k]>>4;
-	}
-	return l;
-}
+// __device__ static inline int get_rlen(int n_cigar, const uint32_t *cigar)
+// {
+// 	int k, l;
+// 	for (k = l = 0; k < n_cigar; ++k) {
+// 		int op = cigar[k]&0xf;
+// 		if (op == 0 || op == 2)
+// 			l += cigar[k]>>4;
+// 	}
+// 	return l;
+// }
 
 __device__ static inline void add_cigar(const mem_opt_t *opt, mem_aln_t *p, kstring_t *str, int which, void* d_buffer_ptr)
 {
@@ -529,131 +529,131 @@ __device__ static inline void add_cigar(const mem_opt_t *opt, mem_aln_t *p, kstr
 	} else kputc('*', str, d_buffer_ptr); // having a coordinate but unaligned (e.g. when copy_mate is true)
 }
 
-__device__ static void mem_aln2sam(const mem_opt_t *opt, const bntseq_t *bns, kstring_t *str, bseq1_t *s, int n, const mem_aln_t *list, int which, const mem_aln_t *m_, void* d_buffer_ptr)
-{
-	int i, l_name;
-	mem_aln_t ptmp = list[which], *p = &ptmp, mtmp, *m = 0; // make a copy of the alignment to convert
+// __device__ static void mem_aln2sam(const mem_opt_t *opt, const bntseq_t *bns, kstring_t *str, bseq1_t *s, int n, const mem_aln_t *list, int which, const mem_aln_t *m_, void* d_buffer_ptr)
+// {
+// 	int i, l_name;
+// 	mem_aln_t ptmp = list[which], *p = &ptmp, mtmp, *m = 0; // make a copy of the alignment to convert
 
-	if (m_) mtmp = *m_, m = &mtmp;
-	// set flag
-	p->flag |= m? 0x1 : 0; // is paired in sequencing
-	p->flag |= p->rid < 0? 0x4 : 0; // is mapped
-	p->flag |= m && m->rid < 0? 0x8 : 0; // is mate mapped
-	if (p->rid < 0 && m && m->rid >= 0) // copy mate to alignment
-		p->rid = m->rid, p->pos = m->pos, p->is_rev = m->is_rev, p->n_cigar = 0;
-	if (m && m->rid < 0 && p->rid >= 0) // copy alignment to mate
-		m->rid = p->rid, m->pos = p->pos, m->is_rev = p->is_rev, m->n_cigar = 0;
-	p->flag |= p->is_rev? 0x10 : 0; // is on the reverse strand
-	p->flag |= m && m->is_rev? 0x20 : 0; // is mate on the reverse strand
+// 	if (m_) mtmp = *m_, m = &mtmp;
+// 	// set flag
+// 	p->flag |= m? 0x1 : 0; // is paired in sequencing
+// 	p->flag |= p->rid < 0? 0x4 : 0; // is mapped
+// 	p->flag |= m && m->rid < 0? 0x8 : 0; // is mate mapped
+// 	if (p->rid < 0 && m && m->rid >= 0) // copy mate to alignment
+// 		p->rid = m->rid, p->pos = m->pos, p->is_rev = m->is_rev, p->n_cigar = 0;
+// 	if (m && m->rid < 0 && p->rid >= 0) // copy alignment to mate
+// 		m->rid = p->rid, m->pos = p->pos, m->is_rev = p->is_rev, m->n_cigar = 0;
+// 	p->flag |= p->is_rev? 0x10 : 0; // is on the reverse strand
+// 	p->flag |= m && m->is_rev? 0x20 : 0; // is mate on the reverse strand
 
-	// print up to CIGAR
-	l_name = strlen_GPU(s->name);
-	ks_resize(str, str->l + s->l_seq + l_name + (s->qual? s->l_seq : 0) + 20, d_buffer_ptr);
-	kputsn(s->name, l_name, str, d_buffer_ptr); kputc('\t', str, d_buffer_ptr); // QNAME
-	kputw((p->flag&0xffff) | (p->flag&0x10000? 0x100 : 0), str, d_buffer_ptr); kputc('\t', str, d_buffer_ptr); // FLAG
-	if (p->rid >= 0) { // with coordinate
-		kputs(bns->anns[p->rid].name, str, d_buffer_ptr); kputc('\t', str, d_buffer_ptr); // RNAME
-		kputl(p->pos + 1, str, d_buffer_ptr); kputc('\t', str, d_buffer_ptr); // POS
-		kputw(p->mapq, str, d_buffer_ptr); kputc('\t', str, d_buffer_ptr); // MAPQ
-		add_cigar(opt, p, str, which, d_buffer_ptr);
-	} else kputsn("*\t0\t0\t*", 7, str, d_buffer_ptr); // without coordinte
-	kputc('\t', str, d_buffer_ptr);
+// 	// print up to CIGAR
+// 	l_name = strlen_GPU(s->name);
+// 	ks_resize(str, str->l + s->l_seq + l_name + (s->qual? s->l_seq : 0) + 20, d_buffer_ptr);
+// 	kputsn(s->name, l_name, str, d_buffer_ptr); kputc('\t', str, d_buffer_ptr); // QNAME
+// 	kputw((p->flag&0xffff) | (p->flag&0x10000? 0x100 : 0), str, d_buffer_ptr); kputc('\t', str, d_buffer_ptr); // FLAG
+// 	if (p->rid >= 0) { // with coordinate
+// 		kputs(bns->anns[p->rid].name, str, d_buffer_ptr); kputc('\t', str, d_buffer_ptr); // RNAME
+// 		kputl(p->pos + 1, str, d_buffer_ptr); kputc('\t', str, d_buffer_ptr); // POS
+// 		kputw(p->mapq, str, d_buffer_ptr); kputc('\t', str, d_buffer_ptr); // MAPQ
+// 		add_cigar(opt, p, str, which, d_buffer_ptr);
+// 	} else kputsn("*\t0\t0\t*", 7, str, d_buffer_ptr); // without coordinte
+// 	kputc('\t', str, d_buffer_ptr);
 
-	// print the mate position if applicable
-	if (m && m->rid >= 0) {
-		if (p->rid == m->rid) kputc('=', str, d_buffer_ptr);
-		else kputs(bns->anns[m->rid].name, str, d_buffer_ptr);
-		kputc('\t', str, d_buffer_ptr);
-		kputl(m->pos + 1, str, d_buffer_ptr); kputc('\t', str, d_buffer_ptr);
-		if (p->rid == m->rid) {
-			int64_t p0 = p->pos + (p->is_rev? get_rlen(p->n_cigar, p->cigar) - 1 : 0);
-			int64_t p1 = m->pos + (m->is_rev? get_rlen(m->n_cigar, m->cigar) - 1 : 0);
-			if (m->n_cigar == 0 || p->n_cigar == 0) kputc('0', str, d_buffer_ptr);
-			else kputl(-(p0 - p1 + (p0 > p1? 1 : p0 < p1? -1 : 0)), str, d_buffer_ptr);
-		} else kputc('0', str, d_buffer_ptr);
-	} else kputsn("*\t0\t0", 5, str, d_buffer_ptr);
-	kputc('\t', str, d_buffer_ptr);
+// 	// print the mate position if applicable
+// 	if (m && m->rid >= 0) {
+// 		if (p->rid == m->rid) kputc('=', str, d_buffer_ptr);
+// 		else kputs(bns->anns[m->rid].name, str, d_buffer_ptr);
+// 		kputc('\t', str, d_buffer_ptr);
+// 		kputl(m->pos + 1, str, d_buffer_ptr); kputc('\t', str, d_buffer_ptr);
+// 		if (p->rid == m->rid) {
+// 			int64_t p0 = p->pos + (p->is_rev? get_rlen(p->n_cigar, p->cigar) - 1 : 0);
+// 			int64_t p1 = m->pos + (m->is_rev? get_rlen(m->n_cigar, m->cigar) - 1 : 0);
+// 			if (m->n_cigar == 0 || p->n_cigar == 0) kputc('0', str, d_buffer_ptr);
+// 			else kputl(-(p0 - p1 + (p0 > p1? 1 : p0 < p1? -1 : 0)), str, d_buffer_ptr);
+// 		} else kputc('0', str, d_buffer_ptr);
+// 	} else kputsn("*\t0\t0", 5, str, d_buffer_ptr);
+// 	kputc('\t', str, d_buffer_ptr);
 
-	// print SEQ and QUAL
-	if (p->flag & 0x100) { // for secondary alignments, don't write SEQ and QUAL
-		kputsn("*\t*", 3, str, d_buffer_ptr);
-	} else if (!p->is_rev) { // the forward strand
-		int i, qb = 0, qe = s->l_seq;
-		if (p->n_cigar && which && !(opt->flag&MEM_F_SOFTCLIP) && !p->is_alt) { // have cigar && not the primary alignment && not softclip all
-			if ((p->cigar[0]&0xf) == 4 || (p->cigar[0]&0xf) == 3) qb += p->cigar[0]>>4;
-			if ((p->cigar[p->n_cigar-1]&0xf) == 4 || (p->cigar[p->n_cigar-1]&0xf) == 3) qe -= p->cigar[p->n_cigar-1]>>4;
-		}
-		ks_resize(str, str->l + (qe - qb) + 1, d_buffer_ptr);
-		for (i = qb; i < qe; ++i) str->s[str->l++] = "ACGTN"[(int)s->seq[i]];
-		kputc('\t', str, d_buffer_ptr);
-		if (s->qual) { // printf qual
-			ks_resize(str, str->l + (qe - qb) + 1, d_buffer_ptr);
-			for (i = qb; i < qe; ++i) str->s[str->l++] = s->qual[i];
-			str->s[str->l] = 0;
-		} else kputc('*', str, d_buffer_ptr);
-	} else { // the reverse strand
-		int i, qb = 0, qe = s->l_seq;
-		if (p->n_cigar && which && !(opt->flag&MEM_F_SOFTCLIP) && !p->is_alt) {
-			if ((p->cigar[0]&0xf) == 4 || (p->cigar[0]&0xf) == 3) qe -= p->cigar[0]>>4;
-			if ((p->cigar[p->n_cigar-1]&0xf) == 4 || (p->cigar[p->n_cigar-1]&0xf) == 3) qb += p->cigar[p->n_cigar-1]>>4;
-		}
-		ks_resize(str, str->l + (qe - qb) + 1, d_buffer_ptr);
-		for (i = qe-1; i >= qb; --i) str->s[str->l++] = "TGCAN"[(int)s->seq[i]];
-		kputc('\t', str, d_buffer_ptr);
-		if (s->qual) { // printf qual
-			ks_resize(str, str->l + (qe - qb) + 1, d_buffer_ptr);
-			for (i = qe-1; i >= qb; --i) str->s[str->l++] = s->qual[i];
-			str->s[str->l] = 0;
-		} else kputc('*', str, d_buffer_ptr);
-	}
+// 	// print SEQ and QUAL
+// 	if (p->flag & 0x100) { // for secondary alignments, don't write SEQ and QUAL
+// 		kputsn("*\t*", 3, str, d_buffer_ptr);
+// 	} else if (!p->is_rev) { // the forward strand
+// 		int i, qb = 0, qe = s->l_seq;
+// 		if (p->n_cigar && which && !(opt->flag&MEM_F_SOFTCLIP) && !p->is_alt) { // have cigar && not the primary alignment && not softclip all
+// 			if ((p->cigar[0]&0xf) == 4 || (p->cigar[0]&0xf) == 3) qb += p->cigar[0]>>4;
+// 			if ((p->cigar[p->n_cigar-1]&0xf) == 4 || (p->cigar[p->n_cigar-1]&0xf) == 3) qe -= p->cigar[p->n_cigar-1]>>4;
+// 		}
+// 		ks_resize(str, str->l + (qe - qb) + 1, d_buffer_ptr);
+// 		for (i = qb; i < qe; ++i) str->s[str->l++] = "ACGTN"[(int)s->seq[i]];
+// 		kputc('\t', str, d_buffer_ptr);
+// 		if (s->qual) { // printf qual
+// 			ks_resize(str, str->l + (qe - qb) + 1, d_buffer_ptr);
+// 			for (i = qb; i < qe; ++i) str->s[str->l++] = s->qual[i];
+// 			str->s[str->l] = 0;
+// 		} else kputc('*', str, d_buffer_ptr);
+// 	} else { // the reverse strand
+// 		int i, qb = 0, qe = s->l_seq;
+// 		if (p->n_cigar && which && !(opt->flag&MEM_F_SOFTCLIP) && !p->is_alt) {
+// 			if ((p->cigar[0]&0xf) == 4 || (p->cigar[0]&0xf) == 3) qe -= p->cigar[0]>>4;
+// 			if ((p->cigar[p->n_cigar-1]&0xf) == 4 || (p->cigar[p->n_cigar-1]&0xf) == 3) qb += p->cigar[p->n_cigar-1]>>4;
+// 		}
+// 		ks_resize(str, str->l + (qe - qb) + 1, d_buffer_ptr);
+// 		for (i = qe-1; i >= qb; --i) str->s[str->l++] = "TGCAN"[(int)s->seq[i]];
+// 		kputc('\t', str, d_buffer_ptr);
+// 		if (s->qual) { // printf qual
+// 			ks_resize(str, str->l + (qe - qb) + 1, d_buffer_ptr);
+// 			for (i = qe-1; i >= qb; --i) str->s[str->l++] = s->qual[i];
+// 			str->s[str->l] = 0;
+// 		} else kputc('*', str, d_buffer_ptr);
+// 	}
 
-	// print optional tags
-	if (p->n_cigar) {
-		kputsn("\tNM:i:", 6, str, d_buffer_ptr); kputw(p->NM, str, d_buffer_ptr);
-		kputsn("\tMD:Z:", 6, str, d_buffer_ptr); kputs((char*)(p->cigar + p->n_cigar), str, d_buffer_ptr);
-	}
-	if (m && m->n_cigar) { kputsn("\tMC:Z:", 6, str, d_buffer_ptr); add_cigar(opt, m, str, which, d_buffer_ptr); }
-	if (p->score >= 0) { kputsn("\tAS:i:", 6, str, d_buffer_ptr); kputw(p->score, str, d_buffer_ptr); }
-	if (p->sub >= 0) { kputsn("\tXS:i:", 6, str, d_buffer_ptr); kputw(p->sub, str, d_buffer_ptr); }
-	// if (bwa_rg_id[0]) { kputsn("\tRG:Z:", 6, str, d_buffer_ptr); kputs(bwa_rg_id, str, d_buffer_ptr); }
-	if (!(p->flag & 0x100)) { // not multi-hit
-		for (i = 0; i < n; ++i)
-			if (i != which && !(list[i].flag&0x100)) break;
-		if (i < n) { // there are other primary hits; output them
-			kputsn("\tSA:Z:", 6, str, d_buffer_ptr);
-			for (i = 0; i < n; ++i) {
-				const mem_aln_t *r = &list[i];
-				int k;
-				if (i == which || (r->flag&0x100)) continue; // proceed if: 1) different from the current; 2) not shadowed multi hit
-				kputs(bns->anns[r->rid].name, str, d_buffer_ptr); kputc(',', str, d_buffer_ptr);
-				kputl(r->pos+1, str, d_buffer_ptr); kputc(',', str, d_buffer_ptr);
-				kputc("+-"[r->is_rev], str, d_buffer_ptr); kputc(',', str, d_buffer_ptr);
-				for (k = 0; k < r->n_cigar; ++k) {
-					kputw(r->cigar[k]>>4, str, d_buffer_ptr); kputc("MIDSH"[r->cigar[k]&0xf], str, d_buffer_ptr);
-				}
-				kputc(',', str, d_buffer_ptr); kputw(r->mapq, str, d_buffer_ptr);
-				kputc(',', str, d_buffer_ptr); kputw(r->NM, str, d_buffer_ptr);
-				kputc(';', str, d_buffer_ptr);
-			}
-		}
-		if (p->alt_sc > 0)
-			ksprintf(str, "\tpa:f:%.3f", (float)p->score / p->alt_sc, d_buffer_ptr);
-	}
-	if (p->XA) {
-		kputsn((opt->flag&MEM_F_XB)? "\tXB:Z:" : "\tXA:Z:", 6, str, d_buffer_ptr);
-		kputs(p->XA, str, d_buffer_ptr);
-	}
-	if (s->comment) { kputc('\t', str, d_buffer_ptr); kputs(s->comment, str, d_buffer_ptr); }
-	if ((opt->flag&MEM_F_REF_HDR) && p->rid >= 0 && bns->anns[p->rid].anno != 0 && bns->anns[p->rid].anno[0] != 0) {
-		int tmp;
-		kputsn("\tXR:Z:", 6, str, d_buffer_ptr);
-		tmp = str->l;
-		kputs(bns->anns[p->rid].anno, str, d_buffer_ptr);
-		for (i = tmp; i < str->l; ++i) // replace TAB in the comment to SPACE
-			if (str->s[i] == '\t') str->s[i] = ' ';
-	}
-	kputc('\n', str, d_buffer_ptr);
-}
+// 	// print optional tags
+// 	if (p->n_cigar) {
+// 		kputsn("\tNM:i:", 6, str, d_buffer_ptr); kputw(p->NM, str, d_buffer_ptr);
+// 		kputsn("\tMD:Z:", 6, str, d_buffer_ptr); kputs((char*)(p->cigar + p->n_cigar), str, d_buffer_ptr);
+// 	}
+// 	if (m && m->n_cigar) { kputsn("\tMC:Z:", 6, str, d_buffer_ptr); add_cigar(opt, m, str, which, d_buffer_ptr); }
+// 	if (p->score >= 0) { kputsn("\tAS:i:", 6, str, d_buffer_ptr); kputw(p->score, str, d_buffer_ptr); }
+// 	if (p->sub >= 0) { kputsn("\tXS:i:", 6, str, d_buffer_ptr); kputw(p->sub, str, d_buffer_ptr); }
+// 	// if (bwa_rg_id[0]) { kputsn("\tRG:Z:", 6, str, d_buffer_ptr); kputs(bwa_rg_id, str, d_buffer_ptr); }
+// 	if (!(p->flag & 0x100)) { // not multi-hit
+// 		for (i = 0; i < n; ++i)
+// 			if (i != which && !(list[i].flag&0x100)) break;
+// 		if (i < n) { // there are other primary hits; output them
+// 			kputsn("\tSA:Z:", 6, str, d_buffer_ptr);
+// 			for (i = 0; i < n; ++i) {
+// 				const mem_aln_t *r = &list[i];
+// 				int k;
+// 				if (i == which || (r->flag&0x100)) continue; // proceed if: 1) different from the current; 2) not shadowed multi hit
+// 				kputs(bns->anns[r->rid].name, str, d_buffer_ptr); kputc(',', str, d_buffer_ptr);
+// 				kputl(r->pos+1, str, d_buffer_ptr); kputc(',', str, d_buffer_ptr);
+// 				kputc("+-"[r->is_rev], str, d_buffer_ptr); kputc(',', str, d_buffer_ptr);
+// 				for (k = 0; k < r->n_cigar; ++k) {
+// 					kputw(r->cigar[k]>>4, str, d_buffer_ptr); kputc("MIDSH"[r->cigar[k]&0xf], str, d_buffer_ptr);
+// 				}
+// 				kputc(',', str, d_buffer_ptr); kputw(r->mapq, str, d_buffer_ptr);
+// 				kputc(',', str, d_buffer_ptr); kputw(r->NM, str, d_buffer_ptr);
+// 				kputc(';', str, d_buffer_ptr);
+// 			}
+// 		}
+// 		if (p->alt_sc > 0)
+// 			ksprintf(str, "\tpa:f:%.3f", (float)p->score / p->alt_sc, d_buffer_ptr);
+// 	}
+// 	if (p->XA) {
+// 		kputsn((opt->flag&MEM_F_XB)? "\tXB:Z:" : "\tXA:Z:", 6, str, d_buffer_ptr);
+// 		kputs(p->XA, str, d_buffer_ptr);
+// 	}
+// 	if (s->comment) { kputc('\t', str, d_buffer_ptr); kputs(s->comment, str, d_buffer_ptr); }
+// 	if ((opt->flag&MEM_F_REF_HDR) && p->rid >= 0 && bns->anns[p->rid].anno != 0 && bns->anns[p->rid].anno[0] != 0) {
+// 		int tmp;
+// 		kputsn("\tXR:Z:", 6, str, d_buffer_ptr);
+// 		tmp = str->l;
+// 		kputs(bns->anns[p->rid].anno, str, d_buffer_ptr);
+// 		for (i = tmp; i < str->l; ++i) // replace TAB in the comment to SPACE
+// 			if (str->s[i] == '\t') str->s[i] = ' ';
+// 	}
+// 	kputc('\n', str, d_buffer_ptr);
+// }
 
 
 /*****************************************************
@@ -746,76 +746,76 @@ __device__ static void mem_mark_primary_se_core_GPU(const mem_opt_t *opt, int n,
 	}
 }
 
-__device__ static mem_aln_t mem_reg2aln_GPU(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const char *query_, const mem_alnreg_t *ar, void* d_buffer_ptr)
-{
-	mem_aln_t a;
-	int i, w2, tmp, qb, qe, NM, score, is_rev, last_sc = -(1<<30), l_MD;
-	int64_t pos, rb, re;
-	uint8_t *query;
+// __device__ static mem_aln_t mem_reg2aln_GPU(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const char *query_, const mem_alnreg_t *ar, void* d_buffer_ptr)
+// {
+// 	mem_aln_t a;
+// 	int i, w2, tmp, qb, qe, NM, score, is_rev, last_sc = -(1<<30), l_MD;
+// 	int64_t pos, rb, re;
+// 	uint8_t *query;
 
-	memset(&a, 0, sizeof(mem_aln_t));
-	if (ar == 0 || ar->rb < 0 || ar->re < 0) { // generate an unmapped record
-		a.rid = -1; a.pos = -1; a.flag |= 0x4;
-		return a;
-	}
-	qb = ar->qb, qe = ar->qe;
-	rb = ar->rb, re = ar->re;
-	query = (uint8_t*)CUDAKernelMalloc(d_buffer_ptr, l_query, 1);
-	for (i = 0; i < l_query; ++i) // convert to the nt4 encoding
-		query[i] = query_[i] < 5? query_[i] : d_nst_nt4_table[(int)query_[i]];
-	a.mapq = ar->secondary < 0? mem_approx_mapq_se(opt, ar) : 0;
-	if (ar->secondary >= 0) a.flag |= 0x100; // secondary alignment
-	tmp = infer_bw(qe - qb, re - rb, ar->truesc, opt->a, opt->o_del, opt->e_del);
-	w2  = infer_bw(qe - qb, re - rb, ar->truesc, opt->a, opt->o_ins, opt->e_ins);
-	w2 = w2 > tmp? w2 : tmp;
-	if (w2 > opt->w) w2 = w2 < ar->w? w2 : ar->w;
-	i = 0; a.cigar = 0;
-	do {
-		// free(a.cigar);
-		w2 = w2 < opt->w<<2? w2 : opt->w<<2;
-		a.cigar = bwa_gen_cigar2_gpu(opt->mat, opt->o_del, opt->e_del, opt->o_ins, opt->e_ins, w2, bns->l_pac, pac, qe - qb, (uint8_t*)&query[qb], rb, re, &score, &a.n_cigar, &NM, d_buffer_ptr);
-		if (score == last_sc || w2 == opt->w<<2) break; // it is possible that global alignment and local alignment give different scores
-		last_sc = score;
-		w2 <<= 1;
-	} while (++i < 3 && score < ar->truesc - opt->a);
-	l_MD = strlen_GPU((char*)(a.cigar + a.n_cigar)) + 1;
+// 	memset(&a, 0, sizeof(mem_aln_t));
+// 	if (ar == 0 || ar->rb < 0 || ar->re < 0) { // generate an unmapped record
+// 		a.rid = -1; a.pos = -1; a.flag |= 0x4;
+// 		return a;
+// 	}
+// 	qb = ar->qb, qe = ar->qe;
+// 	rb = ar->rb, re = ar->re;
+// 	query = (uint8_t*)CUDAKernelMalloc(d_buffer_ptr, l_query, 1);
+// 	for (i = 0; i < l_query; ++i) // convert to the nt4 encoding
+// 		query[i] = query_[i] < 5? query_[i] : d_nst_nt4_table[(int)query_[i]];
+// 	a.mapq = ar->secondary < 0? mem_approx_mapq_se(opt, ar) : 0;
+// 	if (ar->secondary >= 0) a.flag |= 0x100; // secondary alignment
+// 	tmp = infer_bw(qe - qb, re - rb, ar->truesc, opt->a, opt->o_del, opt->e_del);
+// 	w2  = infer_bw(qe - qb, re - rb, ar->truesc, opt->a, opt->o_ins, opt->e_ins);
+// 	w2 = w2 > tmp? w2 : tmp;
+// 	if (w2 > opt->w) w2 = w2 < ar->w? w2 : ar->w;
+// 	i = 0; a.cigar = 0;
+// 	do {
+// 		// free(a.cigar);
+// 		w2 = w2 < opt->w<<2? w2 : opt->w<<2;
+// 		a.cigar = bwa_gen_cigar2_gpu(opt->mat, opt->o_del, opt->e_del, opt->o_ins, opt->e_ins, w2, bns->l_pac, pac, qe - qb, (uint8_t*)&query[qb], rb, re, &score, &a.n_cigar, &NM, d_buffer_ptr);
+// 		if (score == last_sc || w2 == opt->w<<2) break; // it is possible that global alignment and local alignment give different scores
+// 		last_sc = score;
+// 		w2 <<= 1;
+// 	} while (++i < 3 && score < ar->truesc - opt->a);
+// 	l_MD = strlen_GPU((char*)(a.cigar + a.n_cigar)) + 1;
 
-	a.NM = NM;
-	pos = bns_depos_GPU(bns, rb < bns->l_pac? rb : re - 1, &is_rev);
-	a.is_rev = is_rev;
-	if (a.n_cigar > 0) { // squeeze out leading or trailing deletions
-		if ((a.cigar[0]&0xf) == 2) {
-			pos += a.cigar[0]>>4;
-			--a.n_cigar;
-			cudaKernelMemmove(a.cigar + 1, a.cigar, a.n_cigar * 4 + l_MD);
-		} else if ((a.cigar[a.n_cigar-1]&0xf) == 2) {
-			--a.n_cigar;
-			cudaKernelMemmove(a.cigar + a.n_cigar + 1, a.cigar + a.n_cigar, l_MD); // MD needs to be moved accordingly
-		}
-	}
-	if (qb != 0 || qe != l_query) { // add clipping to CIGAR
-		int clip5, clip3;
-		clip5 = is_rev? l_query - qe : qb;
-		clip3 = is_rev? qb : l_query - qe;
-		a.cigar = (uint32_t*)CUDAKernelRealloc(d_buffer_ptr, a.cigar, 4 * (a.n_cigar + 2) + l_MD, 4);
-		if (clip5) {
-			cudaKernelMemmove(a.cigar, a.cigar+1, a.n_cigar * 4 + l_MD); // make room for 5'-end clipping
-			a.cigar[0] = clip5<<4 | 3;
-			++a.n_cigar;
-		}
-		if (clip3) {
-			cudaKernelMemmove(a.cigar + a.n_cigar, a.cigar + a.n_cigar + 1, l_MD); // make room for 3'-end clipping
-			a.cigar[a.n_cigar++] = clip3<<4 | 3;
-		}
-	}
-	a.rid = bns_pos2rid_gpu(bns, pos);
-	// assert(a.rid == ar->rid);
-	a.pos = pos - bns->anns[a.rid].offset;
-	a.score = ar->score; a.sub = ar->sub > ar->csub? ar->sub : ar->csub;
-	a.is_alt = ar->is_alt; a.alt_sc = ar->alt_sc;
-	// free(query);
-	return a;
-}
+// 	a.NM = NM;
+// 	pos = bns_depos_GPU(bns, rb < bns->l_pac? rb : re - 1, &is_rev);
+// 	a.is_rev = is_rev;
+// 	if (a.n_cigar > 0) { // squeeze out leading or trailing deletions
+// 		if ((a.cigar[0]&0xf) == 2) {
+// 			pos += a.cigar[0]>>4;
+// 			--a.n_cigar;
+// 			cudaKernelMemmove(a.cigar + 1, a.cigar, a.n_cigar * 4 + l_MD);
+// 		} else if ((a.cigar[a.n_cigar-1]&0xf) == 2) {
+// 			--a.n_cigar;
+// 			cudaKernelMemmove(a.cigar + a.n_cigar + 1, a.cigar + a.n_cigar, l_MD); // MD needs to be moved accordingly
+// 		}
+// 	}
+// 	if (qb != 0 || qe != l_query) { // add clipping to CIGAR
+// 		int clip5, clip3;
+// 		clip5 = is_rev? l_query - qe : qb;
+// 		clip3 = is_rev? qb : l_query - qe;
+// 		a.cigar = (uint32_t*)CUDAKernelRealloc(d_buffer_ptr, a.cigar, 4 * (a.n_cigar + 2) + l_MD, 4);
+// 		if (clip5) {
+// 			cudaKernelMemmove(a.cigar, a.cigar+1, a.n_cigar * 4 + l_MD); // make room for 5'-end clipping
+// 			a.cigar[0] = clip5<<4 | 3;
+// 			++a.n_cigar;
+// 		}
+// 		if (clip3) {
+// 			cudaKernelMemmove(a.cigar + a.n_cigar, a.cigar + a.n_cigar + 1, l_MD); // make room for 3'-end clipping
+// 			a.cigar[a.n_cigar++] = clip3<<4 | 3;
+// 		}
+// 	}
+// 	a.rid = bns_pos2rid_gpu(bns, pos);
+// 	// assert(a.rid == ar->rid);
+// 	a.pos = pos - bns->anns[a.rid].offset;
+// 	a.score = ar->score; a.sub = ar->sub > ar->csub? ar->sub : ar->csub;
+// 	a.is_alt = ar->is_alt; a.alt_sc = ar->alt_sc;
+// 	// free(query);
+// 	return a;
+// }
 
 
 __device__ int mem_mark_primary_se_GPU(const mem_opt_t *d_opt, int n, mem_alnreg_t *a, int id, void* d_buffer_ptr)
@@ -859,211 +859,209 @@ __device__ int mem_mark_primary_se_GPU(const mem_opt_t *d_opt, int n, mem_alnreg
 }
 
 
-__device__ static void mem_reorder_primary5(int T, mem_alnreg_v *a)
-{
-	int k, n_pri = 0, left_st = INT_MAX, left_k = -1;
-	mem_alnreg_t t;
-	for (k = 0; k < a->n; ++k)
-		if (a->a[k].secondary < 0 && !a->a[k].is_alt && a->a[k].score >= T) ++n_pri;
-	if (n_pri <= 1) return; // only one alignment
-	for (k = 0; k < a->n; ++k) {
-		mem_alnreg_t *p = &a->a[k];
-		if (p->secondary >= 0 || p->is_alt || p->score < T) continue;
-		if (p->qb < left_st) left_st = p->qb, left_k = k;
-	}
-	// assert(a->a[0].secondary < 0);
-	if (left_k == 0) return; // no need to reorder
-	t = a->a[0], a->a[0] = a->a[left_k], a->a[left_k] = t;
-	for (k = 1; k < a->n; ++k) { // update secondary and secondary_all
-		mem_alnreg_t *p = &a->a[k];
-		if (p->secondary == 0) p->secondary = left_k;
-		else if (p->secondary == left_k) p->secondary = 0;
-		if (p->secondary_all == 0) p->secondary_all = left_k;
-		else if (p->secondary_all == left_k) p->secondary_all = 0;
-	}
-}
+// __device__ static void mem_reorder_primary5(int T, mem_alnreg_v *a)
+// {
+// 	int k, n_pri = 0, left_st = INT_MAX, left_k = -1;
+// 	mem_alnreg_t t;
+// 	for (k = 0; k < a->n; ++k)
+// 		if (a->a[k].secondary < 0 && !a->a[k].is_alt && a->a[k].score >= T) ++n_pri;
+// 	if (n_pri <= 1) return; // only one alignment
+// 	for (k = 0; k < a->n; ++k) {
+// 		mem_alnreg_t *p = &a->a[k];
+// 		if (p->secondary >= 0 || p->is_alt || p->score < T) continue;
+// 		if (p->qb < left_st) left_st = p->qb, left_k = k;
+// 	}
+// 	// assert(a->a[0].secondary < 0);
+// 	if (left_k == 0) return; // no need to reorder
+// 	t = a->a[0], a->a[0] = a->a[left_k], a->a[left_k] = t;
+// 	for (k = 1; k < a->n; ++k) { // update secondary and secondary_all
+// 		mem_alnreg_t *p = &a->a[k];
+// 		if (p->secondary == 0) p->secondary = left_k;
+// 		else if (p->secondary == left_k) p->secondary = 0;
+// 		if (p->secondary_all == 0) p->secondary_all = left_k;
+// 		else if (p->secondary_all == left_k) p->secondary_all = 0;
+// 	}
+// }
 
 // ONLY work after mem_mark_primary_se()
-__device__ static char** mem_gen_alt(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_alnreg_v *a, int l_query, const char *query, void* d_buffer_ptr) 
-{
-	int i, k, r, *cnt, tot;
-	kstring_t *aln = 0, str = {0,0,0};
-	char **XA = 0, *has_alt;
+// __device__ static char** mem_gen_alt(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_alnreg_v *a, int l_query, const char *query, void* d_buffer_ptr) 
+// {
+// 	int i, k, r, *cnt, tot;
+// 	kstring_t *aln = 0, str = {0,0,0};
+// 	char **XA = 0, *has_alt;
 
-	cnt = (int*)CUDAKernelCalloc(d_buffer_ptr, a->n, sizeof(int), 4);
-	has_alt = (char*)CUDAKernelCalloc(d_buffer_ptr, a->n, 1, 1);
-	for (i = 0, tot = 0; i < a->n; ++i) {
-		// r = get_pri_idx(opt->XA_drop_ratio, a->a, i);
-		int kk = a->a[i].secondary_all;
-		if (kk >= 0 && a->a[i].score >= a->a[kk].score * opt->XA_drop_ratio) r = kk;
-		else r = -1;
-		if (r >= 0) {
-			++cnt[r], ++tot;
-			if (a->a[i].is_alt) has_alt[r] = 1;
-		}
-	}
+// 	cnt = (int*)CUDAKernelCalloc(d_buffer_ptr, a->n, sizeof(int), 4);
+// 	has_alt = (char*)CUDAKernelCalloc(d_buffer_ptr, a->n, 1, 1);
+// 	for (i = 0, tot = 0; i < a->n; ++i) {
+// 		// r = get_pri_idx(opt->XA_drop_ratio, a->a, i);
+// 		int kk = a->a[i].secondary_all;
+// 		if (kk >= 0 && a->a[i].score >= a->a[kk].score * opt->XA_drop_ratio) r = kk;
+// 		else r = -1;
+// 		if (r >= 0) {
+// 			++cnt[r], ++tot;
+// 			if (a->a[i].is_alt) has_alt[r] = 1;
+// 		}
+// 	}
 
-	if (tot == 0) goto end_gen_alt;
-	aln =(kstring_t*)CUDAKernelCalloc(d_buffer_ptr, a->n, sizeof(kstring_t), 8);
-	for (i = 0; i < a->n; ++i) {
-		mem_aln_t t;
-		// if ((r = get_pri_idx(opt->XA_drop_ratio, a->a, i)) < 0) continue;
-		int kk = a->a[i].secondary_all;
-		if (kk >= 0 && a->a[i].score >= a->a[kk].score * opt->XA_drop_ratio) r = kk;
-		else r = -1;
-		if (r<0) continue;
-		if (cnt[r] > opt->max_XA_hits_alt || (!has_alt[r] && cnt[r] > opt->max_XA_hits)) continue;
-		t = mem_reg2aln_GPU(opt, bns, pac, l_query, query, &a->a[i], d_buffer_ptr);
-		str.l = 0;
-		kputs(bns->anns[t.rid].name, &str, d_buffer_ptr);
-		kputc(',', &str, d_buffer_ptr); kputc("+-"[t.is_rev], &str, d_buffer_ptr); kputl(t.pos + 1, &str, d_buffer_ptr);
-		kputc(',', &str, d_buffer_ptr);
-		for (k = 0; k < t.n_cigar; ++k) {
-			kputw(t.cigar[k]>>4, &str, d_buffer_ptr);
-			kputc("MIDSHN"[t.cigar[k]&0xf], &str, d_buffer_ptr);
-		}
-		kputc(',', &str, d_buffer_ptr); kputw(t.NM, &str, d_buffer_ptr);
-		if (opt->flag & MEM_F_XB) {
-			kputc(',', &str, d_buffer_ptr);
-			kputw(t.score, &str, d_buffer_ptr);
-		}
-		kputc(';', &str, d_buffer_ptr);
-// 		free(t.cigar);
-		kputsn(str.s, str.l, &aln[r], d_buffer_ptr);
-	}
-	XA = (char**)CUDAKernelCalloc(d_buffer_ptr, a->n, sizeof(char*), 8);
-	for (k = 0; k < a->n; ++k)
-		XA[k] = aln[k].s;
+// 	if (tot == 0) goto end_gen_alt;
+// 	aln =(kstring_t*)CUDAKernelCalloc(d_buffer_ptr, a->n, sizeof(kstring_t), 8);
+// 	for (i = 0; i < a->n; ++i) {
+// 		mem_aln_t t;
+// 		// if ((r = get_pri_idx(opt->XA_drop_ratio, a->a, i)) < 0) continue;
+// 		int kk = a->a[i].secondary_all;
+// 		if (kk >= 0 && a->a[i].score >= a->a[kk].score * opt->XA_drop_ratio) r = kk;
+// 		else r = -1;
+// 		if (r<0) continue;
+// 		if (cnt[r] > opt->max_XA_hits_alt || (!has_alt[r] && cnt[r] > opt->max_XA_hits)) continue;
+// 		t = mem_reg2aln_GPU(opt, bns, pac, l_query, query, &a->a[i], d_buffer_ptr);
+// 		str.l = 0;
+// 		kputs(bns->anns[t.rid].name, &str, d_buffer_ptr);
+// 		kputc(',', &str, d_buffer_ptr); kputc("+-"[t.is_rev], &str, d_buffer_ptr); kputl(t.pos + 1, &str, d_buffer_ptr);
+// 		kputc(',', &str, d_buffer_ptr);
+// 		for (k = 0; k < t.n_cigar; ++k) {
+// 			kputw(t.cigar[k]>>4, &str, d_buffer_ptr);
+// 			kputc("MIDSHN"[t.cigar[k]&0xf], &str, d_buffer_ptr);
+// 		}
+// 		kputc(',', &str, d_buffer_ptr); kputw(t.NM, &str, d_buffer_ptr);
+// 		if (opt->flag & MEM_F_XB) {
+// 			kputc(',', &str, d_buffer_ptr);
+// 			kputw(t.score, &str, d_buffer_ptr);
+// 		}
+// 		kputc(';', &str, d_buffer_ptr);
+// // 		free(t.cigar);
+// 		kputsn(str.s, str.l, &aln[r], d_buffer_ptr);
+// 	}
+// 	XA = (char**)CUDAKernelCalloc(d_buffer_ptr, a->n, sizeof(char*), 8);
+// 	for (k = 0; k < a->n; ++k)
+// 		XA[k] = aln[k].s;
 
-end_gen_alt:
-// 	free(has_alt); free(cnt); free(aln); free(str.s);
-	return XA;
-}
+// end_gen_alt:
+// // 	free(has_alt); free(cnt); free(aln); free(str.s);
+// 	return XA;
+// }
 
-extern __device__ char* d_seq_sam_ptr2;
-extern __device__ int d_seq_sam_offset2;
 /* alignments have been marked primary/secondary and filter out. Now write all alignments left */
-__device__ static void mem_reg2sam(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, bseq1_t *s, mem_alnreg_v *a, int extra_flag, const mem_aln_t *m, void* d_buffer_ptr)
-{
-	kstring_t str;
-	struct { size_t n, m; mem_aln_t *a; } aa;
-	aa.n = a->n; 
-	aa.a = (mem_aln_t*)CUDAKernelMalloc(d_buffer_ptr, aa.n*sizeof(mem_aln_t), 8);
-	int k, l;
-	char **XA = 0;
+// __device__ static void mem_reg2sam(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, bseq1_t *s, mem_alnreg_v *a, int extra_flag, const mem_aln_t *m, void* d_buffer_ptr)
+// {
+// 	kstring_t str;
+// 	struct { size_t n, m; mem_aln_t *a; } aa;
+// 	aa.n = a->n; 
+// 	aa.a = (mem_aln_t*)CUDAKernelMalloc(d_buffer_ptr, aa.n*sizeof(mem_aln_t), 8);
+// 	int k, l;
+// 	char **XA = 0;
 
-	if (!(opt->flag & MEM_F_ALL))
-		XA = mem_gen_alt(opt, bns, pac, a, s->l_seq, s->seq, d_buffer_ptr);
-	str.l = str.m = 0; str.s = 0;
-	for (k = 0; k < a->n; ++k) {
-		mem_alnreg_t *p = &a->a[k];
-		mem_aln_t *q = &aa.a[k];
-		*q = mem_reg2aln_GPU(opt, bns, pac, s->l_seq, s->seq, p, d_buffer_ptr);
-		q->XA = XA? XA[k] : 0;
-		q->flag |= extra_flag; // flag secondary
-		if (p->secondary >= 0) q->sub = -1; // don't output sub-optimal score
-		if (k>0 && p->secondary < 0) // if supplementary
-			q->flag |= (opt->flag&MEM_F_NO_MULTI)? 0x10000 : 0x800;
-		if (!(opt->flag & MEM_F_KEEP_SUPP_MAPQ) && (k>0) && !p->is_alt && q->mapq > aa.a[0].mapq)
-			q->mapq = aa.a[0].mapq; // lower mapq for supplementary mappings, unless -5 or -q is applied
-	}
-	if (aa.n == 0) { // no alignments good enough; then write an unaligned record
-		mem_aln_t t;
-		t = mem_reg2aln_GPU(opt, bns, pac, s->l_seq, s->seq, 0, d_buffer_ptr);
-		t.flag |= extra_flag;
-		mem_aln2sam(opt, bns, &str, s, 1, &t, 0, m, d_buffer_ptr);
-	} else {
-		for (k = 0; k < aa.n; ++k)
-			mem_aln2sam(opt, bns, &str, s, aa.n, aa.a, k, m, d_buffer_ptr);
-		// for (k = 0; k < aa.n; ++k) free(aa.a[k].cigar);
-		// free(aa.a);
-	}
-	l = strlen_GPU(str.s); 		// length of output
-	k = atomicAdd(&d_seq_sam_offset2, l+1);	// offset to output to d_seq_sam_ptr2
-	memcpy(&d_seq_sam_ptr2[k], str.s, l+1);	// copy sam to output
-	s->sam = (char*)k; 	// record offset
-	// if (XA) {
-	// 	for (k = 0; k < a->n; ++k) free(XA[k]);
-	// 	free(XA);
-	// }
-}
+// 	if (!(opt->flag & MEM_F_ALL))
+// 		XA = mem_gen_alt(opt, bns, pac, a, s->l_seq, s->seq, d_buffer_ptr);
+// 	str.l = str.m = 0; str.s = 0;
+// 	for (k = 0; k < a->n; ++k) {
+// 		mem_alnreg_t *p = &a->a[k];
+// 		mem_aln_t *q = &aa.a[k];
+// 		*q = mem_reg2aln_GPU(opt, bns, pac, s->l_seq, s->seq, p, d_buffer_ptr);
+// 		q->XA = XA? XA[k] : 0;
+// 		q->flag |= extra_flag; // flag secondary
+// 		if (p->secondary >= 0) q->sub = -1; // don't output sub-optimal score
+// 		if (k>0 && p->secondary < 0) // if supplementary
+// 			q->flag |= (opt->flag&MEM_F_NO_MULTI)? 0x10000 : 0x800;
+// 		if (!(opt->flag & MEM_F_KEEP_SUPP_MAPQ) && (k>0) && !p->is_alt && q->mapq > aa.a[0].mapq)
+// 			q->mapq = aa.a[0].mapq; // lower mapq for supplementary mappings, unless -5 or -q is applied
+// 	}
+// 	if (aa.n == 0) { // no alignments good enough; then write an unaligned record
+// 		mem_aln_t t;
+// 		t = mem_reg2aln_GPU(opt, bns, pac, s->l_seq, s->seq, 0, d_buffer_ptr);
+// 		t.flag |= extra_flag;
+// 		mem_aln2sam(opt, bns, &str, s, 1, &t, 0, m, d_buffer_ptr);
+// 	} else {
+// 		for (k = 0; k < aa.n; ++k)
+// 			mem_aln2sam(opt, bns, &str, s, aa.n, aa.a, k, m, d_buffer_ptr);
+// 		// for (k = 0; k < aa.n; ++k) free(aa.a[k].cigar);
+// 		// free(aa.a);
+// 	}
+// 	l = strlen_GPU(str.s); 		// length of output
+// 	k = atomicAdd(&d_seq_sam_size, l+1);	// offset to output to d_seq_sam_ptr
+// 	memcpy(&d_seq_sam_ptr[k], str.s, l+1);	// copy sam to output
+// 	s->sam = (char*)k; 	// record offset
+// 	// if (XA) {
+// 	// 	for (k = 0; k < a->n; ++k) free(XA[k]);
+// 	// 	free(XA);
+// 	// }
+// }
 
 /**********************************************
  * Device functions for paired-end alignments *
  **********************************************/
 #define raw_mapq(diff, a) ((int)(6.02 * (diff) / (a) + .499))
 
-__device__ static int mem_pair(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_pestat_t pes[4], bseq1_t s[2], mem_alnreg_v a[2], int id, int *sub, int *n_sub, int z[2], int n_pri[2], void* d_buffer_ptr)
-{
-	pair64_v v, u;
-	int r, i, k, y[4], ret; // y[] keeps the last hit
-	int64_t l_pac = bns->l_pac;
-	v.n = 0; v.m = 0; v.a = 0;
-	u.n = 0; u.m = 0; u.a = 0;
-	for (r = 0; r < 2; ++r) { // loop through read number
-		for (i = 0; i < n_pri[r]; ++i) {
-			pair64_t key;
-			mem_alnreg_t *e = &a[r].a[i];
-			key.x = e->rb < l_pac? e->rb : (l_pac<<1) - 1 - e->rb; // forward position
-			key.x = (uint64_t)e->rid<<32 | (key.x - bns->anns[e->rid].offset);
-			key.y = (uint64_t)e->score << 32 | i << 2 | (e->rb >= l_pac)<<1 | r;
-			// kv_push(pair64_t, v=v, x=key);
-			if (v.n == v.m) {
-				v.m = (v).m? v.m<<1 : 2;
-				v.a = (pair64_t*)CUDAKernelRealloc(d_buffer_ptr, v.a, sizeof(pair64_t) * v.m, 8);
-			}
-			v.a[v.n++] = key;
-		}
-	}
-	ks_introsort_128(v.n, v.a, d_buffer_ptr);
-	y[0] = y[1] = y[2] = y[3] = -1;
-	//for (i = 0; i < v.n; ++i) printf("[%d]\t%d\t%c%ld\n", i, (int)(v.a[i].y&1)+1, "+-"[v.a[i].y>>1&1], (long)v.a[i].x);
-	for (i = 0; i < v.n; ++i) {
-		for (r = 0; r < 2; ++r) { // loop through direction
-			int dir = r<<1 | (v.a[i].y>>1&1), which;
-			if (pes[dir].failed) continue; // invalid orientation
-			which = r<<1 | ((v.a[i].y&1)^1);
-			if (y[which] < 0) continue; // no previous hits
-			for (k = y[which]; k >= 0; --k) { // TODO: this is a O(n^2) solution in the worst case; remember to check if this loop takes a lot of time (I doubt)
-				int64_t dist;
-				int q;
-				double ns;
-				pair64_t *p;
-				if ((v.a[k].y&3) != which) continue;
-				dist = (int64_t)v.a[i].x - v.a[k].x;
-				//printf("%d: %lld\n", k, dist);
-				if (dist > pes[dir].high) break;
-				if (dist < pes[dir].low)  continue;
-				ns = (dist - pes[dir].avg) / pes[dir].std;
-				q = (int)((v.a[i].y>>32) + (v.a[k].y>>32) + .721 * log(2. * erfc(fabs(ns) * M_SQRT1_2)) * opt->a + .499); // .721 = 1/log(4)
-				if (q < 0) q = 0;
-				// p = kv_pushp(pair64_t, u);
-				p = (((u.n == u.m)
-				   	? (u.m = (u.m? u.m<<1 : 2), u.a = (pair64_t*)CUDAKernelRealloc(d_buffer_ptr, u.a, sizeof(pair64_t) * u.m, 8), 0)
-					: 0), &u.a[u.n++]);
-				p->y = (uint64_t)k<<32 | i;
-				p->x = (uint64_t)q<<32 | (hash_64(p->y ^ id<<8) & 0xffffffffU);
-				//printf("[%lld,%lld]\t%d\tdist=%ld\n", v.a[k].x, v.a[i].x, q, (long)dist);
-			}
-		}
-		y[v.a[i].y&3] = i;
-	}
-	if (u.n) { // found at least one proper pair
-		int tmp = opt->a + opt->b;
-		tmp = tmp > opt->o_del + opt->e_del? tmp : opt->o_del + opt->e_del;
-		tmp = tmp > opt->o_ins + opt->e_ins? tmp : opt->o_ins + opt->e_ins;
-		ks_introsort_128(u.n, u.a, d_buffer_ptr);
-		i = u.a[u.n-1].y >> 32; k = u.a[u.n-1].y << 32 >> 32;
-		z[v.a[i].y&1] = v.a[i].y<<32>>34; // index of the best pair
-		z[v.a[k].y&1] = v.a[k].y<<32>>34;
-		ret = u.a[u.n-1].x >> 32;
-		*sub = u.n > 1? u.a[u.n-2].x>>32 : 0;
-		for (i = (long)u.n - 2, *n_sub = 0; i >= 0; --i)
-			if (*sub - (int)(u.a[i].x>>32) <= tmp) ++*n_sub;
-	} else ret = 0, *sub = 0, *n_sub = 0;
-	// free(u.a); free(v.a);
-	return ret;
-}
+// __device__ static int mem_pair(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_pestat_t pes[4], bseq1_t s[2], mem_alnreg_v a[2], int id, int *sub, int *n_sub, int z[2], int n_pri[2], void* d_buffer_ptr)
+// {
+// 	pair64_v v, u;
+// 	int r, i, k, y[4], ret; // y[] keeps the last hit
+// 	int64_t l_pac = bns->l_pac;
+// 	v.n = 0; v.m = 0; v.a = 0;
+// 	u.n = 0; u.m = 0; u.a = 0;
+// 	for (r = 0; r < 2; ++r) { // loop through read number
+// 		for (i = 0; i < n_pri[r]; ++i) {
+// 			pair64_t key;
+// 			mem_alnreg_t *e = &a[r].a[i];
+// 			key.x = e->rb < l_pac? e->rb : (l_pac<<1) - 1 - e->rb; // forward position
+// 			key.x = (uint64_t)e->rid<<32 | (key.x - bns->anns[e->rid].offset);
+// 			key.y = (uint64_t)e->score << 32 | i << 2 | (e->rb >= l_pac)<<1 | r;
+// 			// kv_push(pair64_t, v=v, x=key);
+// 			if (v.n == v.m) {
+// 				v.m = (v).m? v.m<<1 : 2;
+// 				v.a = (pair64_t*)CUDAKernelRealloc(d_buffer_ptr, v.a, sizeof(pair64_t) * v.m, 8);
+// 			}
+// 			v.a[v.n++] = key;
+// 		}
+// 	}
+// 	ks_introsort_128(v.n, v.a, d_buffer_ptr);
+// 	y[0] = y[1] = y[2] = y[3] = -1;
+// 	//for (i = 0; i < v.n; ++i) printf("[%d]\t%d\t%c%ld\n", i, (int)(v.a[i].y&1)+1, "+-"[v.a[i].y>>1&1], (long)v.a[i].x);
+// 	for (i = 0; i < v.n; ++i) {
+// 		for (r = 0; r < 2; ++r) { // loop through direction
+// 			int dir = r<<1 | (v.a[i].y>>1&1), which;
+// 			if (pes[dir].failed) continue; // invalid orientation
+// 			which = r<<1 | ((v.a[i].y&1)^1);
+// 			if (y[which] < 0) continue; // no previous hits
+// 			for (k = y[which]; k >= 0; --k) { // TODO: this is a O(n^2) solution in the worst case; remember to check if this loop takes a lot of time (I doubt)
+// 				int64_t dist;
+// 				int q;
+// 				double ns;
+// 				pair64_t *p;
+// 				if ((v.a[k].y&3) != which) continue;
+// 				dist = (int64_t)v.a[i].x - v.a[k].x;
+// 				//printf("%d: %lld\n", k, dist);
+// 				if (dist > pes[dir].high) break;
+// 				if (dist < pes[dir].low)  continue;
+// 				ns = (dist - pes[dir].avg) / pes[dir].std;
+// 				q = (int)((v.a[i].y>>32) + (v.a[k].y>>32) + .721 * log(2. * erfc(fabs(ns) * M_SQRT1_2)) * opt->a + .499); // .721 = 1/log(4)
+// 				if (q < 0) q = 0;
+// 				// p = kv_pushp(pair64_t, u);
+// 				p = (((u.n == u.m)
+// 				   	? (u.m = (u.m? u.m<<1 : 2), u.a = (pair64_t*)CUDAKernelRealloc(d_buffer_ptr, u.a, sizeof(pair64_t) * u.m, 8), 0)
+// 					: 0), &u.a[u.n++]);
+// 				p->y = (uint64_t)k<<32 | i;
+// 				p->x = (uint64_t)q<<32 | (hash_64(p->y ^ id<<8) & 0xffffffffU);
+// 				//printf("[%lld,%lld]\t%d\tdist=%ld\n", v.a[k].x, v.a[i].x, q, (long)dist);
+// 			}
+// 		}
+// 		y[v.a[i].y&3] = i;
+// 	}
+// 	if (u.n) { // found at least one proper pair
+// 		int tmp = opt->a + opt->b;
+// 		tmp = tmp > opt->o_del + opt->e_del? tmp : opt->o_del + opt->e_del;
+// 		tmp = tmp > opt->o_ins + opt->e_ins? tmp : opt->o_ins + opt->e_ins;
+// 		ks_introsort_128(u.n, u.a, d_buffer_ptr);
+// 		i = u.a[u.n-1].y >> 32; k = u.a[u.n-1].y << 32 >> 32;
+// 		z[v.a[i].y&1] = v.a[i].y<<32>>34; // index of the best pair
+// 		z[v.a[k].y&1] = v.a[k].y<<32>>34;
+// 		ret = u.a[u.n-1].x >> 32;
+// 		*sub = u.n > 1? u.a[u.n-2].x>>32 : 0;
+// 		for (i = (long)u.n - 2, *n_sub = 0; i >= 0; --i)
+// 			if (*sub - (int)(u.a[i].x>>32) <= tmp) ++*n_sub;
+// 	} else ret = 0, *sub = 0, *n_sub = 0;
+// 	// free(u.a); free(v.a);
+// 	return ret;
+// }
 
 __device__ int mem_matesw(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_pestat_t pes[4], const mem_alnreg_t *a, int l_ms, const uint8_t *ms, mem_alnreg_v *ma, void* d_buffer_ptr)
 {
@@ -1141,160 +1139,160 @@ __device__ int mem_matesw(const mem_opt_t *opt, const bntseq_t *bns, const uint8
 }
 
 
-__device__ static int mem_sam_pe(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_pestat_t pes[4], uint64_t id, bseq1_t s[2], mem_alnreg_v a[2], void* d_buffer_ptr)
-{
-	int n = 0, i, j, z[2], o, subo, n_sub, extra_flag = 1, n_pri[2], n_aa[2];
-	kstring_t str;
-	mem_aln_t h[2], g[2], aa[2][2];
+// __device__ static int mem_sam_pe(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_pestat_t pes[4], uint64_t id, bseq1_t s[2], mem_alnreg_v a[2], void* d_buffer_ptr)
+// {
+// 	int n = 0, i, j, z[2], o, subo, n_sub, extra_flag = 1, n_pri[2], n_aa[2];
+// 	kstring_t str;
+// 	mem_aln_t h[2], g[2], aa[2][2];
 
-	str.l = str.m = 0; str.s = 0;
-	memset(h, 0, sizeof(mem_aln_t) * 2);
-	memset(g, 0, sizeof(mem_aln_t) * 2);
-	n_aa[0] = n_aa[1] = 0;
-	if (!(opt->flag & MEM_F_NO_RESCUE)) { // then perform SW for the best alignment
-		mem_alnreg_v b[2];
-		b[0].n = 0; b[0].m = 0; b[0].a = 0;
-		b[1].n = 0; b[1].m = 0; b[1].a = 0;
-		for (i = 0; i < 2; ++i)
-			for (j = 0; j < a[i].n; ++j)
-				if (a[i].a[j].score >= a[i].a[0].score  - opt->pen_unpaired){
-					// kv_push(mem_alnreg_t, v=b[i], x=a[i].a[j]);
-					if (b[i].n == b[i].m) {
-						b[i].m = b[i].m? b[i].m<<1 : 2;
-						b[i].a = (mem_alnreg_t*)CUDAKernelRealloc(d_buffer_ptr, b[i].a, sizeof(mem_alnreg_t) * b[i].m, 8);
-					}
-					b[i].a[b[i].n++] = a[i].a[j];
-				}
-		for (i = 0; i < 2; ++i)
-			for (j = 0; j < b[i].n && j < opt->max_matesw; ++j)
-				n += mem_matesw(opt, bns, pac, pes, &b[i].a[j], s[!i].l_seq, (uint8_t*)s[!i].seq, &a[!i], d_buffer_ptr);
-		// free(b[0].a); free(b[1].a);
-	}
-	n_pri[0] = mem_mark_primary_se_GPU(opt, a[0].n, a[0].a, id<<1|0, d_buffer_ptr);
-	n_pri[1] = mem_mark_primary_se_GPU(opt, a[1].n, a[1].a, id<<1|1, d_buffer_ptr);
-	if (opt->flag & MEM_F_PRIMARY5) {
-		mem_reorder_primary5(opt->T, &a[0]);
-		mem_reorder_primary5(opt->T, &a[1]);
-	}
-	if (opt->flag&MEM_F_NOPAIRING) goto no_pairing;
-	// pairing single-end hits
-	if (n_pri[0] && n_pri[1] && (o = mem_pair(opt, bns, pac, pes, s, a, id, &subo, &n_sub, z, n_pri, d_buffer_ptr)) > 0) {
-		int is_multi[2], q_pe, score_un, q_se[2];
-		char **XA[2];
-		// check if an end has multiple hits even after mate-SW
-		for (i = 0; i < 2; ++i) {
-			for (j = 1; j < n_pri[i]; ++j)
-				if (a[i].a[j].secondary < 0 && a[i].a[j].score >= opt->T) break;
-			is_multi[i] = j < n_pri[i]? 1 : 0;
-		}
-		if (is_multi[0] || is_multi[1]) goto no_pairing; // TODO: in rare cases, the true hit may be long but with low score
-		// compute mapQ for the best SE hit
-		score_un = a[0].a[0].score + a[1].a[0].score - opt->pen_unpaired;
-		//q_pe = o && subo < o? (int)(MEM_MAPQ_COEF * (1. - (double)subo / o) * log(a[0].a[z[0]].seedcov + a[1].a[z[1]].seedcov) + .499) : 0;
-		subo = subo > score_un? subo : score_un;
-		q_pe = raw_mapq(o - subo, opt->a);
-		if (n_sub > 0) q_pe -= (int)(4.343 * log((double)n_sub+1) + .499);
-		if (q_pe < 0) q_pe = 0;
-		if (q_pe > 60) q_pe = 60;
-		q_pe = (int)(q_pe * (1. - .5 * (a[0].a[0].frac_rep + a[1].a[0].frac_rep)) + .499);
-		// the following assumes no split hits
-		if (o > score_un) { // paired alignment is preferred
-			mem_alnreg_t *c[2];
-			c[0] = &a[0].a[z[0]]; c[1] = &a[1].a[z[1]];
-			for (i = 0; i < 2; ++i) {
-				if (c[i]->secondary >= 0)
-					c[i]->sub = a[i].a[c[i]->secondary].score, c[i]->secondary = -2;
-				q_se[i] = mem_approx_mapq_se(opt, c[i]);
-			}
-			q_se[0] = q_se[0] > q_pe? q_se[0] : q_pe < q_se[0] + 40? q_pe : q_se[0] + 40;
-			q_se[1] = q_se[1] > q_pe? q_se[1] : q_pe < q_se[1] + 40? q_pe : q_se[1] + 40;
-			extra_flag |= 2;
-			// cap at the tandem repeat score
-			q_se[0] = q_se[0] < raw_mapq(c[0]->score - c[0]->csub, opt->a)? q_se[0] : raw_mapq(c[0]->score - c[0]->csub, opt->a);
-			q_se[1] = q_se[1] < raw_mapq(c[1]->score - c[1]->csub, opt->a)? q_se[1] : raw_mapq(c[1]->score - c[1]->csub, opt->a);
-		} else { // the unpaired alignment is preferred
-			z[0] = z[1] = 0;
-			q_se[0] = mem_approx_mapq_se(opt, &a[0].a[0]);
-			q_se[1] = mem_approx_mapq_se(opt, &a[1].a[0]);
-		}
-		for (i = 0; i < 2; ++i) {
-			int k = a[i].a[z[i]].secondary_all;
-			if (k >= 0 && k < n_pri[i]) { // switch secondary and primary if both of them are non-ALT
-				// assert(a[i].a[k].secondary_all < 0);
-				for (j = 0; j < a[i].n; ++j)
-					if (a[i].a[j].secondary_all == k || j == k)
-						a[i].a[j].secondary_all = z[i];
-				a[i].a[z[i]].secondary_all = -1;
-			}
-		}
-		if (!(opt->flag & MEM_F_ALL)) {
-			for (i = 0; i < 2; ++i)
-				XA[i] = mem_gen_alt(opt, bns, pac, &a[i], s[i].l_seq, s[i].seq, d_buffer_ptr);
-		} else XA[0] = XA[1] = 0;
-		// write SAM
-		for (i = 0; i < 2; ++i) {
-			h[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, &a[i].a[z[i]], d_buffer_ptr);
-			h[i].mapq = q_se[i];
-			h[i].flag |= 0x40<<i | extra_flag;
-			h[i].XA = XA[i]? XA[i][z[i]] : 0;
-			aa[i][n_aa[i]++] = h[i];
-			if (n_pri[i] < a[i].n) { // the read has ALT hits
-				mem_alnreg_t *p = &a[i].a[n_pri[i]];
-				if (p->score < opt->T || p->secondary >= 0 || !p->is_alt) continue;
-				g[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, p, d_buffer_ptr);
-				g[i].flag |= 0x800 | 0x40<<i | extra_flag;
-				g[i].XA = XA[i]? XA[i][n_pri[i]] : 0;
-				aa[i][n_aa[i]++] = g[i];
-			}
-		}
-		for (i = 0; i < n_aa[0]; ++i)
-			mem_aln2sam(opt, bns, &str, &s[0], n_aa[0], aa[0], i, &h[1], d_buffer_ptr); // write read1 hits
-		int l_sam = strlen_GPU(str.s); 		// length of output
-		int offset = atomicAdd(&d_seq_sam_offset2, l_sam+1);	// offset to output to d_seq_sam_ptr2
-		memcpy(&d_seq_sam_ptr2[offset], str.s, l_sam+1);	// copy sam to output
-		s[0].sam = (char*)offset; 	// record offset
-		str.l = 0;
-		for (i = 0; i < n_aa[1]; ++i)
-			mem_aln2sam(opt, bns, &str, &s[1], n_aa[1], aa[1], i, &h[0], d_buffer_ptr); // write read2 hits
-		l_sam = strlen_GPU(str.s); 		// length of output
-		offset = atomicAdd(&d_seq_sam_offset2, l_sam+1);	// offset to output to d_seq_sam_ptr2
-		memcpy(&d_seq_sam_ptr2[offset], str.s, l_sam+1);	// copy sam to output
-		s[1].sam = (char*)offset; 	// record offset
-
-		// if (strcmp(s[0].name, s[1].name) != 0) err_fatal(__func__, "paired reads have different names: \"%s\", \"%s\"\n", s[0].name, s[1].name);
-// 		// free
+// 	str.l = str.m = 0; str.s = 0;
+// 	memset(h, 0, sizeof(mem_aln_t) * 2);
+// 	memset(g, 0, sizeof(mem_aln_t) * 2);
+// 	n_aa[0] = n_aa[1] = 0;
+// 	if (!(opt->flag & MEM_F_NO_RESCUE)) { // then perform SW for the best alignment
+// 		mem_alnreg_v b[2];
+// 		b[0].n = 0; b[0].m = 0; b[0].a = 0;
+// 		b[1].n = 0; b[1].m = 0; b[1].a = 0;
+// 		for (i = 0; i < 2; ++i)
+// 			for (j = 0; j < a[i].n; ++j)
+// 				if (a[i].a[j].score >= a[i].a[0].score  - opt->pen_unpaired){
+// 					// kv_push(mem_alnreg_t, v=b[i], x=a[i].a[j]);
+// 					if (b[i].n == b[i].m) {
+// 						b[i].m = b[i].m? b[i].m<<1 : 2;
+// 						b[i].a = (mem_alnreg_t*)CUDAKernelRealloc(d_buffer_ptr, b[i].a, sizeof(mem_alnreg_t) * b[i].m, 8);
+// 					}
+// 					b[i].a[b[i].n++] = a[i].a[j];
+// 				}
+// 		for (i = 0; i < 2; ++i)
+// 			for (j = 0; j < b[i].n && j < opt->max_matesw; ++j)
+// 				n += mem_matesw(opt, bns, pac, pes, &b[i].a[j], s[!i].l_seq, (uint8_t*)s[!i].seq, &a[!i], d_buffer_ptr);
+// 		// free(b[0].a); free(b[1].a);
+// 	}
+// 	n_pri[0] = mem_mark_primary_se_GPU(opt, a[0].n, a[0].a, id<<1|0, d_buffer_ptr);
+// 	n_pri[1] = mem_mark_primary_se_GPU(opt, a[1].n, a[1].a, id<<1|1, d_buffer_ptr);
+// 	if (opt->flag & MEM_F_PRIMARY5) {
+// 		mem_reorder_primary5(opt->T, &a[0]);
+// 		mem_reorder_primary5(opt->T, &a[1]);
+// 	}
+// 	if (opt->flag&MEM_F_NOPAIRING) goto no_pairing;
+// 	// pairing single-end hits
+// 	if (n_pri[0] && n_pri[1] && (o = mem_pair(opt, bns, pac, pes, s, a, id, &subo, &n_sub, z, n_pri, d_buffer_ptr)) > 0) {
+// 		int is_multi[2], q_pe, score_un, q_se[2];
+// 		char **XA[2];
+// 		// check if an end has multiple hits even after mate-SW
 // 		for (i = 0; i < 2; ++i) {
-// 			free(h[i].cigar); free(g[i].cigar);
-// 			if (XA[i] == 0) continue;
-// 			for (j = 0; j < a[i].n; ++j) free(XA[i][j]);
-// 			free(XA[i]);
+// 			for (j = 1; j < n_pri[i]; ++j)
+// 				if (a[i].a[j].secondary < 0 && a[i].a[j].score >= opt->T) break;
+// 			is_multi[i] = j < n_pri[i]? 1 : 0;
 // 		}
-	} else goto no_pairing;
-	return n;
+// 		if (is_multi[0] || is_multi[1]) goto no_pairing; // TODO: in rare cases, the true hit may be long but with low score
+// 		// compute mapQ for the best SE hit
+// 		score_un = a[0].a[0].score + a[1].a[0].score - opt->pen_unpaired;
+// 		//q_pe = o && subo < o? (int)(MEM_MAPQ_COEF * (1. - (double)subo / o) * log(a[0].a[z[0]].seedcov + a[1].a[z[1]].seedcov) + .499) : 0;
+// 		subo = subo > score_un? subo : score_un;
+// 		q_pe = raw_mapq(o - subo, opt->a);
+// 		if (n_sub > 0) q_pe -= (int)(4.343 * log((double)n_sub+1) + .499);
+// 		if (q_pe < 0) q_pe = 0;
+// 		if (q_pe > 60) q_pe = 60;
+// 		q_pe = (int)(q_pe * (1. - .5 * (a[0].a[0].frac_rep + a[1].a[0].frac_rep)) + .499);
+// 		// the following assumes no split hits
+// 		if (o > score_un) { // paired alignment is preferred
+// 			mem_alnreg_t *c[2];
+// 			c[0] = &a[0].a[z[0]]; c[1] = &a[1].a[z[1]];
+// 			for (i = 0; i < 2; ++i) {
+// 				if (c[i]->secondary >= 0)
+// 					c[i]->sub = a[i].a[c[i]->secondary].score, c[i]->secondary = -2;
+// 				q_se[i] = mem_approx_mapq_se(opt, c[i]);
+// 			}
+// 			q_se[0] = q_se[0] > q_pe? q_se[0] : q_pe < q_se[0] + 40? q_pe : q_se[0] + 40;
+// 			q_se[1] = q_se[1] > q_pe? q_se[1] : q_pe < q_se[1] + 40? q_pe : q_se[1] + 40;
+// 			extra_flag |= 2;
+// 			// cap at the tandem repeat score
+// 			q_se[0] = q_se[0] < raw_mapq(c[0]->score - c[0]->csub, opt->a)? q_se[0] : raw_mapq(c[0]->score - c[0]->csub, opt->a);
+// 			q_se[1] = q_se[1] < raw_mapq(c[1]->score - c[1]->csub, opt->a)? q_se[1] : raw_mapq(c[1]->score - c[1]->csub, opt->a);
+// 		} else { // the unpaired alignment is preferred
+// 			z[0] = z[1] = 0;
+// 			q_se[0] = mem_approx_mapq_se(opt, &a[0].a[0]);
+// 			q_se[1] = mem_approx_mapq_se(opt, &a[1].a[0]);
+// 		}
+// 		for (i = 0; i < 2; ++i) {
+// 			int k = a[i].a[z[i]].secondary_all;
+// 			if (k >= 0 && k < n_pri[i]) { // switch secondary and primary if both of them are non-ALT
+// 				// assert(a[i].a[k].secondary_all < 0);
+// 				for (j = 0; j < a[i].n; ++j)
+// 					if (a[i].a[j].secondary_all == k || j == k)
+// 						a[i].a[j].secondary_all = z[i];
+// 				a[i].a[z[i]].secondary_all = -1;
+// 			}
+// 		}
+// 		if (!(opt->flag & MEM_F_ALL)) {
+// 			for (i = 0; i < 2; ++i)
+// 				XA[i] = mem_gen_alt(opt, bns, pac, &a[i], s[i].l_seq, s[i].seq, d_buffer_ptr);
+// 		} else XA[0] = XA[1] = 0;
+// 		// write SAM
+// 		for (i = 0; i < 2; ++i) {
+// 			h[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, &a[i].a[z[i]], d_buffer_ptr);
+// 			h[i].mapq = q_se[i];
+// 			h[i].flag |= 0x40<<i | extra_flag;
+// 			h[i].XA = XA[i]? XA[i][z[i]] : 0;
+// 			aa[i][n_aa[i]++] = h[i];
+// 			if (n_pri[i] < a[i].n) { // the read has ALT hits
+// 				mem_alnreg_t *p = &a[i].a[n_pri[i]];
+// 				if (p->score < opt->T || p->secondary >= 0 || !p->is_alt) continue;
+// 				g[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, p, d_buffer_ptr);
+// 				g[i].flag |= 0x800 | 0x40<<i | extra_flag;
+// 				g[i].XA = XA[i]? XA[i][n_pri[i]] : 0;
+// 				aa[i][n_aa[i]++] = g[i];
+// 			}
+// 		}
+// 		for (i = 0; i < n_aa[0]; ++i)
+// 			mem_aln2sam(opt, bns, &str, &s[0], n_aa[0], aa[0], i, &h[1], d_buffer_ptr); // write read1 hits
+// 		int l_sam = strlen_GPU(str.s); 		// length of output
+// 		int offset = atomicAdd(&d_seq_sam_size, l_sam+1);	// offset to output to d_seq_sam_ptr
+// 		memcpy(&d_seq_sam_ptr[offset], str.s, l_sam+1);	// copy sam to output
+// 		s[0].sam = (char*)offset; 	// record offset
+// 		str.l = 0;
+// 		for (i = 0; i < n_aa[1]; ++i)
+// 			mem_aln2sam(opt, bns, &str, &s[1], n_aa[1], aa[1], i, &h[0], d_buffer_ptr); // write read2 hits
+// 		l_sam = strlen_GPU(str.s); 		// length of output
+// 		offset = atomicAdd(&d_seq_sam_size, l_sam+1);	// offset to output to d_seq_sam_ptr
+// 		memcpy(&d_seq_sam_ptr[offset], str.s, l_sam+1);	// copy sam to output
+// 		s[1].sam = (char*)offset; 	// record offset
 
-no_pairing:
-	for (i = 0; i < 2; ++i) {
-		int which = -1;
-		if (a[i].n) {
-			if (a[i].a[0].score >= opt->T) which = 0;
-			else if (n_pri[i] < a[i].n && a[i].a[n_pri[i]].score >= opt->T)
-				which = n_pri[i];
-		}
-		if (which >= 0) h[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, &a[i].a[which], d_buffer_ptr);
-		else h[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, 0, d_buffer_ptr);
-	}
-	if (!(opt->flag & MEM_F_NOPAIRING) && h[0].rid == h[1].rid && h[0].rid >= 0) { // if the top hits from the two ends constitute a proper pair, flag it.
-		int64_t dist;
-		int d;
-		d = mem_infer_dir(bns->l_pac, a[0].a[0].rb, a[1].a[0].rb, &dist);
-		if (!pes[d].failed && dist >= pes[d].low && dist <= pes[d].high) extra_flag |= 2;
-	}
-	mem_reg2sam(opt, bns, pac, &s[0], &a[0], 0x41|extra_flag, &h[1], d_buffer_ptr);
-	mem_reg2sam(opt, bns, pac, &s[1], &a[1], 0x81|extra_flag, &h[0], d_buffer_ptr);
-	// if (strcmp(s[0].name, s[1].name) != 0) err_fatal(__func__, "paired reads have different names: \"%s\", \"%s\"\n", s[0].name, s[1].name);
-	// free(h[0].cigar); free(h[1].cigar);
-	return n;
-}
+// 		// if (strcmp(s[0].name, s[1].name) != 0) err_fatal(__func__, "paired reads have different names: \"%s\", \"%s\"\n", s[0].name, s[1].name);
+// // 		// free
+// // 		for (i = 0; i < 2; ++i) {
+// // 			free(h[i].cigar); free(g[i].cigar);
+// // 			if (XA[i] == 0) continue;
+// // 			for (j = 0; j < a[i].n; ++j) free(XA[i][j]);
+// // 			free(XA[i]);
+// // 		}
+// 	} else goto no_pairing;
+// 	return n;
+
+// no_pairing:
+// 	for (i = 0; i < 2; ++i) {
+// 		int which = -1;
+// 		if (a[i].n) {
+// 			if (a[i].a[0].score >= opt->T) which = 0;
+// 			else if (n_pri[i] < a[i].n && a[i].a[n_pri[i]].score >= opt->T)
+// 				which = n_pri[i];
+// 		}
+// 		if (which >= 0) h[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, &a[i].a[which], d_buffer_ptr);
+// 		else h[i] = mem_reg2aln_GPU(opt, bns, pac, s[i].l_seq, s[i].seq, 0, d_buffer_ptr);
+// 	}
+// 	if (!(opt->flag & MEM_F_NOPAIRING) && h[0].rid == h[1].rid && h[0].rid >= 0) { // if the top hits from the two ends constitute a proper pair, flag it.
+// 		int64_t dist;
+// 		int d;
+// 		d = mem_infer_dir(bns->l_pac, a[0].a[0].rb, a[1].a[0].rb, &dist);
+// 		if (!pes[d].failed && dist >= pes[d].low && dist <= pes[d].high) extra_flag |= 2;
+// 	}
+// 	mem_reg2sam(opt, bns, pac, &s[0], &a[0], 0x41|extra_flag, &h[1], d_buffer_ptr);
+// 	mem_reg2sam(opt, bns, pac, &s[1], &a[1], 0x81|extra_flag, &h[0], d_buffer_ptr);
+// 	// if (strcmp(s[0].name, s[1].name) != 0) err_fatal(__func__, "paired reads have different names: \"%s\", \"%s\"\n", s[0].name, s[1].name);
+// 	// free(h[0].cigar); free(h[1].cigar);
+// 	return n;
+// }
 
 /* find the SMEM starting at each position of the read 
 	for each position, only extend to the right
@@ -1786,7 +1784,6 @@ __global__ void SEEDCHAINING_chain_kernel(
 	bseq1_t *d_seqs,
 	mem_seed_v *d_seq_seeds,
 	mem_chain_v *d_chains,	// output
-	int64_t l_pac,
 	void *d_buffer_pools
 	)
 {
@@ -1807,6 +1804,7 @@ __global__ void SEEDCHAINING_chain_kernel(
 	// for each seed (except 0), find nearest preceding chainable seed
 	int max_chain_gap = d_opt->max_chain_gap;
 	int bandwidth_gap = d_opt->w;
+	int64_t l_pac = d_bns->l_pac;
 	for (int j=threadIdx.x+1; j<n_seeds&&j<SORTSEEDSHIGH_MAX_NSEEDS; j+=blockDim.x){
 		if (seed_a[j].rid==-1){
 			S_preceding_seed[j] = -1; continue;
@@ -2805,8 +2803,8 @@ __global__ void FINALIZEALN_preprocessing1_kernel(
 __global__ void FINALIZEALN_preprocessing2_kernel(
 	const mem_opt_t *d_opt,
 	const bseq1_t *d_seqs,
-	int64_t l_pac,
 	const uint8_t *d_pac,
+	const bntseq_t *d_bns,
 	mem_alnreg_v* d_regs,
 	mem_aln_v * d_alns,
 	seed_record_t *d_seed_records,
@@ -2830,6 +2828,7 @@ __global__ void FINALIZEALN_preprocessing2_kernel(
 	uint8_t *query = (uint8_t*)&(d_seqs[seqID].seq[qb]);
 	int l_query = qe - qb;
 	int64_t rlen;
+	int64_t l_pac = d_bns->l_pac;
 	uint8_t *rseq = bns_get_seq_gpu(l_pac, d_pac, rb, re, &rlen, d_buffer_ptr);	
 	// calculate bandwidth
 	int w;
@@ -3253,8 +3252,8 @@ __global__ void SAMGEN_aln2sam_finegrain_kernel(
 
 /* concatenate all SAM strings from a read's alns and write to SAM output location 
 	at this point, d_aln->a->XA is SAM string, d_aln->a->rid is len(SAM string)
-	Copy all SAM strings to d_seq_sam_ptr2[] as follows:
-		- atomicAdd on d_seq_sam_offset2 to reserve a location on the d_seq_sam_ptr2 array (this array is allocated with page-lock for faster transfer)
+	Copy all SAM strings to d_seq_sam_ptr[] as follows:
+		- atomicAdd on d_seq_sam_size to reserve a location on the d_seq_sam_ptr array (this array is allocated with page-lock for faster transfer)
 		- copy SAM to the reserved location
 		- save the offset to seq->SAM for retrieval on host
 		- NOTE: the NULL-terminating character is also a part of the SAM string
@@ -3262,7 +3261,8 @@ __global__ void SAMGEN_aln2sam_finegrain_kernel(
 __global__ void SAMGEN_concatenate_kernel(
 	mem_aln_v *d_alns,
 	bseq1_t *d_seqs,
-	int n_seqs
+	int n_seqs,
+	char* d_seq_sam_ptr, int *d_seq_sam_size
 	)
 {
 	int seqID = blockIdx.x*blockDim.x + threadIdx.x;
@@ -3281,21 +3281,21 @@ __global__ void SAMGEN_concatenate_kernel(
 	l_sams++;	// add 1 for the terminating NULL
 	int thread_offset = atomicAdd(&S_total_l_sams[0], l_sams);
 	__syncthreads();
-	// now add the block's total to d_seq_sam_offset2
+	// now add the block's total to d_seq_sam_size
 	__shared__ int S_block_offset[1];
-	if (threadIdx.x==0) S_block_offset[0] = atomicAdd(&d_seq_sam_offset2, S_total_l_sams[0]);
+	if (threadIdx.x==0) S_block_offset[0] = atomicAdd(d_seq_sam_size, S_total_l_sams[0]);
 	__syncthreads();
 	// record offset to sam
 	d_seqs[seqID].sam = (char*)(S_block_offset[0] + thread_offset);
-	// copy all SAM strings to the designated location on d_seq_sam_ptr2
-	int offset = S_block_offset[0] + thread_offset;	// actual offset on d_seq_sam_ptr2
+	// copy all SAM strings to the designated location on d_seq_sam_ptr
+	int offset = S_block_offset[0] + thread_offset;	// actual offset on d_seq_sam_ptr
 	for (int i=0; i<n_aln; i++){
 		int l_sam = a[i].rid;	// length of this aln's SAM
 		char* sam = a[i].XA;	// SAM string of this aln
-		memcpy(&d_seq_sam_ptr2[offset], sam, l_sam);	// transfer this aln's SAM, excluding the terminating NULL
+		memcpy(&d_seq_sam_ptr[offset], sam, l_sam);	// transfer this aln's SAM, excluding the terminating NULL
 		offset+= l_sam;			// increment for next aln
 	}
-	d_seq_sam_ptr2[offset] = 0;	// NULL-terminating char
+	d_seq_sam_ptr[offset] = 0;	// NULL-terminating char
 }
 
 
@@ -3360,107 +3360,122 @@ __global__ void mem_sort_dedup_patch_kernel(
 }
 
 /* ----------------------- MAIN FUNCTION FOR GENERATING ALIGNMENT RESULTS -----------------*/
-__global__ void generate_sam_kernel(
-	mem_opt_t *d_opt, 			// user-defined options
-	bntseq_t *d_bns, 
-	uint8_t *d_pac, 
-	bseq1_t* d_seqs,			// array of sequence info
-	int n, 						// number of reads being processed in a batch
-	mem_alnreg_v* d_regs,		// array of regs
-	void* d_buffer_pools 		// for CUDA kernel memory management
-	)
-{
-	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x % 32); 	// the buffer pool this thread is using	
-	uint32_t i = blockIdx.x*blockDim.x + threadIdx.x;		// ID of the read to process
+// __global__ void generate_sam_kernel(
+// 	mem_opt_t *d_opt, 			// user-defined options
+// 	bntseq_t *d_bns, 
+// 	uint8_t *d_pac, 
+// 	bseq1_t* d_seqs,			// array of sequence info
+// 	int n, 						// number of reads being processed in a batch
+// 	mem_alnreg_v* d_regs,		// array of regs
+// 	void* d_buffer_pools 		// for CUDA kernel memory management
+// 	)
+// {
+// 	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x % 32); 	// the buffer pool this thread is using	
+// 	uint32_t i = blockIdx.x*blockDim.x + threadIdx.x;		// ID of the read to process
 
-	if (i>=n) return; 	// don't run the padded threads
+// 	if (i>=n) return; 	// don't run the padded threads
 
-	if (!(d_opt->flag&MEM_F_PE)) {
-		mem_reg2sam(d_opt, d_bns, d_pac, &d_seqs[i], &d_regs[i], 0, 0, d_buffer_ptr);
-		// free(w->regs[i].a);
-	} else {
-		// FOR FUTURE DEVELOPMENT
-		// mem_sam_pe(d_opt, d_bns, d_pac, d_pes, i, &d_seqs[i<<1], &d_regs[i<<1], d_buffer_ptr);
-		// free(w->regs[i<<1|0].a); free(w->regs[i<<1|1].a);
-	}
-}
+// 	if (!(d_opt->flag&MEM_F_PE)) {
+// 		mem_reg2sam(d_opt, d_bns, d_pac, &d_seqs[i], &d_regs[i], 0, 0, d_buffer_ptr);
+// 		// free(w->regs[i].a);
+// 	} else {
+// 		// FOR FUTURE DEVELOPMENT
+// 		// mem_sam_pe(d_opt, d_bns, d_pac, d_pes, i, &d_seqs[i<<1], &d_regs[i<<1], d_buffer_ptr);
+// 		// free(w->regs[i<<1|0].a); free(w->regs[i<<1|1].a);
+// 	}
+// }
 
 /*  main function for bwamem in GPU 
 	return to seqs.sam
  */
-int mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, const bntseq_t *bns)
+void mem_align_GPU(process_data_t *process_data)
 {
-	if (gpu_data.n_seqs==0) return 0;
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** aligning %d seqs ... \n", __func__, gpu_data.n_seqs);
+	int n_seqs = process_data->n_seqs;
+	if (n_seqs==0) return;
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** reset process stream ... \n", __func__);
+	resetProcess(process_data);
+	if (bwa_verbose>=3) fprintf(stderr, "[M::%-25s] *** aligning seqs %'ld - %'ld ... \n", __func__, process_data->n_processed, process_data->n_processed+n_seqs-1);
 	/* GRID SIZE when processing at read level (code applied to each read) */
-	dim3 dimGrid_readlevel(ceil((double)gpu_data.n_seqs/CUDA_BLOCKSIZE));
+	dim3 dimGrid_readlevel(ceil((double)n_seqs/CUDA_BLOCKSIZE));
 	dim3 dimBlock_readlevel(CUDA_BLOCKSIZE);
-	extern cudaStream_t getProcessStream();
-	cudaStream_t process_stream = getProcessStream();
+
+	// options
+	auto d_opt = process_data->d_opt;
+	// index
+	auto d_bwt = process_data->d_bwt;
+	auto d_bns = process_data->d_bns;
+	auto d_pac = process_data->d_pac;
+	// reads
+	auto d_seqs = process_data->d_seqs;
+	auto d_seq_sam_ptr = process_data->d_seq_sam_ptr;
+	auto d_seq_sam_size = process_data->d_seq_sam_size;
+	// intermediate data
+	auto d_aux = process_data->d_aux;
+	auto d_seq_seeds = process_data->d_seq_seeds;
+	auto d_chains = process_data->d_chains;
+	auto d_regs = process_data->d_regs;
+	auto d_seed_records = process_data->d_seed_records;
+	auto d_Nseeds = process_data->d_Nseeds;
+	auto d_alns = process_data->d_alns;
+	auto d_sortkeys_in = process_data->d_sortkeys_in;
+	auto d_seqIDs_in = process_data->d_seqIDs_in;
+	auto d_sortkeys_out = process_data->d_sortkeys_out;
+	auto d_seqIDs_out = process_data->d_seqIDs_out;
+	// system stuffs
+	auto d_buffer_pools = process_data->d_buffer_pools;
+	cudaStream_t process_stream = *((cudaStream_t*)process_data->CUDA_stream);
 
 	/* ----------------------- First part of pipeline: find SMEM intervals --------------------------------------*/
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [MEM FINDING]: collect MEM intervals ...\n", __func__);
-	MEMFINDING_collect_intv_kernel <<< gpu_data.n_seqs, 320, 512, process_stream >>> (
-			gpu_data.d_opt,
-			gpu_data.d_bwt,
-			gpu_data.d_seqs,
-			gpu_data.d_aux,	// output
-			gpu_data.d_buffer_pools);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [MEM FINDING]: collect MEM intervals ...\n", __func__);
+	MEMFINDING_collect_intv_kernel <<< n_seqs, 320, 512, process_stream >>> (
+			d_opt, d_bwt, d_seqs,
+			d_aux,	// output
+			d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* ----------------------- Second part of pipeline: chaining seeds --------------------------------------*/
 	/* separate seeds from bwt intervals, filter out duplicated seeds */
-	if (bwa_verbose>=4)  fprintf(stderr, "[M::%s] **** [SEED CHAINING]: seeds separating and filtering ...\n", __func__);
-	SEEDCHAINING_filter_seeds_kernel <<< gpu_data.n_seqs, WARPSIZE, 0, process_stream >>>(
-		gpu_data.d_opt,
-		gpu_data.d_aux,
-		gpu_data.d_buffer_pools);
+	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING]: seeds separating and filtering ...\n", __func__);
+	SEEDCHAINING_filter_seeds_kernel <<< n_seqs, WARPSIZE, 0, process_stream >>>(
+		d_opt, d_aux, d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* translate seed info from bwt index */
-	if (bwa_verbose>=4)  fprintf(stderr, "[M::%s] **** [SEED CHAINING]: translating seed info ...\n", __func__);
-	SEEDCHAINING_translate_seedinfo_kernel <<< gpu_data.n_seqs, 128, 0, process_stream >>> (
-		gpu_data.d_opt,
-		gpu_data.d_bwt,
-		gpu_data.d_bns,
-		gpu_data.d_seqs,
-		gpu_data.d_aux,
-		gpu_data.d_seq_seeds,
-		gpu_data.d_buffer_pools);
+	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING]: translating seed info ...\n", __func__);
+	SEEDCHAINING_translate_seedinfo_kernel <<< n_seqs, 128, 0, process_stream >>> (
+		d_opt, d_bwt, d_bns, d_seqs, d_aux,
+		d_seq_seeds,
+		d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* sort seeds by rbeg for each read */
-	if (bwa_verbose>=4)  fprintf(stderr, "[M::%s] **** [SEED CHAINING]: sorting seeds by rbeg (low n_seeds) ...\n", __func__);
-	SEEDCHAINING_sortSeeds_low_kernel <<< gpu_data.n_seqs, SORTSEEDSLOW_BLOCKDIMX, 0, process_stream >>> (
-		gpu_data.d_seq_seeds,
-		gpu_data.d_buffer_pools);
+	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING]: sorting seeds by rbeg (low n_seeds) ...\n", __func__);
+	SEEDCHAINING_sortSeeds_low_kernel <<< n_seqs, SORTSEEDSLOW_BLOCKDIMX, 0, process_stream >>> (
+		d_seq_seeds,
+		d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
-	if (bwa_verbose>=4)  fprintf(stderr, "[M::%s] **** [SEED CHAINING]: sorting seeds by rbeg (high n_seeds) ...\n", __func__);
-	SEEDCHAINING_sortSeeds_high_kernel <<< gpu_data.n_seqs, SORTSEEDSHIGH_BLOCKDIMX, 0, process_stream >>> (
-		gpu_data.d_seq_seeds,
-		gpu_data.d_buffer_pools);
+	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING]: sorting seeds by rbeg (high n_seeds) ...\n", __func__);
+	SEEDCHAINING_sortSeeds_high_kernel <<< n_seqs, SORTSEEDSHIGH_BLOCKDIMX, 0, process_stream >>> (
+		d_seq_seeds,
+		d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* seed chaining */
-	if (bwa_verbose>=4)  fprintf(stderr, "[M::%s] **** [SEED CHAINING]: chaining seeds ...\n", __func__);
-	SEEDCHAINING_chain_kernel <<< gpu_data.n_seqs, SEEDCHAINING_CHAIN_BLOCKDIMX, 0, process_stream >>> (
-		gpu_data.d_opt,
-		gpu_data.d_bns,
-		gpu_data.d_seqs,
-		gpu_data.d_seq_seeds,
-		gpu_data.d_chains,	// output
-		bns->l_pac,
-		gpu_data.d_buffer_pools);
+	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING]: chaining seeds ...\n", __func__);
+	SEEDCHAINING_chain_kernel <<< n_seqs, SEEDCHAINING_CHAIN_BLOCKDIMX, 0, process_stream >>> (
+		d_opt, d_bns, d_seqs, d_seq_seeds,
+		d_chains,	// output
+		d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	// /* second kernel: chaining seeds */
-	// if (bwa_verbose>=4)  fprintf(stderr, "[M::%s] **** [SEEDCHAINING]: Launch kernel mem_chain ...\n", __func__);
+	// if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEEDCHAINING]: Launch kernel mem_chain ...\n", __func__);
 	// dimGrid.x = ceil((double)gpu_data.n_seqs/CUDA_BLOCKSIZE);
 	// dimBlock.x = CUDA_BLOCKSIZE;
 	// mem_chain_kernel <<< dimGrid, dimBlock, 0 >>> (
@@ -3479,50 +3494,43 @@ int mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, cons
 	// size_t temp_storage_size = 0;
 	// gpuErrchk( cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_size, d_sortkey_in, d_sortkey_out, d_seqids_in, d_seqids_out, gpu_data.n_seqs) );
 	// // Allocate temporary storage
-	// fprintf(stderr, "[M::%s] sorting storage ..... %.2f MB\n", __func__, (float)temp_storage_size/1000000);
+	// fprintf(stderr, "[M::%-25s] sorting storage ..... %.2f MB\n", __func__, (float)temp_storage_size/1000000);
 	// gpuErrchk( cudaMalloc(&d_temp_storage, temp_storage_size) );
 	// // perform radix sort
 	// gpuErrchk( cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_size, d_sortkey_in, d_sortkey_out, d_seqids_in, d_seqids_out, gpu_data.n_seqs) );
 
 	/* ----------------------- Third part of pipeline: Filtering chains --------------------------------------*/
 	/* sort chains */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [CHAIN FILTERING]: sorting chains ...\n", __func__);
-	CHAINFILTERING_sortChains_kernel <<< gpu_data.n_seqs, SORTCHAIN_BLOCKDIMX, MAX_N_CHAIN*2*sizeof(uint16_t)+sizeof(mem_chain_t**), process_stream >>> (gpu_data.d_chains, gpu_data.d_buffer_pools);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [CHAIN FILTERING]: sorting chains ...\n", __func__);
+	CHAINFILTERING_sortChains_kernel <<< n_seqs, SORTCHAIN_BLOCKDIMX, MAX_N_CHAIN*2*sizeof(uint16_t)+sizeof(mem_chain_t**), process_stream >>> (
+		d_chains, d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError());
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* filter chains */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [CHAIN FILTERING]: Launch kernel mem_chain_flt ...\n", __func__);
-	CHAINFILTERING_filter_kernel <<< gpu_data.n_seqs, CHAIN_FLT_BLOCKSIZE, MAX_N_CHAIN*(3*sizeof(uint16_t)+sizeof(uint8_t)), process_stream >>> (
-			gpu_data.d_opt, 
-			gpu_data.d_chains, 	// input and output
-			gpu_data.d_buffer_pools);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [CHAIN FILTERING]: Launch kernel mem_chain_flt ...\n", __func__);
+	CHAINFILTERING_filter_kernel <<< n_seqs, CHAIN_FLT_BLOCKSIZE, MAX_N_CHAIN*(3*sizeof(uint16_t)+sizeof(uint8_t)), process_stream >>> (
+			d_opt, 
+			d_chains, 	// input and output
+			d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* fourth kernel: mem_flt_chained_seeds */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [CHAIN FILTERING]: Launch kernel mem_flt_chained_seeds ...\n", __func__);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [CHAIN FILTERING]: Launch kernel mem_flt_chained_seeds ...\n", __func__);
 	CHAINFILTERING_flt_chained_seeds_kernel <<< dimGrid_readlevel, dimBlock_readlevel, 0, process_stream >>> (
-			gpu_data.d_opt, 
-			gpu_data.d_bns,
-			gpu_data.d_pac,
-			gpu_data.d_seqs,
-			gpu_data.d_chains, 	// input and output
-			gpu_data.n_seqs, 		// number of reads
-			gpu_data.d_buffer_pools);
+			d_opt, d_bns, d_pac,
+			d_seqs, d_chains, 	// input and output
+			n_seqs, d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* ----------------------- Fourth part of pipeline: Smith-Waterman extension --------------------------------------*/
 	/* pre-processing for SW extension: count number of seeds a read has, write seed_record to global mem, and allocate vector mem_alnreg_t for each read */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [SMITHEWATERMAN]: preprocessing1 ... ", __func__);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SMITHEWATERMAN]: preprocessing1 ... ", __func__);
 	SMITHWATERMAN_preprocessing1_kernel <<< dimGrid_readlevel, dimBlock_readlevel, 0, process_stream >>> (
-			gpu_data.d_chains, 
-			gpu_data.d_regs,
-			gpu_data.d_seed_records,
-			gpu_data.d_Nseeds,
-			gpu_data.n_seqs,
-			gpu_data.d_buffer_pools
+			d_chains, d_regs, d_seed_records, d_Nseeds, n_seqs,
+			d_buffer_pools
 			);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
@@ -3530,20 +3538,13 @@ int mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, cons
 	/* pre-processing for SW extension: prepare target and query strings for each seed */
 	// find number of seeds
 	int n_seeds;
-	gpuErrchk( cudaMemcpyAsync(&n_seeds, gpu_data.d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost, process_stream) );
+	gpuErrchk( cudaMemcpyAsync(&n_seeds, d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost, process_stream) );
 	if (bwa_verbose>=4) fprintf(stderr, "%d seeds\n", n_seeds);
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [SMITHWATERMAN]: preprocessing2 ... \n", __func__);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SMITHWATERMAN]: preprocessing2 ... \n", __func__);
 	SMITHWATERMAN_preprocessing2_kernel <<< ceil((float)n_seeds/32.0), 32, 0, process_stream >>> (
-			gpu_data.d_opt,
-			gpu_data.d_bns,
-			gpu_data.d_pac,
-			gpu_data.d_seqs,
-			gpu_data.d_chains, 
-			gpu_data.d_regs,
-			gpu_data.d_seed_records,
-			gpu_data.d_Nseeds,
-			gpu_data.n_seqs,
-			gpu_data.d_buffer_pools
+			d_opt, d_bns, d_pac, d_seqs,
+			d_chains, d_regs, d_seed_records, d_Nseeds,
+			n_seqs, d_buffer_pools
 			);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
@@ -3551,23 +3552,21 @@ int mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, cons
 	/* fifth kernel: SW extension 
 	launch n_seeds threads, each thread extend 1 seed
 	*/
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [SMITHWATERMAN]: Launch kernel extend ... \n", __func__);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SMITHWATERMAN]: Launch kernel extend ... \n", __func__);
 	SMITHWATERMAN_extend_kernel <<< n_seeds, WARPSIZE, 0, process_stream >>> (
-			gpu_data.d_opt,
-			gpu_data.d_chains, 		// input chains
-			gpu_data.d_seed_records,
-			gpu_data.d_regs,		// output array
-			gpu_data.d_Nseeds);
+			d_opt,
+			d_chains, 		// input chains
+			d_seed_records,
+			d_regs,		// output array
+			d_Nseeds);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* Post processing SW: remove duplicated alignments */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [SMITHWATERMAN]: post-processing remove duplicated alignments ... \n", __func__);
-	SMITHWATERMAN_postprocessing_kernel <<< gpu_data.n_seqs, 320, 0, process_stream >>> (
-		gpu_data.d_opt,
-		gpu_data.d_bns,
-		gpu_data.d_chains,
-		gpu_data.d_regs
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SMITHWATERMAN]: post-processing remove duplicated alignments ... \n", __func__);
+	SMITHWATERMAN_postprocessing_kernel <<< n_seqs, 320, 0, process_stream >>> (
+		d_opt, d_bns,
+		d_chains, d_regs
 		);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
@@ -3599,87 +3598,74 @@ int mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, cons
 	// }
 	
 	/* Mark alignments that we want to write to SAM */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [FINALIZEALN]: Launch kernel mark_primary ...\n", __func__);
-	FINALIZEALN_mark_primary_kernel <<< gpu_data.n_seqs, 256, 0, process_stream >>> (gpu_data.d_opt, gpu_data.d_regs, gpu_data.d_buffer_pools);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: Launch kernel mark_primary ...\n", __func__);
+	FINALIZEALN_mark_primary_kernel <<< n_seqs, 256, 0, process_stream >>> (d_opt, d_regs, d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* reorder alignments so that alt alignments are placed lower and higher score are placed higher */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [FINALIZEALN]: Launch kernel reorder alignments ...\n", __func__);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: Launch kernel reorder alignments ...\n", __func__);
  	FINALIZEALN_reorderAlns_kernel <<< dimGrid_readlevel, dimBlock_readlevel, 0, process_stream >>>(
-		gpu_data.d_regs,
-		gpu_data.n_seqs,
-		gpu_data.d_buffer_pools);
+		d_regs, n_seqs, d_buffer_pools);
  	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* preprocessing for global SW alignments */
-	cudaMemsetAsync(gpu_data.d_Nseeds, 0, sizeof(int), process_stream);		// reset seed info
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [FINALIZEALN]: Launch kernel preprocessing 1 ... ", __func__);
+	cudaMemsetAsync(d_Nseeds, 0, sizeof(int), process_stream);		// reset seed info
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: Launch kernel preprocessing 1 ... ", __func__);
  	FINALIZEALN_preprocessing1_kernel <<< dimGrid_readlevel, dimBlock_readlevel, 0, process_stream >>>(
-		gpu_data.d_regs,
-		gpu_data.d_alns,
-		gpu_data.d_seed_records,
-		gpu_data.d_Nseeds,
-		gpu_data.d_buffer_pools);
+		d_regs, d_alns, d_seed_records, d_Nseeds,
+		d_buffer_pools);
  	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
-	gpuErrchk( cudaMemcpyAsync(&n_seeds, gpu_data.d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost, process_stream) );
+	gpuErrchk( cudaMemcpyAsync(&n_seeds, d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost, process_stream) );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 	if (bwa_verbose>=4) fprintf(stderr, "%d aligments\n", n_seeds);
 
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [FINALIZEALN]: Launch kernel preprocessing 2 ...\n", __func__);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: Launch kernel preprocessing 2 ...\n", __func__);
  	FINALIZEALN_preprocessing2_kernel <<< ceil((float)n_seeds/32), 32, 0, process_stream >>>(
- 		gpu_data.d_opt,
- 		gpu_data.d_seqs,
- 		bns->l_pac,
- 		gpu_data.d_pac,
-		gpu_data.d_regs,
-		gpu_data.d_alns,
-		gpu_data.d_seed_records,
-		n_seeds,
-		gpu_data.d_sortkeys_in,	// sortkeys_in = bandwidth * rlen
-		gpu_data.d_seqIDs_in,
-		gpu_data.d_buffer_pools);
+ 		d_opt, d_seqs,
+ 		d_pac, d_bns,
+		d_regs, d_alns, d_seed_records, n_seeds,
+		d_sortkeys_in,	// sortkeys_in = bandwidth * rlen
+		d_seqIDs_in,
+		d_buffer_pools);
  	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
-	gpu_data.n_sortkeys = n_seeds;
+	auto n_sortkeys = n_seeds;
 
 	// reverse query and target if aln position is on reverse strand
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [FINALIZEALN]: reverse seqs ...\n", __func__);
- 	FINALIZEALN_reverseSeq_kernel <<< n_seeds, 32, 0, process_stream >>> (gpu_data.d_seed_records, gpu_data.d_alns, gpu_data.d_buffer_pools);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: reverse seqs ...\n", __func__);
+ 	FINALIZEALN_reverseSeq_kernel <<< n_seeds, 32, 0, process_stream >>> (d_seed_records, d_alns, d_buffer_pools);
  	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* now we sort alignments for better warp efficiency in next kernel */
 	void *d_temp_storage = NULL;
 	size_t temp_storage_size = 0;
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [FINALIZEALN]: sort by bandwidth*ref_length ..... %.2f MB\n", __func__, (float)temp_storage_size/1000000);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: sort by bandwidth*ref_length ..... %.2f MB\n", __func__, (float)temp_storage_size/1000000);
 	// determine temporary storage requirement
-	gpuErrchk( cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_size, gpu_data.d_sortkeys_in, gpu_data.d_sortkeys_out, gpu_data.d_seqIDs_in, gpu_data.d_seqIDs_out, gpu_data.n_sortkeys, 0, 8*sizeof(int), process_stream) );
+	gpuErrchk( cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_size, d_sortkeys_in, d_sortkeys_out, d_seqIDs_in, d_seqIDs_out, n_sortkeys, 0, 8*sizeof(int), process_stream) );
 	// Allocate temporary storage
 	gpuErrchk( cudaMalloc(&d_temp_storage, temp_storage_size) );
 	// perform radix sort
-	gpuErrchk( cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_size, gpu_data.d_sortkeys_in, gpu_data.d_sortkeys_out, gpu_data.d_seqIDs_in, gpu_data.d_seqIDs_out, gpu_data.n_sortkeys, 0, 8*sizeof(int), process_stream) );
+	gpuErrchk( cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_size, d_sortkeys_in, d_sortkeys_out, d_seqIDs_in, d_seqIDs_out, n_sortkeys, 0, 8*sizeof(int), process_stream) );
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 	cudaFree(d_temp_storage);
 
 	/* global SW */
 	// low banddiwth
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [FINALIZEALN]: Launch kernel global Smith-Waterman  ...\n", __func__);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: Launch kernel global Smith-Waterman  ...\n", __func__);
 	FINALIZEALN_globalSW_kernel <<< ceil((float)n_seeds/32), 32, 0, process_stream >>> (
-		gpu_data.d_opt,
-		gpu_data.d_seed_records,
-		n_seeds,
-		gpu_data.d_alns,
-		gpu_data.d_seqIDs_out,
-		gpu_data.d_buffer_pools
+		d_opt,
+		d_seed_records, n_seeds, d_alns, d_seqIDs_out,
+		d_buffer_pools
 		);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 	// high bandwidth
-	// if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** Launch kernel globalSW_high_bandwidth_kernel  ...\n", __func__);
+	// if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** Launch kernel globalSW_high_bandwidth_kernel  ...\n", __func__);
 	// mem_globalSW_high_bandwidth_kernel <<< n_seeds, 32 >>> (
 	// 	gpu_data.d_opt,
 	// 	gpu_data.d_alns,
@@ -3689,141 +3675,46 @@ int mem_align_GPU(gpu_ptrs_t gpu_data, bseq1_t* seqs, const mem_opt_t *opt, cons
 	// gpuErrchk( cudaDeviceSynchronize() );
 
 	/* finalize aln */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [FINALIZEALN]: gather all info and finalize aln ...\n", __func__);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: gather all info and finalize aln ...\n", __func__);
 	FINALIZEALN_final_kernel <<< ceil((float)n_seeds/32), 32, 0, process_stream >>> (
-		gpu_data.d_opt,
-		gpu_data.d_bns,
-		gpu_data.d_seqs,
-		gpu_data.d_regs,
-		gpu_data.d_alns,
-		gpu_data.d_seed_records,
-		n_seeds,
-		gpu_data.d_buffer_pools
+		d_opt, d_bns, d_seqs,
+		d_regs, d_alns, d_seed_records, n_seeds,
+		d_buffer_pools
 	);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* generate SAM for each aln */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [SAMGEN]: generate SAM for each aln ...\n", __func__);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SAMGEN]: generate SAM for each aln ...\n", __func__);
 	SAMGEN_aln2sam_finegrain_kernel <<< ceil((float)n_seeds/32), 32, 0, process_stream >>> (
-		gpu_data.d_opt,
-		gpu_data.d_bns,
-		gpu_data.d_seqs,
-		gpu_data.d_alns,
-		gpu_data.d_seed_records,
-		n_seeds,
-		gpu_data.d_buffer_pools
+		d_opt, d_bns, d_seqs,
+		d_alns, d_seed_records, n_seeds,
+		d_buffer_pools
 	);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 	/* finalize SAM strings for each read */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** [SAMGEN]: concatenate all SAM for each read ...\n", __func__);
-	SAMGEN_concatenate_kernel <<< ceil((float)gpu_data.n_seqs/32), 32, 0, process_stream >>> (
-		gpu_data.d_alns,
-		gpu_data.d_seqs,
-		gpu_data.n_seqs
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SAMGEN]: concatenate all SAM for each read ...\n", __func__);
+	SAMGEN_concatenate_kernel <<< ceil((float)n_seqs/32), 32, 0, process_stream >>> (
+		d_alns,
+		d_seqs, n_seqs,
+		d_seq_sam_ptr, d_seq_sam_size
 	);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	// /* generate SAM alignment */
-	// if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** Launch kernel generate_sam ...\n", __func__);
+	// if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** Launch kernel generate_sam ...\n", __func__);
 	// generate_sam_kernel <<< dimGrid, dimBlock >>> 
-	// 	(gpu_data.d_opt, gpu_data.d_bns, gpu_data.d_pac, 
-	// 	 gpu_data.d_seqs, gpu_data.n_seqs, gpu_data.d_regs, gpu_data.d_buffer_pools);
+	// 	(d_opt, d_bns, d_pac, 
+	// 	d_seqs, n_seqs, d_regs, d_buffer_pools);
 	// gpuErrchk( cudaPeekAtLastError() );
 	// gpuErrchk( cudaDeviceSynchronize() );
 
 	// output
 	int L_sam;	// find total size of sam
-	cudaMemcpyFromSymbolAsync(&L_sam, d_seq_sam_offset2, sizeof(int), 0, cudaMemcpyDeviceToHost, process_stream);
-	return L_sam;
+	cudaMemcpyFromSymbolAsync(&L_sam, d_seq_sam_size, sizeof(int), 0, cudaMemcpyDeviceToHost, process_stream);
+	return;
 
 // printBufferInfoHost(gpu_data.d_buffer_pools);
 };
-
-/* Function to set up GPU memory
-	copy constant data from host to device
-	set up buffer pools
- */
-gpu_ptrs_t GPU_Init(
-	/* Input args */
-	const mem_opt_t *opt, 
-	const bwt_t *bwt, 
-	const bntseq_t *bns, 
-	const uint8_t *pac,
-	mem_pestat_t *pes0
-	)
-{
-	cudaSetDevice(0);
-	// cudaDeviceSetLimit(cudaLimitStackSize, 2048);
-	gpu_ptrs_t gpu_data;	// output
-	memset(&gpu_data, 0, sizeof(gpu_ptrs_t));
-	CUDATransferStaticData(opt, bwt, bns, pac, pes0, &gpu_data);
-	// buffer
-	gpu_data.d_buffer_pools = CUDA_BufferInit();
-	return gpu_data;
-}
-
-__device__ int d_seq_sam_offset2 = 0;
-/* free d_seqs if they exist
-	   reset buffer pools
-	   update opt if opt !=0
-	 */
-void prepare_batch_GPU(gpu_ptrs_t* gpu_data, const bseq1_t* seqs, int n_seqs, const mem_opt_t *opt){
-	extern cudaStream_t getProcessStream();
-	cudaStream_t process_stream = getProcessStream();
-	// update gpu_data with the new batch
-	updateGPUData(gpu_data, n_seqs);
-	if (bwa_verbose>=3) fprintf(stderr, "[M::%s] *** Prepare to align new batch of %d reads ..... \n", __func__, n_seqs);
-
-	// allocate intermediate data if not done already
-	if (!gpu_data->d_aux){
-		fprintf(stderr, "[M::%s] aux intervals ..... %ld MB\n", __func__, n_seqs*sizeof(smem_aux_t)/1000000);
-		gpuErrchk( cudaMallocAsync((void**)&(gpu_data->d_aux), n_seqs*sizeof(smem_aux_t), process_stream) );
-	}
-	if (!gpu_data->d_seq_seeds){
-		fprintf(stderr, "[M::%s] seeds array  ...... %ld MB\n", __func__, n_seqs*sizeof(mem_seed_v)/1000000);
-		gpuErrchk( cudaMallocAsync((void**)&(gpu_data->d_seq_seeds), n_seqs*sizeof(mem_seed_v), process_stream) );
-	}
-	if (!gpu_data->d_chains){
-		fprintf(stderr, "[M::%s] chains ............ %ld MB\n", __func__, n_seqs*sizeof(mem_chain_v)/1000000);
-		gpuErrchk( cudaMallocAsync((void**)&(gpu_data->d_chains), n_seqs*sizeof(mem_chain_v), process_stream) );
-	}
-	if (!gpu_data->d_seed_records){
-		fprintf(stderr, "[M::%s] seed records ...... %ld MB\n", __func__, n_seqs*500*sizeof(seed_record_t)/1000000);
-		gpuErrchk( cudaMallocAsync((void**)&(gpu_data->d_seed_records), n_seqs*500*sizeof(seed_record_t), process_stream) );	// allocate enough for all seeds
-	}
-	if (!gpu_data->d_Nseeds) 
-		gpuErrchk( cudaMallocAsync((void**)&(gpu_data->d_Nseeds), sizeof(int), process_stream) );
-	cudaMemset(gpu_data->d_Nseeds, 0, sizeof(int));
-	if (!gpu_data->d_regs){
-		fprintf(stderr, "[M::%s] alignment regs .... %ld MB\n", __func__, n_seqs*sizeof(mem_alnreg_v)/1000000);
-		gpuErrchk( cudaMallocAsync((void**)&(gpu_data->d_regs), n_seqs*sizeof(mem_alnreg_v), process_stream) );
-	}
-	if (!gpu_data->d_alns){
-		fprintf(stderr, "[M::%s] alignments ...... %ld MB\n", __func__, n_seqs*sizeof(mem_aln_v)/1000000);
-		gpuErrchk( cudaMallocAsync((void**)&(gpu_data->d_alns), n_seqs*sizeof(mem_aln_v), process_stream) );
-	}
-	if (!gpu_data->d_sortkeys_in){
-		fprintf(stderr, "[M::%s] sorting keys .... %ld MB\n", __func__, 4*5*n_seqs*sizeof(int)/1000000);
-		gpuErrchk( cudaMallocAsync((void**)&gpu_data->d_sortkeys_in, n_seqs*5*sizeof(int), process_stream) );
-		gpuErrchk( cudaMallocAsync((void**)&gpu_data->d_sortkeys_out, n_seqs*5*sizeof(int), process_stream) );
-		gpuErrchk( cudaMallocAsync((void**)&gpu_data->d_seqIDs_in, n_seqs*5*sizeof(int), process_stream) );
-		gpuErrchk( cudaMallocAsync((void**)&gpu_data->d_seqIDs_out, n_seqs*5*sizeof(int), process_stream) );
-	}
-
-	// reset sam offset on device
-	int zero = 0;
-	gpuErrchk( cudaMemcpyToSymbolAsync(d_seq_sam_offset2, &zero, sizeof(int), 0, cudaMemcpyHostToDevice, process_stream) );
-
-	// reset buffer pools
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** reset buffer pools ... \n", __func__);
-	CUDAResetBufferPool(gpu_data->d_buffer_pools, process_stream);
-
-	// update opt if opt != 0
-	if (opt != 0){
-		if (bwa_verbose>=4) fprintf(stderr, "[M::%s] **** updating options ...\n", __func__);
-		cudaMemcpyAsync(gpu_data->d_opt, opt, sizeof(mem_opt_t), cudaMemcpyHostToDevice, process_stream);
-	}
-}

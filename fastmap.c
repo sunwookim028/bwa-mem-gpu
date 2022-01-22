@@ -302,17 +302,12 @@ int main_mem(int argc, char *argv[])
 	}
 	bwa_print_sam_hdr(aux.idx->bns, hdr_line);
 	aux.actual_chunk_size = fixed_chunk_size > 0? fixed_chunk_size : opt->chunk_size * opt->n_threads;
-	// Init static memory on GPU
-	aux.gpu_data = GPU_Init(aux.opt, aux.idx->bwt, aux.idx->bns, aux.idx->pac, aux.pes0);
-	// prepare large chunks of memory for seqs
-	CUDAInitSeqsMemory();
 	// kt_pipeline(no_mt_io? 1 : 2, process, &aux, 3);
 	setlocale(LC_NUMERIC, "");
 	// kt_pipeline(1, process, &aux, 3);
 	processHideIO(&aux);
 	free(hdr_line);
 	free(opt);
-	CUDADataFree();
 	bwa_idx_destroy(aux.idx);
 	kseq_destroy(aux.ks);
 	err_gzclose(fp); kclose(ko);

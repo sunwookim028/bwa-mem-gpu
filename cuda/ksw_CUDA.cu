@@ -178,7 +178,6 @@ static __device__ kswr_t ksw_i16(kswq_t *q, int tlen, const uint8_t *target, int
 	e_ins = set_value_m128i(_e_ins);
 	H0 = q->H0; H1 = q->H1; E = q->E; Hmax = q->Hmax;
 	slen = q->slen;
-	m128i* temp;
 	for (i = 0; i < slen; ++i) {
 		*(E+i) = zero;
 		*(H0+i) = zero;

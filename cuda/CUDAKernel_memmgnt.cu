@@ -15,7 +15,7 @@ __host__ void* CUDA_BufferInit(){
 	First few bytes of each pool contain CUDAKernel_mem_info
 	return array of pointers to the pools
 	*/
-	fprintf(stderr, "[M::%-25s] init buffer ......... %ld MB\n", __func__, NBUFFERPOOLS*(size_t)POOLSIZE/1048576);
+	fprintf(stderr, "[M::%-25s] init buffer ......... %ld MB\n", __func__, NBUFFERPOOLS*(size_t)POOLSIZE/MB_SIZE);
 	// allocate array of pointers on host
 	void** pools;
 	pools = (void**)malloc(NBUFFERPOOLS*sizeof(void*));

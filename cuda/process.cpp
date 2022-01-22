@@ -53,8 +53,8 @@ static void writeOutput(bool first_batch, transfer_data_t *transfer_data){
 		if (seqs[i].sam) err_fputs(seqs[i].sam, stdout);
 	if (bwa_verbose >= 3)
 		fprintf(stderr, "[M::%-25s] *** wrote output for sequences %'ld - %'ld\n", __func__, transfer_data->total_output, transfer_data->total_output+n_seqs);
-	fprintf(stderr, "[M::%-25s] finised %'ld read\n", __func__, transfer_data->total_output);
 	transfer_data->total_output += n_seqs;
+	fprintf(stderr, "[M::%-25s] finised %'ld read\n", __func__, transfer_data->total_output);
 }
 
 
@@ -70,8 +70,8 @@ static void writeOutput(bool first_batch, transfer_data_t *transfer_data){
 		swap corresponding 2 sets of pointers on device
  */
 void processHideIO(ktp_aux_t *aux){
-	transfer_data_t *transfer_data = newTransfer();
 	process_data_t *process_data = newProcess(aux->opt, aux->pes0, aux->idx->bwt, aux->idx->bns, aux->idx->pac);
+	transfer_data_t *transfer_data = newTransfer();
 	bool first_batch = true;
 	while (first_batch || transfer_data->n_seqs!=0 || process_data->n_seqs!=0 ){		// kernel, process until IO is empty
 		if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** seqs in transfer=%'d, seqs in process=%'d \n", __func__, transfer_data->n_seqs, process_data->n_seqs);

@@ -15,4 +15,6 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
    }
 }
 
+#define MB_SIZE (1<<20)
+
 #endif

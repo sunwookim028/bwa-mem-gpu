@@ -1,4 +1,4 @@
-buildIndex: buildIndex.cpp hashKMer.hpp loadIndex.hpp
+buildIndex: buildIndex.cpp hashKMer.hpp loadKMerIndex.cpp hashKMerIndex.h
 	g++ buildIndex.cpp -o buildIndex -L.. -lbwa -lm -lz -lpthread
 
 .PHONY: run

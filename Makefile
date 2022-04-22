@@ -11,7 +11,7 @@ LOBJS=		utils.o kthread.o kstring.o ksw.o bwt.o bntseq.o bwa.o bwamem.o bwamem_p
 AOBJS=		bwashm.o bwase.o bwaseqio.o bwtgap.o bwtaln.o bamlite.o \
 			bwape.o kopen.o pemerge.o maxk.o \
 			bwtsw2_core.o bwtsw2_main.o bwtsw2_aux.o bwt_lite.o \
-			bwtsw2_chain.o fastmap.o bwtsw2_pair.o
+			bwtsw2_chain.o fastmap.o bwtsw2_pair.o loadKMerIndex.o
 PROG=		bwa
 INCLUDES=	
 LIBS=		-lm -lz -lpthread
@@ -76,6 +76,8 @@ GPULink.o: bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUD
 	nvcc -I. --device-link -arch=$(CUDA_ARCH) bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o streams.o --output-file GPULink.o
 process.o: cuda/process.cpp
 	nvcc -I. $(NVCC_FLAGS) -o process.o cuda/process.cpp
+loadKMerIndex.o: kmers_index/loadKMerIndex.cpp kmers_index/hashKMerIndex.h
+	g++ kmers_index/loadKMerIndex.cpp -c -o loadKMerIndex.o
 
 QSufSort.o: QSufSort.h
 bamlite.o: bamlite.h malloc_wrap.h

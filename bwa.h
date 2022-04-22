@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include "bntseq.h"
 #include "bwt.h"
+#include "kmers_index/hashKMerIndex.h"
 
 #define BWA_IDX_BWT 0x1
 #define BWA_IDX_BNS 0x2
@@ -217,6 +218,7 @@ typedef struct {
 	void* d_buffer_pools;	// buffer pools
 	mem_pestat_t* d_pes; 	// paired-end stats
 	mem_pestat_t* h_pes0;	// pes0 on host for paired-end stats
+	kmers_bucket_t* d_kmerHashTab;
     // pointers that will change each batch (being swapped between transfer and process)
         // reads on device
 	int n_seqs;			// number of reads on device

@@ -9,6 +9,7 @@ static void transferIndex(
 	const bwt_t *bwt, 
 	const bntseq_t *bns, 
 	const uint8_t *pac,
+	const kmers_bucket_t *kmerHashTab,
 	process_data_t *process_instance)
 {
 		/* CUDA GLOBAL MEMORY ALLOCATION AND TRANSFER */
@@ -88,10 +89,18 @@ static void transferIndex(
 	cudaMalloc((void**)&d_pac, bns->l_pac/4*sizeof(uint8_t)); 		// l_pac is length of ref seq
 	cudaMemcpy(d_pac, pac, bns->l_pac/4*sizeof(uint8_t), cudaMemcpyHostToDevice); 		// divide by 4 because 2-bit encoding
 
+	// K-MER HASH TABLE
+	if (bwa_verbose>=3) fprintf(stderr, "[M::%-25s] *** kmer ......... %.2f MB\n", __func__, (float)pow4(KMER_K)*sizeof(kmers_bucket_t)/MB_SIZE);
+	kmers_bucket_t* d_kmerHashTab ;
+	cudaMalloc((void**)&d_kmerHashTab, pow4(KMER_K)*sizeof(kmers_bucket_t)); 		// l_pac is length of ref seq
+	cudaMemcpy(d_kmerHashTab, kmerHashTab, pow4(KMER_K)*sizeof(kmers_bucket_t), cudaMemcpyHostToDevice); 		// divide by 4 because 2-bit encoding
+
+
 	// output
 	process_instance->d_bwt = d_bwt;
 	process_instance->d_bns = d_bns;
 	process_instance->d_pac = d_pac;
+	process_instance->d_kmerHashTab = d_kmerHashTab;
 }
 
 /* transfer user-defined optinos */
@@ -157,7 +166,8 @@ process_data_t* newProcess(
 	mem_pestat_t *pes0,
 	const bwt_t *bwt, 
 	const bntseq_t *bns, 
-	const uint8_t *pac
+	const uint8_t *pac,
+	const kmers_bucket_t *kmerHashTab
 )
 {
     // new instance in memory
@@ -167,7 +177,7 @@ process_data_t* newProcess(
 	transferOptions(opt, pes0, instance);
     
 	// transfer index data
-	transferIndex(bwt, bns, pac, instance);
+	transferIndex(bwt, bns, pac, kmerHashTab, instance);
 
 	// init memory management
 	instance->d_buffer_pools = CUDA_BufferInit();

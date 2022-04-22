@@ -2,10 +2,9 @@
 #define HASHKMER_HPP
 
 #include <cstdlib>
-#include "../bwt.h"
 #include <iostream>
+#include "hashKMerIndex.h"
 
-#define KMER_K 9
 
 // convert A,C,G,T,N to 0,1,2,3,4
 const int __nst_nt4_table__[256] = {
@@ -29,7 +28,7 @@ const int __nst_nt4_table__[256] = {
 
 #define charToInt(c) (__nst_nt4_table__[(int)c])
 #define intToChar(x) ("ACGTN"[(x)])
-#define pow4(x) (1<<(2*(x)))  // 4^x
+
 
 
 int hashK(const char* s){
@@ -53,16 +52,12 @@ char* inverseHashK(int x){
 }
 
 
-typedef struct {
-	bwtint_t x[3]; // same as first 3 elements on bwtintv_t
-	// bwtintv_t.info not included here because it contains length of match, which is always KMER_K in this case
-} bucket_t;
 
 
 // hash table as array
-// (arrayIndex = hashValue) --> bwt interval bucket_t
-bucket_t* createHashKTable(const bwt_t *bwt){
-	bucket_t* out = (bucket_t*)malloc(pow4(KMER_K)*sizeof(bucket_t));
+// (arrayIndex = hashValue) --> bwt interval kmers_bucket_t
+kmers_bucket_t* createHashKTable(const bwt_t *bwt){
+	kmers_bucket_t* out = (kmers_bucket_t*)malloc(pow4(KMER_K)*sizeof(kmers_bucket_t));
 	for (int hashValue=0; hashValue<pow4(KMER_K); hashValue++){
 		char *read = inverseHashK(hashValue);	// K-length string for finding intervals
 		bwtintv_t ik, ok[4];
@@ -82,4 +77,6 @@ bucket_t* createHashKTable(const bwt_t *bwt){
 	return out;
 }
 
+#undef chartoInt
+#undef inToChar
 #endif

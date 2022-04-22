@@ -25,13 +25,7 @@
 
 /* Contact: Heng Li <lh3@sanger.ac.uk> */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-#include <stddef.h>
-#include "../bwt.h"
-#include "CUDAKernel_memmgnt.cuh"
+#include "bwt_CUDA.cuh"
 
 
 #define OCC_INTV_SHIFT 7
@@ -196,15 +190,34 @@ __device__ static void bwt_reverse_intvs(bwtintv_v *p)
 	}
 }
 
+extern __device__ __constant__ unsigned char d_nst_nt4_table[256];
+#define d_charToInt(c) (d_nst_nt4_table[(int)c])	// for device code only
+#define d_intToChar(x) ("ACGTN"[(x)])
+__device__ int d_hashK(const uint8_t* s){
+    int out = 0;
+    for (int i=0; i<KMER_K; i++){
+        if (s[i]==4) return -1;
+        out += s[i]*pow4(KMER_K-1-i);
+    }
+    return out;
+}
+
 // extend furthest to the right from a position and save that one seed
-__device__ void bwt_smem_right(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, int min_seed_len, bwtintv_t *mem_a)
+__device__ void bwt_smem_right(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, int min_seed_len, bwtintv_t *mem_a, kmers_bucket_t *d_kmersHashTab)
 {
 	bwtintv_t ik, ok[4];
-	if (q[x] > 3) return;			// dont do N base
 	if (min_intv < 1) min_intv = 1; // the interval size should be at least 1
 	bwt_set_intv(bwt, q[x], ik); 	// the initial interval of a single base
+	// load interval for first K base from hash table
+	if (x>len-1-KMER_K) return;	// not enough space to the right for extension
+	int hashValue = d_hashK(&q[x]);
+	if (hashValue==-1) return;	// hash N in this substring
+	kmers_bucket_t ikK = d_kmersHashTab[hashValue];
+	ik.x[0] = ikK.x[0]; ik.x[1] = ikK.x[1]; ik.x[2] = ikK.x[2];
+	ik.info = ((uint64_t)x<<32) | ((uint64_t)(x+KMER_K-1));
+
 	int i;
-	for (i = x + 1; i < len; ++i) { // forward search
+	for (i = x + KMER_K; i < len; ++i) { // forward search
 		if (ik.x[2] < max_intv) { // an interval small enough
 			break;
 		} else if (q[i] < 4) { // an A/C/G/T base

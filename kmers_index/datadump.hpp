@@ -54,7 +54,7 @@ void dumpArray(T *arr, unsigned long long arr_size, const std::string& file_name
 }
 
 /* load an array from disk */
-template <typename T=bucket_t>
+template <typename T=kmers_bucket_t>
 T* loadArray(unsigned long long arr_size, const std::string& file_name){
     std::ifstream infile(file_name, std::ios::binary);
     T* out = (T*)malloc(arr_size*sizeof(T));

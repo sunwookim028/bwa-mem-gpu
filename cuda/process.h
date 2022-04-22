@@ -7,6 +7,7 @@
 #include <locale.h>
 #include "bwamem_GPU.cuh"
 #include "batch_config.h"
+#include "../kmers_index/hashKMerIndex.h"
 KSEQ_DECLARE(gzFile)
 
 typedef struct {
@@ -16,6 +17,7 @@ typedef struct {
 	int64_t n_processed;
 	int copy_comment, actual_chunk_size;
 	bwaidx_t *idx;
+	kmers_bucket_t *kmerHashTab;
 } ktp_aux_t;
 
 typedef struct {

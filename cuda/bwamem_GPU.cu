@@ -1304,6 +1304,7 @@ __global__ void MEMFINDING_collect_intv_kernel(
 	const bwt_t *d_bwt, 
 	const bseq1_t *d_seqs, 
 	smem_aux_t *d_aux, 			// aux output
+	kmers_bucket_t *d_kmerHashTab,
 	void* d_buffer_pools)
 {
 	// seqID = blockIdx.x
@@ -1347,7 +1348,7 @@ __global__ void MEMFINDING_collect_intv_kernel(
 	// positions higher than l_seq-min_seed_len would produce unqualified seds anyways
 	#pragma unroll
 	for (j=threadIdx.x; j<=(l_seq-min_seed_len); j+=blockDim.x){
-		bwt_smem_right(d_bwt, l_seq, S_seq, j, start_width, 0, min_seed_len, mem_a);
+		bwt_smem_right(d_bwt, l_seq, S_seq, j, start_width, 0, min_seed_len, mem_a, d_kmerHashTab);
 	}
 }
 
@@ -3405,6 +3406,7 @@ void mem_align_GPU(process_data_t *process_data)
 	auto d_bwt = process_data->d_bwt;
 	auto d_bns = process_data->d_bns;
 	auto d_pac = process_data->d_pac;
+	auto d_kmerHashTab = process_data->d_kmerHashTab;
 	// reads
 	auto d_seqs = process_data->d_seqs;
 	auto d_seq_sam_ptr = process_data->d_seq_sam_ptr;
@@ -3430,6 +3432,7 @@ void mem_align_GPU(process_data_t *process_data)
 	MEMFINDING_collect_intv_kernel <<< n_seqs, 320, 512, process_stream >>> (
 			d_opt, d_bwt, d_seqs,
 			d_aux,	// output
+			d_kmerHashTab,
 			d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );

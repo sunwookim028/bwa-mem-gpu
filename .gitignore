@@ -7,3 +7,6 @@ Makefile.bak
 bwamem-lite
 .vscode*
 out*
+kmers_index/buildIndex
+kmers_index/hashTable
+kmers_index/hashTable_text

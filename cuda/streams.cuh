@@ -2,6 +2,7 @@
 #define CUDASTREAMS_CUH
 #include <stdint.h>
 #include "../bwamem.h"
+#include "../kmers_index/hashKMerIndex.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -22,7 +23,8 @@ extern "C"{
 		mem_pestat_t *pes0,
 		const bwt_t *bwt, 
 		const bntseq_t *bns, 
-		const uint8_t *pac
+		const uint8_t *pac,
+		const kmers_bucket_t *kmersHashTab
 	);
 
     /* intialize a new set for data transfer (disk <-> CPU <-> GPU)

@@ -70,7 +70,7 @@ static void writeOutput(bool first_batch, transfer_data_t *transfer_data){
 		swap corresponding 2 sets of pointers on device
  */
 void processHideIO(ktp_aux_t *aux){
-	process_data_t *process_data = newProcess(aux->opt, aux->pes0, aux->idx->bwt, aux->idx->bns, aux->idx->pac);
+	process_data_t *process_data = newProcess(aux->opt, aux->pes0, aux->idx->bwt, aux->idx->bns, aux->idx->pac, aux->kmerHashTab);
 	transfer_data_t *transfer_data = newTransfer();
 	bool first_batch = true;
 	while (first_batch || transfer_data->n_seqs!=0 || process_data->n_seqs!=0 ){		// kernel, process until IO is empty

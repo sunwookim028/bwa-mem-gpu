@@ -305,6 +305,9 @@ int main_mem(int argc, char *argv[])
 	// kt_pipeline(no_mt_io? 1 : 2, process, &aux, 3);
 	setlocale(LC_NUMERIC, "");
 	// kt_pipeline(1, process, &aux, 3);
+	// load kmer hash
+	aux.kmerHashTab = loadKMerIndex("kmers_index/hashTable");
+
 	processHideIO(&aux);
 	free(hdr_line);
 	free(opt);

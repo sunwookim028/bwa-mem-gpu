@@ -24,11 +24,16 @@ static int readInput(kseq_t *ks, kseq_t *ks2, int actual_chunk_size, int copy_co
 		for (int i = 0; i<n_seqs_read; ++i) {
 			seqs[i].comment = 0;
 		}
-	for (int i = 0; i<n_seqs_read; ++i) size += seqs[i].l_seq;
+	int max_l_seq = 0;
+	for (int i = 0; i<n_seqs_read; ++i){
+		size += seqs[i].l_seq;
+		max_l_seq = seqs[i].l_seq>max_l_seq ? seqs[i].l_seq : max_l_seq;
+	}
 	if (bwa_verbose >= 3)
 		fprintf(stderr, "[M::%-25s] *** read sequences %'ld - %'ld (%ld bp)\n", __func__, transfer_data->total_input, transfer_data->total_input+n_seqs_read-1, (long)size);
 
 	transfer_data->n_seqs = n_seqs_read;
+	transfer_data->max_l_seqs = max_l_seq;
 	CUDATransferSeqsIn(transfer_data);
 	if (bwa_verbose >= 3)
 		fprintf(stderr, "[M::%-25s] *** transferred sequences %'ld - %'ld to device\n", __func__, transfer_data->total_input, transfer_data->total_input+n_seqs_read-1);

@@ -222,6 +222,7 @@ typedef struct {
     // pointers that will change each batch (being swapped between transfer and process)
         // reads on device
 	int n_seqs;			// number of reads on device
+	int max_l_seqs; 	// max length of a read in this batch
 	int64_t n_processed;	// number of reads processed prior to this batch
 	bseq1_t *d_seqs;		// reads
     char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  // name, comment, seq, qual, sam output
@@ -258,6 +259,7 @@ typedef struct {
 typedef struct {
     // reads on device
 	int n_seqs;			// number of reads
+	int max_l_seqs; 	// max length of a read in this batch
 	int64_t total_input;	// number of reads input prior to this batch
 	int64_t total_output;	// number of reads output prior to this batch
 	bseq1_t *d_seqs;		// reads

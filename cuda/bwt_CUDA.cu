@@ -202,6 +202,47 @@ __device__ int d_hashK(const uint8_t* s){
     return out;
 }
 
+// generate initial bwt intervals for sub-sequence of length K starting from position i
+// write result to *interval, return success/failure
+__device__ bool bwt_KMerHashInit(int qlen, const uint8_t *q, int i, kmers_bucket_t *d_kmersHashTab, bwtintv_lite_t *interval){
+	if (i>qlen-1-KMER_K) return false;	// not enough space to the right for extension
+	int hashValue = d_hashK(&q[i]);
+	if (hashValue==-1) return false;	// hash N in this substring
+	kmers_bucket_t entry = d_kmersHashTab[hashValue];
+	interval->x0 = entry.x[0]; interval->x1 = entry.x[1]; interval->x2 = entry.x[2];
+	interval->start = i;
+	interval->end = i+KMER_K-1;
+	return true;
+}
+
+// extend 1 to the right, write result in-place. interval is input and output. Return true if successfully extended, false otherwise
+// if extend is unsuccessful, *interval is not modified
+__device__ bool bwt_extend_right1(const bwt_t *bwt, int qlen, const uint8_t *q, int min_intv, uint64_t max_intv, bwtintv_lite_t *interval){
+	int end = interval->end;
+	if (end==qlen-1) return false;
+	int nextBase = q[end+1];
+	if (nextBase==4) return false; // ambiguous base
+	
+	bwtintv_t ik, ok[4];
+	ik.x[0] = interval->x0;
+	ik.x[1] = interval->x1;
+	ik.x[2] = interval->x2;
+	if (ik.x[2]<max_intv) return false;	// an interval small enough
+
+	// try to extend
+	int c = 3 - nextBase;	// complement
+	bwt_extend_gpu(bwt, &ik, ok, 0);
+	if (ok[c].x[2] < min_intv) return false; // the interval size is too small to be extended further
+	// otherwise, success extend, write output to *interval
+	interval->x0 = ok[c].x[0];
+	interval->x1 = ok[c].x[1];
+	interval->x2 = ok[c].x[2];
+	interval->end = interval->end + 1;
+
+	return true;
+}
+
+
 // extend furthest to the right from a position and save that one seed
 __device__ void bwt_smem_right(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, int min_seed_len, bwtintv_t *mem_a, kmers_bucket_t *d_kmersHashTab)
 {

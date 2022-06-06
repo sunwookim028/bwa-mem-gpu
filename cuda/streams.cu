@@ -262,6 +262,7 @@ void swapData(process_data_t *process_data, transfer_data_t *transfer_data){
 	{ auto tmp = process_data->d_seq_sam_size; process_data->d_seq_sam_size = transfer_data->d_seq_sam_size; transfer_data->d_seq_sam_size = tmp; }
 	// swap n_seqs
 	{ auto tmp = process_data->n_seqs; process_data->n_seqs = transfer_data->n_seqs; transfer_data->n_seqs = tmp; }
+	{ auto tmp = process_data->max_l_seqs; process_data->max_l_seqs = transfer_data->max_l_seqs; transfer_data->max_l_seqs = tmp; }
     return;
 }
 

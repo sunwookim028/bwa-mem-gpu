@@ -12,6 +12,8 @@
 #include <string.h>
 #include <cub/cub.cuh>
 #include "streams.cuh"
+#include "batch_config.h"
+#include "../kmers_index/hashKMerIndex.h"
 
 __device__ __constant__ unsigned char d_nst_nt4_table[256] = {
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
@@ -1349,6 +1351,132 @@ __global__ void MEMFINDING_collect_intv_kernel(
 	#pragma unroll
 	for (j=threadIdx.x; j<=(l_seq-min_seed_len); j+=blockDim.x){
 		bwt_smem_right(d_bwt, l_seq, S_seq, j, start_width, 0, min_seed_len, mem_a, d_kmerHashTab);
+	}
+}
+
+/* convert all reads to bit encoding:
+	A=0, C=1, G=2, T=3, N=4 (ambiguous)
+	one block convert one read
+	readID = blockIdx.x
+ */
+__global__ void PREPROCESS_convert_bit_encoding_kernel(const bseq1_t *d_seqs){
+	char *seq1 = d_seqs[blockIdx.x].seq; 	// get read from global mem
+	int l_seq  = d_seqs[blockIdx.x].l_seq;	// read length
+	for (int j=threadIdx.x; j<l_seq; j+=blockDim.x){
+		uint8_t b = seq1[j] < 4? (uint8_t)seq1[j] : (uint8_t)d_nst_nt4_table[(int)seq1[j]];
+		seq1[j] = (char)b;
+	}
+}
+
+/* find the SMEM starting at each position of the read 
+	for each position, only extend to the right
+	each block process a read, readID = blockIdx.x
+*/
+#define start_width 1
+__global__ void MEMFINDING_collect_intv_concurrent_kernel(
+	const mem_opt_t *d_opt, 
+	const bwt_t *d_bwt, 
+	const bseq1_t *d_seqs, 
+	smem_aux_t *d_aux, 			// aux output
+	kmers_bucket_t *d_kmerHashTab,
+	void* d_buffer_pools)
+{
+	uint8_t *d_seq = (uint8_t*)d_seqs[blockIdx.x].seq; 	// get read from global mem
+	int l_seq  = d_seqs[blockIdx.x].l_seq;	// read length
+	smem_aux_t* a = &d_aux[blockIdx.x];		// output location for this read
+	int min_seed_len = d_opt->min_seed_len;
+	if (l_seq < min_seed_len){ 	// if the query is shorter than the seed length, no match
+		if (threadIdx.x==0){
+			a->mem.n = a->mem.m = 0;
+			a->mem.a = 0;
+		}
+		return;
+	}
+
+	__shared__ uint8_t S_seq[SEQ_MAXLEN];
+	for (int i=threadIdx.x; i<l_seq; i+=blockDim.x)
+		S_seq[i] = d_seq[i];
+
+	// allocate memory for output intervals
+	// output type is bwtintv_t (3 64-bit integers: location on Forward, location on Reverse, length of match interval).
+	// There are at most (l_seq-min_seed_len+1) seeds in a read corresponding to each position
+	// thread 0 allocate memory, all other threads get resulted pointer from thread 0
+	bwtintv_t* out_arr; 
+	unsigned long long out_arr_int; // shuffle instructions only support int type
+	__shared__  bwtintv_t* S_out_arr[1];
+	if (threadIdx.x == 0){
+		void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, blockIdx.x % 32);
+		out_arr_int = (unsigned long long)CUDAKernelMalloc(d_buffer_ptr, (l_seq-min_seed_len+1)*sizeof(bwtintv_t), 8);
+		S_out_arr[0] = (bwtintv_t*)out_arr_int;
+		// write this location to global info that is attached to read
+		a->mem.n = a->mem.m = l_seq-min_seed_len+1;
+		a->mem.a = (bwtintv_t*)out_arr_int;
+	}
+	__syncthreads();
+	// out_arr_int = __shfl_sync(0xffffffff, out_arr_int, 0);
+	// out_arr= (bwtintv_t*)out_arr_int;
+	out_arr = S_out_arr[0];
+
+	// extend to the right and find the longest seed
+	// positions higher than l_seq-min_seed_len would produce unqualified short seeds anyways
+	// use processsing queue for concurrent processing
+	// first use hashKMers to find the initial intervals
+	// queue max size is SEQ_MAXLEN
+	__shared__ unsigned S_queueStartIdx[1], S_queueEndIdx[1]; // virtualized queue start and end index
+	extern __shared__ bwtintv_lite_t S_queue[];	// actual queue, fixed length, index by modulo of SEQ_MAXLEN
+	if (threadIdx.x==0){ *S_queueStartIdx = blockDim.x; *S_queueEndIdx = l_seq-min_seed_len; }	// initial empty queue, set start to blockSize for fisrst processing round
+	__syncthreads();
+	// compute hash and put intervals to queue
+	for (int j=threadIdx.x; j<=(l_seq-min_seed_len); j+=blockDim.x){
+		bwtintv_lite_t interval;
+		bool success = bwt_KMerHashInit(l_seq, S_seq, j, d_kmerHashTab, &interval);
+		if (!success) interval.x2 = 0;
+		S_queue[j] = interval;
+	}
+
+
+	// concurrent queue processing
+	// each thread works on position queueStart+threadId
+	// actual work located at position % SEQ_MAXLEN
+	__syncthreads();
+	int i = threadIdx.x;	// position on queue to process 
+	bwtintv_lite_t interval; // data from queue
+	bool success;
+	unsigned queueEndIdx = *S_queueEndIdx; // this won't change
+	if (i<queueEndIdx){
+		interval = S_queue[i];
+		success = interval.x2==0 ? false : true;
+	}
+
+	while (i<queueEndIdx){
+		// determine whether to extend the current interval or grab a new one from Queue
+		// if success, keep the same i and interval (do nothing)
+		// if not, write interval back to shared mem queue and grab the next i and interval from the queue
+		if (!success){
+			// write back to shared mem
+			S_queue[i] = interval;
+			// grab next i and interval
+			i = atomicAdd(S_queueStartIdx, 1);
+			if (i<queueEndIdx) interval = S_queue[i];
+			else break;
+		}
+		
+		// extend 1 base on current interval
+		success = bwt_extend_right1(d_bwt, l_seq, S_seq, start_width, 0, &interval);
+	}
+
+	// write output from shared mem S_queue to global output at once
+	for (i=threadIdx.x; i<queueEndIdx; i+=blockDim.x){
+		interval = S_queue[i];
+		int start = interval.start;
+		int end = interval.end;
+		if (end-start>=min_seed_len){
+			out_arr[start].x[0] = interval.x0;
+			out_arr[start].x[1] = interval.x1;
+			out_arr[start].x[2] = interval.x2;
+			out_arr[start].info = (((uint64_t)start)<<32) | ((uint64_t)end);
+		} 
+		else out_arr[start].info = 0; // discard if match not long enough
 	}
 }
 
@@ -3396,6 +3524,10 @@ void mem_align_GPU(process_data_t *process_data)
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** reset process stream ... \n", __func__);
 	resetProcess(process_data);
 	if (bwa_verbose>=3) fprintf(stderr, "[M::%-25s] *** aligning seqs %'ld - %'ld ... \n", __func__, process_data->n_processed, process_data->n_processed+n_seqs-1);
+	if (process_data->max_l_seqs > SEQ_MAXLEN){
+		fprintf(stderr, "[M::%-25s] ERROR: a read has length of %d, more than the maximum set %d \n", __func__, process_data->max_l_seqs, SEQ_MAXLEN);
+		exit(1);
+	}
 	/* GRID SIZE when processing at read level (code applied to each read) */
 	dim3 dimGrid_readlevel(ceil((double)n_seqs/CUDA_BLOCKSIZE));
 	dim3 dimBlock_readlevel(CUDA_BLOCKSIZE);
@@ -3426,6 +3558,12 @@ void mem_align_GPU(process_data_t *process_data)
 	// system stuffs
 	auto d_buffer_pools = process_data->d_buffer_pools;
 	cudaStream_t process_stream = *((cudaStream_t*)process_data->CUDA_stream);
+
+	/* ----------------------- Preprocessing: convert letters to bits --------------------------------------*/
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [PREPROCESS ]: convert letters to bits ...\n", __func__);
+	PREPROCESS_convert_bit_encoding_kernel <<< n_seqs, 32, 0, process_stream >>> (d_seqs);
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
 	/* ----------------------- First part of pipeline: find SMEM intervals --------------------------------------*/
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [MEM FINDING]: collect MEM intervals ...\n", __func__);

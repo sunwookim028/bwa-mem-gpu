@@ -1,5 +1,5 @@
 #define NBUFFERPOOLS 32 	// number of buffer pools
-#define POOLSIZE 100000000	// size of each buffer pool
+#define POOLSIZE 135000000	// size of each buffer pool
 #include "CUDAKernel_memmgnt.cuh"
 #include "errHandler.cuh"
 

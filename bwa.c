@@ -74,13 +74,13 @@ static inline void kseq2bseq2(const kseq_t *ks, bseq1_t *s, transfer_data_t *out
 	if (out->h_seq_name_size+ks->name.l+1 > SEQ_NAME_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq name.\n", __func__); exit(1); }
 	temp = &(out->h_seq_name_ptr[out->h_seq_name_size]);	// position on the big chunk on host
 	memcpy(temp, ks->name.s, ks->name.l); temp[ks->name.l] = '\0';
-	s->name = (char*)(out->d_seq_name_ptr + out->h_seq_name_size); // point to its address on device
+	s->name = (char*)(out->h_seq_name_ptr + out->h_seq_name_size); // point to its address on device
 	out->h_seq_name_size += ks->name.l + 1;
 	// copy seq to host's memory
 	if (out->h_seq_seq_size+ks->seq.l+1 > SEQ_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq.\n", __func__); exit(1); }
 	temp = &(out->h_seq_seq_ptr[out->h_seq_seq_size]);
 	memcpy(temp, ks->seq.s, ks->seq.l); temp[ks->seq.l] = '\0';
-	s->seq = (char*)(out->d_seq_seq_ptr + out->h_seq_seq_size); // point to its address on device
+	s->seq = (char*)(out->h_seq_seq_ptr + out->h_seq_seq_size); // point to its address on device
 	out->h_seq_seq_size += ks->seq.l + 1;
 	// copy comment if not NULL
 	if (ks->comment.l == 0){
@@ -89,7 +89,7 @@ static inline void kseq2bseq2(const kseq_t *ks, bseq1_t *s, transfer_data_t *out
 		if (out->h_seq_comment_size+ks->comment.l+1 > SEQ_COMMENT_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq comment.\n", __func__); exit(1); }
 		temp = &(out->h_seq_comment_ptr[out->h_seq_comment_size]);
 		memcpy(temp, ks->comment.s, ks->comment.l); temp[ks->comment.l] = '\0';
-		s->comment = (char*)(out->d_seq_comment_ptr + out->h_seq_comment_size); // point to its address on device
+		s->comment = (char*)(out->h_seq_comment_ptr + out->h_seq_comment_size); // point to its address on device
 		out->h_seq_comment_size += ks->comment.l + 1;
 	}
 	// copy qual if not NULL
@@ -99,7 +99,7 @@ static inline void kseq2bseq2(const kseq_t *ks, bseq1_t *s, transfer_data_t *out
 		if (out->h_seq_qual_size+ks->qual.l+1 > SEQ_QUAL_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq qual.\n", __func__); exit(1); }
 		temp = &(out->h_seq_qual_ptr[out->h_seq_qual_size]);
 		memcpy(temp, ks->qual.s, ks->qual.l); temp[ks->qual.l] = '\0';
-		s->qual = (char*)(out->d_seq_qual_ptr + out->h_seq_qual_size);  // point to its address on device
+		s->qual = (char*)(out->h_seq_qual_ptr + out->h_seq_qual_size);  // point to its address on device
 		out->h_seq_qual_size += ks->qual.l + 1;
 	}
 	s->l_seq = ks->seq.l;

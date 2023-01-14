@@ -1327,13 +1327,9 @@ __global__ void MEMFINDING_collect_intv_kernel(
 	// cache read in shared mem
 	extern __shared__ int SM[];
 	uint8_t *S_seq = (uint8_t*)SM;
-
-	// convert to 2-bit encoding if we have not done so
 	#pragma unroll
-	for (j=threadIdx.x; j<l_seq; j+=blockDim.x){
-		S_seq[j] = seq1[j] < 4? (uint8_t)seq1[j] : (uint8_t)d_nst_nt4_table[(int)seq1[j]];
-		seq1[j] = (char)S_seq[j];
-	}
+	for (j=threadIdx.x; j<l_seq; j+=blockDim.x)
+		S_seq[j] = (uint8_t)seq1[j];
 
 	// allocate memory for SMEM intervals
 	__shared__ bwtintv_t* S_mem_a[1];
@@ -1351,6 +1347,54 @@ __global__ void MEMFINDING_collect_intv_kernel(
 	#pragma unroll
 	for (j=threadIdx.x; j<=(l_seq-min_seed_len); j+=blockDim.x){
 		bwt_smem_right(d_bwt, l_seq, S_seq, j, start_width, 0, min_seed_len, mem_a, d_kmerHashTab);
+	}
+}
+
+
+/* 
+* each thread does FM index search for several reads
+* For each read: start at each position and extend to right
+*/
+#define MEMFINDING_READS_PER_THREAD 10
+__global__ void MEMFINDING_collect_intv_kernel_try1(
+	const mem_opt_t *d_opt,
+	const bwt_t *d_bwt,
+	const bseq1_t *d_seqs,
+	int n_seqs,
+	smem_aux_t *d_aux, // aux output
+	kmers_bucket_t *d_kmerHashTab,
+	void *d_buffer_pools)
+{
+	int firstSeqId = MEMFINDING_READS_PER_THREAD * (blockIdx.x * blockDim.x + threadIdx.x);
+	int lastSeqId = firstSeqId + MEMFINDING_READS_PER_THREAD - 1;
+	lastSeqId = lastSeqId >= n_seqs ? n_seqs - 1 : lastSeqId;
+	void *d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, firstSeqId % 32);
+	for (int seqId = firstSeqId; seqId <= lastSeqId; seqId ++){
+		uint8_t *seq = (uint8_t*)d_seqs[seqId].seq;			// get read from global mem
+		int l_seq = d_seqs[seqId].l_seq;		// read length
+		smem_aux_t *a = &d_aux[seqId];			// aux output for this read
+		int min_seed_len = d_opt->min_seed_len; // min seq len required
+		if (l_seq < min_seed_len)
+		{ // if the query is shorter than the seed length, no match
+			a->mem.n = a->mem.m = 0;
+			a->mem.a = 0;
+			return;
+		}
+
+		// allocate memory for SMEM intervals
+		
+		bwtintv_t *mem_a = (bwtintv_t *)CUDAKernelMalloc(d_buffer_ptr, (l_seq - min_seed_len + 1) * sizeof(bwtintv_t), 8);
+		a->mem.a = mem_a;
+		a->mem.n = a->mem.m = l_seq - min_seed_len + 1;
+
+		// extend to the right and find the longest seed
+		// positions higher than l_seq-min_seed_len would produce unqualified seds anyways
+		#pragma unroll
+		for (int j = 0; j <= (l_seq - min_seed_len); j ++)
+		// j: starting position on read
+		{
+			bwt_smem_right(d_bwt, l_seq, seq, j, start_width, 0, min_seed_len, mem_a, d_kmerHashTab);
+		}
 	}
 }
 
@@ -1600,7 +1644,7 @@ __global__ void mem_collect_intv_kernel3(const mem_opt_t *opt, const bwt_t *bwt,
 
 
 /* this kernel is to filter out dups and count the actual number of seeds
-	also spthread out the seeds inside the same bwt interval
+	also spread out the seeds inside the same bwt interval
 	output: d_aux such that each interval has length 1, aux->x[1] = l_rep
 	if a bwt interval has length > opt->max_occ, only take max_occ seeds from it
 	each warp process all seeds of a seq
@@ -3529,7 +3573,7 @@ void mem_align_GPU(process_data_t *process_data)
 		exit(1);
 	}
 	/* GRID SIZE when processing at read level (code applied to each read) */
-	dim3 dimGrid_readlevel(ceil((double)n_seqs/CUDA_BLOCKSIZE));
+	dim3 dimGrid_readlevel(ceil((float)n_seqs/CUDA_BLOCKSIZE));
 	dim3 dimBlock_readlevel(CUDA_BLOCKSIZE);
 
 	// options
@@ -3572,6 +3616,11 @@ void mem_align_GPU(process_data_t *process_data)
 			d_aux,	// output
 			d_kmerHashTab,
 			d_buffer_pools);
+	// MEMFINDING_collect_intv_kernel_try1 <<< ceil((float)n_seqs / MEMFINDING_READS_PER_THREAD / 32 ), 32, 0, process_stream >>> (
+	// 	d_opt, d_bwt, d_seqs, n_seqs,
+	// 	d_aux, // output
+	// 	d_kmerHashTab,
+	// 	d_buffer_pools);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 

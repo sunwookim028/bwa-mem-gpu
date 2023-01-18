@@ -1,0 +1,201 @@
+#include "minibatch_process.h"
+#include "../bwa.h"
+#include <locale.h>
+#include "bwamem_GPU.cuh"
+#include "batch_config.h"
+#include "streams.cuh"
+#include <future>
+#include <sys/time.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+/**
+ * @brief convert current host addresses on a minibatch's transfer_data to their (future) addresses on GPU
+ * assuming name, seq, comment, qual pointers on trasnfer_data still points to host memory
+ *
+ * @param seqs
+ * @param n_seqs
+ * @param transfer_data transfer_data_t object where these reads reside
+ */
+void convert2DevAddr(transfer_data_t *transfer_data)
+{
+	auto reads = transfer_data->h_seqs;
+	auto n_reads = transfer_data->n_seqs;
+	auto first_read = reads[0];
+	for (int i = 0; i < n_reads; i++)
+	{
+		reads[i].name = reads[i].name - first_read.name + transfer_data->d_seq_name_ptr;
+		reads[i].seq = reads[i].seq - first_read.seq + transfer_data->d_seq_seq_ptr;
+		reads[i].comment = reads[i].comment - first_read.comment + transfer_data->d_seq_comment_ptr;
+		reads[i].qual = reads[i].qual - first_read.qual + transfer_data->d_seq_qual_ptr;
+	}
+}
+
+/**
+ * @brief load a small batch from superbatch to transfer_data, up to MB_MAX_COUNT. return 0 if no read loaded
+ * after loading, translate reads' addresses to GPU and transfer to GPU,
+ * @param transfer_data
+ * @param superbatch_data
+ * @param n_loaded number of reads loaded from this superbatch before this minibatch
+ * @return int number of reads loaded into transfer_data->n_seqs
+ */
+static void loadInputMiniBatch(transfer_data_t *transfer_data, superbatch_data_t *superbatch_data, int n_loaded)
+{
+	struct timespec timing_start, timing_stop; // variables for printing timings
+	// number of reads to be loaded
+	int n_reads_loading = superbatch_data->n_reads - n_loaded;
+	if (n_reads_loading <= 0){
+		transfer_data->n_seqs = 0;
+		return;
+	}
+	if (n_reads_loading > MB_MAX_COUNT)
+		n_reads_loading = MB_MAX_COUNT;
+	resetTransfer(transfer_data);
+
+	transfer_data->n_seqs = n_reads_loading;
+	int first_readId = n_loaded;
+	int last_readId = n_loaded + n_reads_loading - 1;
+
+	// copy data from superbatch to minibatch
+	if (bwa_verbose >= 3)
+		clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
+	// copy read info
+	memcpy(transfer_data->h_seqs, &superbatch_data->reads[first_readId], n_reads_loading * sizeof(bseq1_t));
+	// copy names, sequences, comments, quals
+	long num_bytes_name, num_bytes_seq, num_bytes_comment, num_bytes_qual;
+	// if this is last minibatch,size = diff between total size and offset of first read
+	if (last_readId == superbatch_data->n_reads - 1)
+	{
+		num_bytes_name = superbatch_data->name_size - (superbatch_data->reads[first_readId].name - superbatch_data->reads[0].name);
+		num_bytes_seq = superbatch_data->seqs_size - (superbatch_data->reads[first_readId].seq - superbatch_data->reads[0].seq);
+		num_bytes_comment = superbatch_data->comment_size - (superbatch_data->reads[first_readId].comment - superbatch_data->reads[0].comment);
+		num_bytes_qual = superbatch_data->qual_size - (superbatch_data->reads[first_readId].qual - superbatch_data->reads[0].qual);
+	}
+	// if not last minibatch, size = diff between next batch's first read and this batch's first read
+	else
+	{
+		num_bytes_name = superbatch_data->reads[last_readId + 1].name - superbatch_data->reads[first_readId].name;
+		num_bytes_seq = superbatch_data->reads[last_readId + 1].seq - superbatch_data->reads[first_readId].seq;
+		num_bytes_comment = superbatch_data->reads[last_readId + 1].comment - superbatch_data->reads[first_readId].comment;
+		num_bytes_qual = superbatch_data->reads[last_readId + 1].qual - superbatch_data->reads[first_readId].qual;
+	}
+
+	memcpy(transfer_data->h_seq_name_ptr, superbatch_data->reads[first_readId].name, num_bytes_name);
+	transfer_data->h_seq_name_size = num_bytes_name;
+	memcpy(transfer_data->h_seq_seq_ptr, superbatch_data->reads[first_readId].seq, num_bytes_seq);
+	transfer_data->h_seq_seq_size = num_bytes_seq;
+	memcpy(transfer_data->h_seq_comment_ptr, superbatch_data->reads[first_readId].comment, num_bytes_comment);
+	transfer_data->h_seq_comment_size = num_bytes_comment;
+	memcpy(transfer_data->h_seq_qual_ptr, superbatch_data->reads[first_readId].qual, num_bytes_qual);
+	transfer_data->h_seq_qual_size = num_bytes_qual;
+
+	// at this point, all pointers on transfer_data still point to name, seq, comment, qual addresses on superbatch_data
+	if (bwa_verbose >= 3)
+		clock_gettime(CLOCK_MONOTONIC_RAW, &timing_stop);
+	if (bwa_verbose >= 3){
+		fprintf(stderr, "[M::%-25s] ***loaded %'d reads from superbatch to minibatch\n", __func__, n_reads_loading);
+		fprintf(stderr, "[M::%-25s] ***transfer from superbatch to minibatch took %lu ms\n", __func__, (timing_stop.tv_nsec - timing_start.tv_nsec) / 1000000);
+	}
+
+	if (bwa_verbose >= 3)
+		clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
+	// translate reads' addresses to GPU addresses
+	convert2DevAddr(transfer_data);
+	// copy data to GPU
+	CUDATransferSeqsIn(transfer_data);
+	if (bwa_verbose >= 3)
+		clock_gettime(CLOCK_MONOTONIC_RAW, &timing_stop);
+	if (bwa_verbose >= 3)
+		fprintf(stderr, "[M::%-25s] ***transfer to GPU took %lu ms\n", __func__, (timing_stop.tv_nsec - timing_start.tv_nsec) / 1000000);
+	
+}
+
+
+
+/**
+ * @brief output the previous batch of reads.
+ * first transfer device's seqio to host's seq_io.
+ * then write from host's seq_io to output
+ * 
+ * @param first_batch 
+ * @param transfer_data 
+ */
+static void writeOutputMiniBatch(transfer_data_t *transfer_data)
+{
+	int n_seqs = transfer_data->n_seqs;
+	if (n_seqs==0) return;
+	struct timespec timing_start, timing_stop; // variables for printing timings
+	// transfer from device's to host's
+	if (bwa_verbose >= 3) clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
+	CUDATransferSamOut(transfer_data);
+	if (bwa_verbose >= 3) clock_gettime(CLOCK_MONOTONIC_RAW, &timing_stop);
+	if (bwa_verbose >= 3) fprintf(stderr, "[M::%-25s] ***transfer SAMs to host took %lu ms\n", __func__, (timing_stop.tv_nsec - timing_start.tv_nsec) / 1000000);
+
+	// write from host's seq_io to output
+	if (bwa_verbose >= 3) clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
+	bseq1_t *seqs = transfer_data->h_seqs;
+	for (int i = 0; i < n_seqs; ++i)
+		if (seqs[i].sam) err_fputs(seqs[i].sam, stdout);
+	if (bwa_verbose >= 3) clock_gettime(CLOCK_MONOTONIC_RAW, &timing_stop);
+	if (bwa_verbose >= 3) fprintf(stderr, "[M::%-25s] ***write SAMs to stdout took %lu ms\n", __func__, (timing_stop.tv_nsec - timing_start.tv_nsec) / 1000000);
+	if (bwa_verbose >= 3)
+		fprintf(stderr, "[M::%-25s] *** wrote output for sequences %'ld - %'ld\n", __func__, transfer_data->total_output, transfer_data->total_output+n_seqs);
+	transfer_data->total_output += n_seqs;
+	fprintf(stderr, "[M::%-25s] finised %'ld read\n", __func__, transfer_data->total_output);
+}
+
+/**
+ * @brief process all reads in a superbatch by using mini batches
+ * Async in a kernel:
+ * - (1) if there is any processed seqs on GPU (reside in transfer_data), transfer them to host then to stdout
+ * - (2) process reads stored on process_data
+ * - (3) wait for (1) then load new minibatch to GPU
+ * wait for (2) and (3)
+ * swap process_data <-> transfer_data
+ * swap corresponding 2 sets of pointers on device
+ *
+ * @param data all the reads in a superbatch
+ */
+
+void miniBatchMain(superbatch_data_t *superbatch_data, transfer_data_t *transfer_data, process_data_t *process_data)
+{
+	int n_loaded = 0; // number of reads we have loaded in this superbatch
+	// process while we still have data in superbatch or in process minibatch
+	while (n_loaded < superbatch_data->n_reads || process_data->n_seqs>0)
+	{
+		if (bwa_verbose >= 4)
+			fprintf(stderr, "[M::%-25s] **** seqs to output=%'d, seqs to process=%'d \n", __func__, transfer_data->n_seqs, process_data->n_seqs);
+		// async output previous batch
+		// auto outputAsync = std::async(std::launch::async, writeOutputMiniBatch, first_batch, transfer_data); // does nothing if first_batch
+			writeOutputMiniBatch(transfer_data);
+		// async process current batch
+		// auto processAsync = std::async(std::launch::async, mem_align_GPU, process_data); // does nothing if process_data->n_seqs is 0
+			mem_align_GPU(process_data);
+
+		// wait for output task to finish before doing next batch input
+		// outputAsync.wait();
+		// async input next batch
+		// auto inputAsync = std::async(std::launch::async, loadInputMiniBatch, transfer_data, superbatch_data, n_processed);
+			loadInputMiniBatch(transfer_data, superbatch_data, n_loaded);
+			n_loaded += transfer_data->n_seqs;
+		
+		// inputAsync.wait();
+		// processAsync.wait();
+
+		// swap output of current processed batch to "transfer", and "transfer" to process for next loop
+		// i.e., swap seqs_io <-> seqs_processed on host, and swap pointers on device
+		// process_data->n_seqs is now the number of seqs to output in next iteration
+		// transfer_data->n_seqs is now the number of seqs to process in next interation
+		swapData(process_data, transfer_data);
+		// after this swap, process_data->n_seqs is the number of seqs to process in next iteration
+		// 					transfer_data->n_seqs is the number of seqs to output in next iteration
+		if (bwa_verbose >= 4)
+			fprintf(stderr, "[M::%-25s] **** data swapped \n", __func__);
+
+	}
+
+	// output the final minibatch
+	writeOutputMiniBatch(transfer_data);
+	return;
+}

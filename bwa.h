@@ -204,6 +204,19 @@ typedef struct {
 	bwtintv_v mem, mem1, *tmpv[2];
 } smem_aux_t;
 
+typedef struct superbatch_data_t
+{
+	int n_reads;	   // number of reads
+	bseq1_t *reads;	   // read info with pointers to the ones below
+	char *name;		   // big chunk of all names
+	char *comment;	   // big chunk of all comments
+	char *seqs;		   // big chunk of all seqs
+	char *qual;		   // big chunk of all qual
+	long name_size;	   // total length of name strings
+	long comment_size; // total length of comment strings
+	long seqs_size;	   // total length of seq strings
+	long qual_size;	   // total length of qual strings
+} superbatch_data_t;
 
 /* 
     data for processing  a GPU
@@ -222,7 +235,6 @@ typedef struct {
     // pointers that will change each batch (being swapped between transfer and process)
         // reads on device
 	int n_seqs;			// number of reads on device
-	int max_l_seqs; 	// max length of a read in this batch
 	int64_t n_processed;	// number of reads processed prior to this batch
 	bseq1_t *d_seqs;		// reads
     char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  // name, comment, seq, qual, sam output
@@ -259,7 +271,6 @@ typedef struct {
 typedef struct {
     // reads on device
 	int n_seqs;			// number of reads
-	int max_l_seqs; 	// max length of a read in this batch
 	int64_t total_input;	// number of reads input prior to this batch
 	int64_t total_output;	// number of reads output prior to this batch
 	bseq1_t *d_seqs;		// reads
@@ -284,7 +295,7 @@ extern "C" {
 	void bseq_classify(int n, bseq1_t *seqs, int m[2], bseq1_t *sep[2]);
 
 	// for cuda transfer and processing
-	void bseq_read2(int chunk_size, int *n_, void *ks1_, void *ks2_, transfer_data_t *transfer_data);
+	void bseq_read2(int chunk_size, int *n_, void *ks1_, void *ks2_, superbatch_data_t *transfer_data);
 
 	void bwa_fill_scmat(int a, int b, int8_t mat[25]);
 	uint32_t *bwa_gen_cigar(const int8_t mat[25], int q, int r, int w_, int64_t l_pac, const uint8_t *pac, int l_query, uint8_t *query, int64_t rb, int64_t re, int *score, int *n_cigar, int *NM);

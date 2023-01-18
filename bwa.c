@@ -67,40 +67,45 @@ static inline char *dupkstring(const kstring_t *str, int dupempty)
 	return s;
 }
 
-static inline void kseq2bseq2(const kseq_t *ks, bseq1_t *s, transfer_data_t *out)
+static inline void kseq2bseq2(const kseq_t *ks, bseq1_t *s, superbatch_data_t *out)
 {
+	if (ks->seq.l > SEQ_MAXLEN){
+		fprintf(stderr, "[M::%-25s] ERROR: a read has length of %d, more than the maximum set %d \n", __func__, ks->seq.l, SEQ_MAXLEN);
+		exit(1);
+	}
+
 	char* temp;
 	// copy name to host's memory
-	if (out->h_seq_name_size+ks->name.l+1 > SEQ_NAME_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq name.\n", __func__); exit(1); }
-	temp = &(out->h_seq_name_ptr[out->h_seq_name_size]);	// position on the big chunk on host
+	if (out->name_size+ks->name.l+1 > SB_NAME_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq name.\n", __func__); exit(1); }
+	temp = &(out->name[out->name_size]);	// position on the big chunk on host
 	memcpy(temp, ks->name.s, ks->name.l); temp[ks->name.l] = '\0';
-	s->name = (char*)(out->h_seq_name_ptr + out->h_seq_name_size); // point to its address on device
-	out->h_seq_name_size += ks->name.l + 1;
+	s->name = (char*)(out->name + out->name_size);
+	out->name_size += ks->name.l + 1;
 	// copy seq to host's memory
-	if (out->h_seq_seq_size+ks->seq.l+1 > SEQ_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq.\n", __func__); exit(1); }
-	temp = &(out->h_seq_seq_ptr[out->h_seq_seq_size]);
+	if (out->seqs_size+ks->seq.l+1 > SB_SEQ_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq.\n", __func__); exit(1); }
+	temp = &(out->seqs[out->seqs_size]);
 	memcpy(temp, ks->seq.s, ks->seq.l); temp[ks->seq.l] = '\0';
-	s->seq = (char*)(out->h_seq_seq_ptr + out->h_seq_seq_size); // point to its address on device
-	out->h_seq_seq_size += ks->seq.l + 1;
+	s->seq = (char*)(out->seqs + out->seqs_size); // point to its address on device
+	out->seqs_size += ks->seq.l + 1;
 	// copy comment if not NULL
 	if (ks->comment.l == 0){
 		s->comment = NULL;
 	} else {
-		if (out->h_seq_comment_size+ks->comment.l+1 > SEQ_COMMENT_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq comment.\n", __func__); exit(1); }
-		temp = &(out->h_seq_comment_ptr[out->h_seq_comment_size]);
+		if (out->comment_size+ks->comment.l+1 > SB_COMMENT_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq comment.\n", __func__); exit(1); }
+		temp = &(out->comment[out->comment_size]);
 		memcpy(temp, ks->comment.s, ks->comment.l); temp[ks->comment.l] = '\0';
-		s->comment = (char*)(out->h_seq_comment_ptr + out->h_seq_comment_size); // point to its address on device
-		out->h_seq_comment_size += ks->comment.l + 1;
+		s->comment = (char*)(out->comment + out->comment_size); // point to its address on device
+		out->comment_size += ks->comment.l + 1;
 	}
 	// copy qual if not NULL
 	if (ks->qual.l == 0){
 		s->qual = NULL;
 	} else {
-		if (out->h_seq_qual_size+ks->qual.l+1 > SEQ_QUAL_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq qual.\n", __func__); exit(1); }
-		temp = &(out->h_seq_qual_ptr[out->h_seq_qual_size]);
+		if (out->qual_size+ks->qual.l+1 > SB_QUAL_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq qual.\n", __func__); exit(1); }
+		temp = &(out->qual[out->qual_size]);
 		memcpy(temp, ks->qual.s, ks->qual.l); temp[ks->qual.l] = '\0';
-		s->qual = (char*)(out->h_seq_qual_ptr + out->h_seq_qual_size);  // point to its address on device
-		out->h_seq_qual_size += ks->qual.l + 1;
+		s->qual = (char*)(out->qual + out->qual_size);  // point to its address on device
+		out->qual_size += ks->qual.l + 1;
 	}
 	s->l_seq = ks->seq.l;
 }
@@ -108,12 +113,12 @@ static inline void kseq2bseq2(const kseq_t *ks, bseq1_t *s, transfer_data_t *out
 /* 
 	load all data to transfer_data
  */
-void bseq_read2(int chunk_size, int *n_, void *ks1_, void *ks2_, transfer_data_t *transfer_data)
+void bseq_read2(int chunk_size, int *n_, void *ks1_, void *ks2_, superbatch_data_t *transfer_data)
 {
 	kseq_t *ks = (kseq_t*)ks1_, *ks2 = (kseq_t*)ks2_;
 	int size = 0, n;
 	n = 0;
-	bseq1_t *seqs = transfer_data->h_seqs;
+	bseq1_t *seqs = transfer_data->reads;
 	while (kseq_read(ks) >= 0) {
 		if (ks2 && kseq_read(ks2) < 0) { // the 2nd file has fewer reads
 			fprintf(stderr, "[W::%s] the 2nd file has fewer sequences.\n", __func__);
@@ -130,11 +135,11 @@ void bseq_read2(int chunk_size, int *n_, void *ks1_, void *ks2_, transfer_data_t
 			size += seqs[n++].l_seq;
 		}
 		if (size >= chunk_size && (n&1) == 0) break;
-		if (   n>=SEQ_MAX_COUNT
-			|| transfer_data->h_seq_name_size >SEQ_NAME_LIMIT-50 
-			|| transfer_data->h_seq_comment_size>SEQ_COMMENT_LIMIT-500
-			|| transfer_data->h_seq_seq_size>SEQ_LIMIT-500
-			|| transfer_data->h_seq_qual_size>SEQ_QUAL_LIMIT-500)  break;
+		if (   n>=SB_MAX_COUNT
+			|| transfer_data->name_size >SB_NAME_LIMIT-100
+			|| transfer_data->comment_size>SB_COMMENT_LIMIT-100
+			|| transfer_data->seqs_size>SB_SEQ_LIMIT-SEQ_MAXLEN
+			|| transfer_data->qual_size>SB_QUAL_LIMIT-SEQ_MAXLEN)  break;
 	}
 	if (size == 0) { // test if the 2nd file is finished
 		if (ks2 && kseq_read(ks2) >= 0)

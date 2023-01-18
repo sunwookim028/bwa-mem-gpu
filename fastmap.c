@@ -32,7 +32,7 @@
 #include <limits.h>
 #include <ctype.h>
 #include <math.h>
-#include "cuda/process.h"
+#include "cuda/superbatch_process.h"
 
 extern unsigned char nst_nt4_table[256];
 
@@ -308,7 +308,7 @@ int main_mem(int argc, char *argv[])
 	// load kmer hash
 	aux.kmerHashTab = loadKMerIndex("kmers_index/hashTable");
 
-	processHideIO(&aux);
+	superBatchMain(&aux);
 	free(hdr_line);
 	free(opt);
 	bwa_idx_destroy(aux.idx);

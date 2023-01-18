@@ -3372,50 +3372,6 @@ __global__ void SAMGEN_aln2sam_finegrain_kernel(
 			str.s[str.l] = 0;
 		} else kputc('*', &str, d_buffer_ptr);
 	}
-
-	// // print optional tags
-	// if (a->n_cigar) {
-	// 	kputsn("\tNM:i:", 6, &str, d_buffer_ptr); kputw(a->NM, &str, d_buffer_ptr);
-	// 	kputsn("\tMD:Z:", 6, &str, d_buffer_ptr); kputs((char*)(a->cigar + a->n_cigar), &str, d_buffer_ptr);
-	// }
-	// if (a->score >= 0) { kputsn("\tAS:i:", 6, &str, d_buffer_ptr); kputw(a->score, &str, d_buffer_ptr); }
-	// if (a->sub >= 0) { kputsn("\tXS:i:", 6, &str, d_buffer_ptr); kputw(a->sub, &str, d_buffer_ptr); }
-	// // if (!(a->flag & 0x100)) { // not multi-hit
-	// // 	for (i = 0; i < n; ++i)
-	// // 		if (i != which && !(list[i].flag&0x100)) break;
-	// // 	if (i < n) { // there are other primary hits; output them
-	// // 		kputsn("\tSA:Z:", 6, str);
-	// // 		for (i = 0; i < n; ++i) {
-	// // 			const mem_aln_t *r = &list[i];
-	// // 			int k;
-	// // 			if (i == which || (r->flag&0x100)) continue; // proceed if: 1) different from the current; 2) not shadowed multi hit
-	// // 			kputs(bns->anns[r->rid].name, str); kputc(',', str);
-	// // 			kputl(r->pos+1, str); kputc(',', str);
-	// // 			kputc("+-"[r->is_rev], str); kputc(',', str);
-	// // 			for (k = 0; k < r->n_cigar; ++k) {
-	// // 				kputw(r->cigar[k]>>4, str); kputc("MIDSH"[r->cigar[k]&0xf], str);
-	// // 			}
-	// // 			kputc(',', str); kputw(r->mapq, str);
-	// // 			kputc(',', str); kputw(r->NM, str);
-	// // 			kputc(';', str);
-	// // 		}
-	// // 	}
-	// // 	if (p->alt_sc > 0)
-	// // 		ksprintf(str, "\tpa:f:%.3f", (double)p->score / p->alt_sc);
-	// // }
-	// // if (a->XA) {
-	// // 	kputsn((d_opt->flag&MEM_F_XB)? "\tXB:Z:" : "\tXA:Z:", 6, &str, d_buffer_ptr);
-	// // 	kputs(a->XA, &str, d_buffer_ptr);
-	// // }
-	// if (d_seqs[seqID].comment) { kputc('\t', &str, d_buffer_ptr); kputs(d_seqs[seqID].comment, &str, d_buffer_ptr); }
-	// if ((d_opt->flag&MEM_F_REF_HDR) && a->rid >= 0 && d_bns->anns[a->rid].anno != 0 && d_bns->anns[a->rid].anno[0] != 0) {
-	// 	int tmp;
-	// 	kputsn("\tXR:Z:", 6, &str, d_buffer_ptr);
-	// 	tmp = str.l;
-	// 	kputs(d_bns->anns[a->rid].anno, &str, d_buffer_ptr);
-	// 	for (int i = tmp; i < str.l; ++i) // replace TAB in the comment to SPACE
-	// 		if (str.s[i] == '\t') str.s[i] = ' ';
-	// }
 	kputc('\n', &str, d_buffer_ptr);
 
 	// save output
@@ -3458,10 +3414,10 @@ __global__ void SAMGEN_concatenate_kernel(
 	__shared__ int S_block_offset[1];
 	if (threadIdx.x==0) S_block_offset[0] = atomicAdd(d_seq_sam_size, S_total_l_sams[0]);
 	__syncthreads();
-	// record offset to sam
-	d_seqs[seqID].sam = (char*)(S_block_offset[0] + thread_offset);
-	// copy all SAM strings to the designated location on d_seq_sam_ptr
 	int offset = S_block_offset[0] + thread_offset;	// actual offset on d_seq_sam_ptr
+	// record offset to sam
+	d_seqs[seqID].sam = (char*)(offset);
+	// copy all SAM strings to the designated location on d_seq_sam_ptr
 	for (int i=0; i<n_aln; i++){
 		int l_sam = a[i].rid;	// length of this aln's SAM
 		char* sam = a[i].XA;	// SAM string of this aln
@@ -3472,65 +3428,6 @@ __global__ void SAMGEN_concatenate_kernel(
 }
 
 
-__global__ void mem_chain2aln_kernel(
-	const mem_opt_t *d_opt,
-	const bntseq_t *d_bns,
-	const uint8_t *d_pac,
-	int n, // number of reads
-	const bseq1_t* d_seqs,
-	mem_chain_v *d_chains, 	// input chains
-	mem_alnreg_v* d_regs,		// output array
-	void *d_buffer_pools
-	)
-{
-	int j;
-	j = blockIdx.x*blockDim.x + threadIdx.x;		// ID of the read to process
-	if (j>=n) return;
-	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x % 32);	// set buffer pool
-	int l_seq = d_seqs[j].l_seq;
-	uint8_t *seq = (uint8_t*)d_seqs[j].seq;
-	mem_chain_v chn = d_chains[j];
-
-	mem_alnreg_v regs;		// output regs
-	regs.n = 0; regs.m = 0; regs.a = 0;
-
-	for (j = 0; j < chn.n; ++j) {
-		mem_chain_t *p = &chn.a[j];
-		mem_chain2aln(d_opt, d_bns, d_pac, l_seq, (uint8_t*)seq, p, &regs, d_buffer_ptr);
-	}
-	// output
-	d_regs[blockIdx.x*blockDim.x + threadIdx.x] = regs;
-}
-
-__global__ void mem_sort_dedup_patch_kernel(
-	mem_opt_t *d_opt, 			// user-defined options
-	bntseq_t *d_bns, 
-	uint8_t *d_pac, 
-	int n, 						// number of reads being processed in a batch
-	bseq1_t* d_seqs,			// array of sequence info
-	mem_alnreg_v* d_regs,		// array of output regs on GPU
-	void* d_buffer_pools 		// for CUDA kernel memory management
-	)
-{
-	int i;
-	mem_alnreg_t *a;
-	i = blockIdx.x*blockDim.x + threadIdx.x;		// ID of the read to process
-	if (i>=n) return;
-	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x % 32);	// set buffer pool
-	n = d_regs[i].n;
-	a = d_regs[i].a;
-	uint8_t *seq = (uint8_t*)d_seqs[i].seq;
-
-	n = mem_sort_dedup_patch(d_opt, d_bns, d_pac, (uint8_t*)seq, n, a, d_buffer_ptr);
-	d_regs[i].n = n;
-// printf("thread %d finished mem_sort_dedup_patch\n", i);
-// printf("unit test 6 regs.n = %d\n", regs.n);	
-	for (i = 0; i < n; ++i) {
-		mem_alnreg_t *p = &a[i];
-		if (p->rid >= 0 && d_bns->anns[p->rid].is_alt)
-			p->is_alt = 1;
-	}
-}
 
 /* ----------------------- MAIN FUNCTION FOR GENERATING ALIGNMENT RESULTS -----------------*/
 // __global__ void generate_sam_kernel(
@@ -3568,10 +3465,7 @@ void mem_align_GPU(process_data_t *process_data)
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** reset process stream ... \n", __func__);
 	resetProcess(process_data);
 	if (bwa_verbose>=3) fprintf(stderr, "[M::%-25s] *** aligning seqs %'ld - %'ld ... \n", __func__, process_data->n_processed, process_data->n_processed+n_seqs-1);
-	if (process_data->max_l_seqs > SEQ_MAXLEN){
-		fprintf(stderr, "[M::%-25s] ERROR: a read has length of %d, more than the maximum set %d \n", __func__, process_data->max_l_seqs, SEQ_MAXLEN);
-		exit(1);
-	}
+
 	/* GRID SIZE when processing at read level (code applied to each read) */
 	dim3 dimGrid_readlevel(ceil((float)n_seqs/CUDA_BLOCKSIZE));
 	dim3 dimBlock_readlevel(CUDA_BLOCKSIZE);
@@ -3890,20 +3784,11 @@ void mem_align_GPU(process_data_t *process_data)
 		d_seqs, n_seqs,
 		d_seq_sam_ptr, d_seq_sam_size
 	);
-	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
+	gpuErrchk( cudaPeekAtLastError() );
 
-	// /* generate SAM alignment */
-	// if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** Launch kernel generate_sam ...\n", __func__);
-	// generate_sam_kernel <<< dimGrid, dimBlock >>> 
-	// 	(d_opt, d_bns, d_pac, 
-	// 	d_seqs, n_seqs, d_regs, d_buffer_pools);
-	// gpuErrchk( cudaPeekAtLastError() );
-	// gpuErrchk( cudaDeviceSynchronize() );
-
-	// output
-	int L_sam;	// find total size of sam
-	cudaMemcpyFromSymbolAsync(&L_sam, d_seq_sam_size, sizeof(int), 0, cudaMemcpyDeviceToHost, process_stream);
+	process_data->n_processed += process_data->n_seqs;
+	
 	return;
 
 // printBufferInfoHost(gpu_data.d_buffer_pools);

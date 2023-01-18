@@ -7,7 +7,7 @@ WRAP_MALLOC=-DUSE_MALLOC_WRAPPERS
 AR=			ar
 DFLAGS=		-DHAVE_PTHREAD $(WRAP_MALLOC)
 LOBJS=		utils.o kthread.o kstring.o ksw.o bwt.o bntseq.o bwa.o bwamem.o bwamem_pair.o bwamem_extra.o malloc_wrap.o \
-			QSufSort.o bwt_gen.o rope.o rle.o is.o bwtindex.o streams.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o bwamem_GPU.o GPULink.o process.o
+			QSufSort.o bwt_gen.o rope.o rle.o is.o bwtindex.o streams.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o bwamem_GPU.o GPULink.o minibatch_process.o superbatch_process.o
 AOBJS=		bwashm.o bwase.o bwaseqio.o bwtgap.o bwtaln.o bamlite.o \
 			bwape.o kopen.o pemerge.o maxk.o \
 			bwtsw2_core.o bwtsw2_main.o bwtsw2_aux.o bwt_lite.o \
@@ -74,8 +74,10 @@ bwamem_GPU.o: bwamem.h bwa.h bntseq.h $(CUDADIR)/bwamem_GPU.cuh kbtree.h $(CUDAD
 	nvcc $(NVCC_FLAGS) $(CUDADIR)/bwamem_GPU.cu -o bwamem_GPU.o
 GPULink.o: bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o streams.o
 	nvcc -I. --device-link -arch=$(CUDA_ARCH) bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o streams.o --output-file GPULink.o
-process.o: cuda/process.cpp
-	nvcc -I. $(NVCC_FLAGS) -o process.o cuda/process.cpp
+minibatch_process.o: cuda/minibatch_process.cpp cuda/minibatch_process.h
+	nvcc -I. $(NVCC_FLAGS) -o minibatch_process.o cuda/minibatch_process.cpp
+superbatch_process.o: cuda/superbatch_process.cpp cuda/superbatch_process.h
+	nvcc -I. $(NVCC_FLAGS) -o superbatch_process.o cuda/superbatch_process.cpp
 loadKMerIndex.o: kmers_index/loadKMerIndex.cpp kmers_index/hashKMerIndex.h
 	g++ kmers_index/loadKMerIndex.cpp -c -o loadKMerIndex.o
 

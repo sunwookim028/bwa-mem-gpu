@@ -2,13 +2,23 @@
 #define BATCH_CONFIG_H
 
 
-#define SEQ_MAXLEN 300				// max length of a seq
-#define SEQ_MAX_COUNT 40000			// max number of seqs 
-#define SEQ_NAME_LIMIT 2000000 		// chunk size of name
-#define SEQ_COMMENT_LIMIT 40000000	// chunk size of comment
-#define SEQ_LIMIT SEQ_MAXLEN*SEQ_MAX_COUNT	// chunk size of seq
-#define SEQ_QUAL_LIMIT 40000000		// chunk size of qual
-#define SEQ_SAM_LIMIT 200000000		// chunk size of sam output
+#define SEQ_MAXLEN 300 // max length of a seq we want to process
+
+// mini-batch config
+#define MB_MAX_COUNT 40000                     // max number of reads
+#define MB_NAME_LIMIT MB_MAX_COUNT * 100       // chunk size of name
+#define MB_COMMENT_LIMIT MB_MAX_COUNT * 100    // chunk size of comment
+#define MB_SEQ_LIMIT MB_MAX_COUNT *SEQ_MAXLEN  // chunk size of seq
+#define MB_QUAL_LIMIT MB_MAX_COUNT *SEQ_MAXLEN // chunk size of qual
+#define MB_SAM_LIMIT MB_MAX_COUNT * 5000       // chunk size of sam output
+
+// super-batch config
+#define SB_MAX_COUNT 1000000                   // max number of reads
+#define SB_NAME_LIMIT SB_MAX_COUNT * 100       // chunk size of name
+#define SB_COMMENT_LIMIT SB_MAX_COUNT * 100    // chunk size of comment
+#define SB_SEQ_LIMIT SB_MAX_COUNT *SEQ_MAXLEN  // chunk size of seq
+#define SB_QUAL_LIMIT SB_MAX_COUNT *SEQ_MAXLEN // chunk size of qual
+#define SB_SAM_LIMIT SB_MAX_COUNT * 5000       // chunk size of sam output
 
 
 #endif

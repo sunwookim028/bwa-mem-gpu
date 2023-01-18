@@ -58,7 +58,7 @@ static int readInput(kseq_t *ks, kseq_t *ks2, int actual_chunk_size, int copy_co
 	if (bwa_verbose >= 3) clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
 	int64_t size = 0;
 	int n_seqs_read;
-	bseq_read2(actual_chunk_size, &n_seqs_read, ks, ks2, transfer_data);	// this will write to transfer_data
+	// bseq_read2(actual_chunk_size, &n_seqs_read, ks, ks2, transfer_data);	// this will write to transfer_data
 	bseq1_t *seqs = transfer_data->h_seqs;
 	if (n_seqs_read == 0) {
 		return 0;
@@ -88,7 +88,6 @@ static int readInput(kseq_t *ks, kseq_t *ks2, int actual_chunk_size, int copy_co
 	// transfer to GPU
 	if (bwa_verbose >= 3) clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
 	transfer_data->n_seqs = n_seqs_read;
-	transfer_data->max_l_seqs = max_l_seq;
 	convert2DevAddr(seqs, n_seqs_read, transfer_data);
 	CUDATransferSeqsIn(transfer_data);
 	if (bwa_verbose >= 3) clock_gettime(CLOCK_MONOTONIC_RAW, &timing_stop);

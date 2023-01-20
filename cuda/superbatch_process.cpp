@@ -20,6 +20,11 @@ static superbatch_data_t *newSuperBatchData()
     batch->seqs = (char *)malloc(SB_SEQ_LIMIT);
     batch->comment = (char *)malloc(SB_COMMENT_LIMIT);
     batch->qual = (char *)malloc(SB_QUAL_LIMIT);
+    if (batch->reads == nullptr || batch->name == nullptr || batch->seqs == nullptr || batch->comment == nullptr || batch->qual == nullptr)
+    {
+        fprintf(stderr, "[M::%-25s] can't malloc superbatch\n", __func__);
+        exit(1);
+    }
     if (bwa_verbose >= 3)
     {
         double nGB_allocated = (double)(SB_MAX_COUNT * sizeof(bseq1_t) + SB_NAME_LIMIT + SB_SEQ_LIMIT + SB_COMMENT_LIMIT + SB_QUAL_LIMIT) / (1024ULL * 1024ULL * 1024ULL);

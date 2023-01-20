@@ -193,6 +193,14 @@ process_data_t* newProcess(
 	gpuErrchk( cudaMallocHost((void**)&instance->h_seq_qual_ptr, MB_QUAL_LIMIT) );
 	gpuErrchk( cudaMallocHost((void**)&instance->h_seq_sam_ptr, MB_SAM_LIMIT) );
 
+	if (instance->h_seqs == nullptr || instance->h_seq_name_ptr == nullptr ||
+		instance->h_seq_comment_ptr == nullptr || instance->h_seq_seq_ptr == nullptr ||
+		instance->h_seq_qual_ptr == nullptr || instance->h_seq_sam_ptr == nullptr)
+	{
+        fprintf(stderr, "[M::%-25s] can't malloc minibatch on host\n", __func__);
+        exit(1);
+    }
+
 	// initialize memory for reads on device
 	unsigned long long total_size = MB_MAX_COUNT*sizeof(bseq1_t) + MB_NAME_LIMIT + MB_COMMENT_LIMIT + MB_SEQ_LIMIT + MB_QUAL_LIMIT + MB_SAM_LIMIT;
 	fprintf(stderr, "[M::%-25s] d_seqs (process) . %llu MB\n", __func__, total_size/MB_SIZE);
@@ -203,6 +211,14 @@ process_data_t* newProcess(
 	gpuErrchk( cudaMalloc((void**)&instance->d_seq_qual_ptr, MB_QUAL_LIMIT) );
 	gpuErrchk( cudaMalloc((void**)&instance->d_seq_sam_ptr, MB_SAM_LIMIT) );
 	gpuErrchk( cudaMalloc((void**)&instance->d_seq_sam_size, sizeof(int)) );
+
+	if (instance->d_seqs == nullptr || instance->d_seq_name_ptr == nullptr ||
+		instance->d_seq_comment_ptr == nullptr || instance->d_seq_seq_ptr == nullptr ||
+		instance->d_seq_qual_ptr == nullptr || instance->d_seq_sam_ptr == nullptr)
+	{
+        fprintf(stderr, "[M::%-25s] can't malloc minibatch on GPU\n", __func__);
+        exit(1);
+    }
 
 	// initialize a cuda stream for processing
 	instance->CUDA_stream = malloc(sizeof(cudaStream_t));
@@ -222,6 +238,14 @@ transfer_data_t* newTransfer(){
 	gpuErrchk( cudaMallocHost((void**)&instance->h_seq_seq_ptr, MB_SEQ_LIMIT) );
 	gpuErrchk( cudaMallocHost((void**)&instance->h_seq_qual_ptr, MB_QUAL_LIMIT) );
 	gpuErrchk( cudaMallocHost((void**)&instance->h_seq_sam_ptr, MB_SAM_LIMIT) );
+	
+	if (instance->h_seqs == nullptr || instance->h_seq_name_ptr == nullptr ||
+		instance->h_seq_comment_ptr == nullptr || instance->h_seq_seq_ptr == nullptr ||
+		instance->h_seq_qual_ptr == nullptr || instance->h_seq_sam_ptr == nullptr)
+	{
+        fprintf(stderr, "[M::%-25s] can't malloc minibatch on host\n", __func__);
+        exit(1);
+    }
 
 	// initialize memory for reads on device
 	unsigned long long total_size = MB_MAX_COUNT*sizeof(bseq1_t) + MB_NAME_LIMIT + MB_COMMENT_LIMIT + MB_SEQ_LIMIT + MB_QUAL_LIMIT + MB_SAM_LIMIT;
@@ -233,6 +257,14 @@ transfer_data_t* newTransfer(){
 	gpuErrchk( cudaMalloc((void**)&instance->d_seq_qual_ptr, MB_QUAL_LIMIT) );
 	gpuErrchk( cudaMalloc((void**)&instance->d_seq_sam_ptr, MB_SAM_LIMIT) );
 	gpuErrchk( cudaMalloc((void**)&instance->d_seq_sam_size, sizeof(int)) );
+
+	if (instance->d_seqs == nullptr || instance->d_seq_name_ptr == nullptr ||
+		instance->d_seq_comment_ptr == nullptr || instance->d_seq_seq_ptr == nullptr ||
+		instance->d_seq_qual_ptr == nullptr || instance->d_seq_sam_ptr == nullptr)
+	{
+        fprintf(stderr, "[M::%-25s] can't malloc minibatch on GPU\n", __func__);
+        exit(1);
+    }
 
 	// initialize a cuda stream for transfer
 	instance->CUDA_stream = malloc(sizeof(cudaStream_t));

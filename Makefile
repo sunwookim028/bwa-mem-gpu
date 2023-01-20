@@ -130,7 +130,7 @@ test:
 	./bwa mem -o out -v4 ../gaivi_test/HG38/GCF_000001405.39_GRCh38.p13_genomic.fna ../SRR043348_80K.fastq
 
 debug:
-	make clean && make -j10 debug=1 && CUDA_VISIBLE_DEVICES=0 cuda-gdb --args bwa mem -v4 -o out ../gaivi_test/HG38/GCF_000001405.39_GRCh38.p13_genomic.fna ../gaivi_test/datasets/D3_SRR043348.fastq
+	make clean && make -j10 debug=1 && CUDA_VISIBLE_DEVICES=0 cuda-gdb --args bwa mem -v4 -o out ../gaivi_test/HG38/GCF_000001405.39_GRCh38.p13_genomic.fna ../gaivi_test/datasets/SRR043348.fastq
 
 profile:
 	nsys profile --stat=true ./bwa mem -v4  ./GCF_000008865.2_ASM886v2_genomic.fna ./SRR10896389.fastq

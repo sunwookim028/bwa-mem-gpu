@@ -20,8 +20,9 @@ static superbatch_data_t *newSuperBatchData()
     batch->seqs = (char *)malloc(SB_SEQ_LIMIT);
     batch->comment = (char *)malloc(SB_COMMENT_LIMIT);
     batch->qual = (char *)malloc(SB_QUAL_LIMIT);
-    if (bwa_verbose >= 3){
-        double nGB_allocated = (double)(SB_MAX_COUNT * sizeof(bseq1_t) + SB_NAME_LIMIT + SB_SEQ_LIMIT + SB_COMMENT_LIMIT + SB_QUAL_LIMIT ) / (1024ULL * 1024ULL * 1024ULL);
+    if (bwa_verbose >= 3)
+    {
+        double nGB_allocated = (double)(SB_MAX_COUNT * sizeof(bseq1_t) + SB_NAME_LIMIT + SB_SEQ_LIMIT + SB_COMMENT_LIMIT + SB_QUAL_LIMIT) / (1024ULL * 1024ULL * 1024ULL);
         fprintf(stderr, "[M::%-25s] allocated %.2f GB on host for superbatch\n", __func__, nGB_allocated);
     }
     return batch;
@@ -37,6 +38,25 @@ static void resetSuperBatchData(superbatch_data_t *data)
     data->comment_size = 0;
     data->seqs_size = 0;
     data->qual_size = 0;
+}
+
+/**
+ * @brief compare 2 reads a and b.
+ * @return int positive if a > b, negative if a < b, 0 if a == b
+ */
+static int compareReads(const void *a, const void *b)
+{
+    char *a_key = ((bseq1_t *)a)->seq;
+    char *b_key = ((bseq1_t *)b)->seq;
+    return strncmp(a_key, b_key, 500);
+}
+
+/**
+ * @brief sort reads lexicographically
+ */
+static void sortReads(bseq1_t *reads, int n_reads)
+{
+    qsort(reads, n_reads, sizeof(bseq1_t), compareReads);
 }
 
 /**
@@ -74,17 +94,14 @@ static int loadInputSuperBatch(kseq_t *ks, kseq_t *ks2, int actual_chunk_size, i
     if (bwa_verbose >= 3)
         fprintf(stderr, "[M::%-25s] ***load %'d reads from disk took %lu ms\n", __func__, n_seqs_read, (timing_stop.tv_nsec - timing_start.tv_nsec) / 1000000);
 
-
     // sort reads
-    // if (bwa_verbose >= 3)
-    //     clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
-    // sortReads(seqs, n_seqs_read);
-    // if (bwa_verbose >= 3)
-    //     clock_gettime(CLOCK_MONOTONIC_RAW, &timing_stop);
-    // if (bwa_verbose >= 3)
-    //     fprintf(stderr, "[M::%-25s] ***sort reads took %lu ms\n", __func__, (timing_stop.tv_nsec - timing_start.tv_nsec) / 1000000);
-
-    // transfer to GPU
+    if (bwa_verbose >= 3)
+        clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
+    sortReads(reads, n_seqs_read);
+    if (bwa_verbose >= 3)
+        clock_gettime(CLOCK_MONOTONIC_RAW, &timing_stop);
+    if (bwa_verbose >= 3)
+        fprintf(stderr, "[M::%-25s] ***sort reads took %lu ms\n", __func__, (timing_stop.tv_nsec - timing_start.tv_nsec) / 1000000);
 
     return n_seqs_read;
 }
@@ -106,7 +123,7 @@ void superBatchMain(ktp_aux_t *aux)
     superbatch_data_t *super_transfer = newSuperBatchData();
     // init memory for minibatches so we don't have to do this repeatedly, 1 for processing and 1 for transfer
     process_data_t *mini_process = newProcess(aux->opt, aux->pes0, aux->idx->bwt, aux->idx->bns, aux->idx->pac, aux->kmerHashTab);
-	transfer_data_t *mini_transfer = newTransfer();
+    transfer_data_t *mini_transfer = newTransfer();
 
     bool first_batch = true;
     // process until there is no more reads to process
@@ -125,10 +142,10 @@ void superBatchMain(ktp_aux_t *aux)
         // verbose
         if (aux->n_processed > 0)
             fprintf(stderr, "[M::%-25s] **** superbatch %'ld finished \n", __func__, aux->n_processed);
-        
+
         // swap the two data sets for next iteration processing
         auto tmp = super_process;
-        super_process= super_transfer;
+        super_process = super_transfer;
         super_transfer = tmp;
         resetSuperBatchData(super_transfer);
         first_batch = false;

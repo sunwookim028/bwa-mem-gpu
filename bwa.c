@@ -70,7 +70,7 @@ static inline char *dupkstring(const kstring_t *str, int dupempty)
 static inline void kseq2bseq2(const kseq_t *ks, bseq1_t *s, superbatch_data_t *out)
 {
 	if (ks->seq.l > SEQ_MAXLEN){
-		fprintf(stderr, "[M::%-25s] ERROR: a read has length of %d, more than the maximum set %d \n", __func__, ks->seq.l, SEQ_MAXLEN);
+		fprintf(stderr, "[M::%-25s] ERROR: a read has length of %ld, more than the maximum set %d \n", __func__, ks->seq.l, SEQ_MAXLEN);
 		exit(1);
 	}
 
@@ -85,7 +85,7 @@ static inline void kseq2bseq2(const kseq_t *ks, bseq1_t *s, superbatch_data_t *o
 	if (out->seqs_size+ks->seq.l+1 > SB_SEQ_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq.\n", __func__); exit(1); }
 	temp = &(out->seqs[out->seqs_size]);
 	memcpy(temp, ks->seq.s, ks->seq.l); temp[ks->seq.l] = '\0';
-	s->seq = (char*)(out->seqs + out->seqs_size); // point to its address on device
+	s->seq = (char*)(out->seqs + out->seqs_size);
 	out->seqs_size += ks->seq.l + 1;
 	// copy comment if not NULL
 	if (ks->comment.l == 0){
@@ -94,7 +94,7 @@ static inline void kseq2bseq2(const kseq_t *ks, bseq1_t *s, superbatch_data_t *o
 		if (out->comment_size+ks->comment.l+1 > SB_COMMENT_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq comment.\n", __func__); exit(1); }
 		temp = &(out->comment[out->comment_size]);
 		memcpy(temp, ks->comment.s, ks->comment.l); temp[ks->comment.l] = '\0';
-		s->comment = (char*)(out->comment + out->comment_size); // point to its address on device
+		s->comment = (char*)(out->comment + out->comment_size);
 		out->comment_size += ks->comment.l + 1;
 	}
 	// copy qual if not NULL
@@ -104,10 +104,13 @@ static inline void kseq2bseq2(const kseq_t *ks, bseq1_t *s, superbatch_data_t *o
 		if (out->qual_size+ks->qual.l+1 > SB_QUAL_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq qual.\n", __func__); exit(1); }
 		temp = &(out->qual[out->qual_size]);
 		memcpy(temp, ks->qual.s, ks->qual.l); temp[ks->qual.l] = '\0';
-		s->qual = (char*)(out->qual + out->qual_size);  // point to its address on device
+		s->qual = (char*)(out->qual + out->qual_size);
 		out->qual_size += ks->qual.l + 1;
 	}
 	s->l_seq = ks->seq.l;
+	s->l_comment = ks->comment.l;
+	s->l_qual = ks->qual.l;
+	s->l_name = ks->name.l;
 }
 
 /* 

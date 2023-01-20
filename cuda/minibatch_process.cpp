@@ -33,7 +33,46 @@ void convert2DevAddr(transfer_data_t *transfer_data)
 }
 
 /**
- * @brief load a small batch from superbatch to transfer_data, up to MB_MAX_COUNT. return 0 if no read loaded
+ * @brief copy a minibatch of n_reads from superbatch to transfer_data minibatch's pinned memory, starting from firstReadId. 
+ * Read info are contiguous, but name, comment, seq, qual are not
+ * 
+ * @param superbatch_data
+ * @param transfer_data 
+ * @param firstReadId 
+ * @param n_reads 
+ */
+void copyReads2PinnedMem(superbatch_data_t *superbatch_data, transfer_data_t *transfer_data, int firstReadId, int n_reads){
+	int lastReadId = firstReadId + n_reads - 1; 
+	// copy name, comment, seq, qual one by one
+	for (int i = firstReadId; i <= lastReadId; i++){
+		bseq1_t *read = &(superbatch_data->reads[i]);
+		char *toAddr = transfer_data->h_seq_name_ptr + transfer_data->h_seq_name_size;
+		memcpy(toAddr, read->name, read->l_name + 1); // size + 1 for null-terminating char
+		read->name = toAddr;
+		transfer_data->h_seq_name_size += read->l_name + 1;
+		
+		toAddr = transfer_data->h_seq_comment_ptr + transfer_data->h_seq_comment_size;
+		memcpy(toAddr, read->comment, read->l_comment + 1); // size + 1 for null-terminating char
+		read->comment = toAddr;
+		transfer_data->h_seq_comment_size += read->l_comment + 1;
+
+		toAddr = transfer_data->h_seq_seq_ptr + transfer_data->h_seq_seq_size;
+		memcpy(toAddr, read->seq, read->l_seq + 1); // size + 1 for null-terminating char
+		read->seq = toAddr;
+		transfer_data->h_seq_seq_size += read->l_seq + 1;
+
+		toAddr = transfer_data->h_seq_qual_ptr + transfer_data->h_seq_qual_size;
+		memcpy(toAddr, read->qual, read->l_qual + 1); // size + 1 for null-terminating char
+		read->qual = toAddr;
+		transfer_data->h_seq_qual_size += read->l_qual + 1;
+	}
+	// copy read info
+	memcpy(transfer_data->h_seqs, &superbatch_data->reads[firstReadId], n_reads * sizeof(bseq1_t));
+}
+
+/**
+ * @brief load a small batch from superbatch to transfer_data, up to MB_MAX_COUNT. 
+ * Return number of reads loaded into transfer_data->n_seqs. return 0 if no read loaded
  * after loading, translate reads' addresses to GPU and transfer to GPU,
  * @param transfer_data
  * @param superbatch_data
@@ -55,40 +94,11 @@ static void loadInputMiniBatch(transfer_data_t *transfer_data, superbatch_data_t
 
 	transfer_data->n_seqs = n_reads_loading;
 	int first_readId = n_loaded;
-	int last_readId = n_loaded + n_reads_loading - 1;
 
 	// copy data from superbatch to minibatch
 	if (bwa_verbose >= 3)
 		clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
-	// copy read info
-	memcpy(transfer_data->h_seqs, &superbatch_data->reads[first_readId], n_reads_loading * sizeof(bseq1_t));
-	// copy names, sequences, comments, quals
-	long num_bytes_name, num_bytes_seq, num_bytes_comment, num_bytes_qual;
-	// if this is last minibatch,size = diff between total size and offset of first read
-	if (last_readId == superbatch_data->n_reads - 1)
-	{
-		num_bytes_name = superbatch_data->name_size - (superbatch_data->reads[first_readId].name - superbatch_data->reads[0].name);
-		num_bytes_seq = superbatch_data->seqs_size - (superbatch_data->reads[first_readId].seq - superbatch_data->reads[0].seq);
-		num_bytes_comment = superbatch_data->comment_size - (superbatch_data->reads[first_readId].comment - superbatch_data->reads[0].comment);
-		num_bytes_qual = superbatch_data->qual_size - (superbatch_data->reads[first_readId].qual - superbatch_data->reads[0].qual);
-	}
-	// if not last minibatch, size = diff between next batch's first read and this batch's first read
-	else
-	{
-		num_bytes_name = superbatch_data->reads[last_readId + 1].name - superbatch_data->reads[first_readId].name;
-		num_bytes_seq = superbatch_data->reads[last_readId + 1].seq - superbatch_data->reads[first_readId].seq;
-		num_bytes_comment = superbatch_data->reads[last_readId + 1].comment - superbatch_data->reads[first_readId].comment;
-		num_bytes_qual = superbatch_data->reads[last_readId + 1].qual - superbatch_data->reads[first_readId].qual;
-	}
-
-	memcpy(transfer_data->h_seq_name_ptr, superbatch_data->reads[first_readId].name, num_bytes_name);
-	transfer_data->h_seq_name_size = num_bytes_name;
-	memcpy(transfer_data->h_seq_seq_ptr, superbatch_data->reads[first_readId].seq, num_bytes_seq);
-	transfer_data->h_seq_seq_size = num_bytes_seq;
-	memcpy(transfer_data->h_seq_comment_ptr, superbatch_data->reads[first_readId].comment, num_bytes_comment);
-	transfer_data->h_seq_comment_size = num_bytes_comment;
-	memcpy(transfer_data->h_seq_qual_ptr, superbatch_data->reads[first_readId].qual, num_bytes_qual);
-	transfer_data->h_seq_qual_size = num_bytes_qual;
+	copyReads2PinnedMem(superbatch_data, transfer_data, first_readId, n_reads_loading);
 
 	// at this point, all pointers on transfer_data still point to name, seq, comment, qual addresses on superbatch_data
 	if (bwa_verbose >= 3)
@@ -167,26 +177,23 @@ void miniBatchMain(superbatch_data_t *superbatch_data, transfer_data_t *transfer
 		if (bwa_verbose >= 4)
 			fprintf(stderr, "[M::%-25s] **** seqs to output=%'d, seqs to process=%'d \n", __func__, transfer_data->n_seqs, process_data->n_seqs);
 		// async output previous batch
-		// auto outputAsync = std::async(std::launch::async, writeOutputMiniBatch, first_batch, transfer_data); // does nothing if first_batch
-			writeOutputMiniBatch(transfer_data);
+		auto outputAsync = std::async(std::launch::async, writeOutputMiniBatch, transfer_data); // does nothing if transfer_data->n_seqs == 0
+
 		// async process current batch
-		// auto processAsync = std::async(std::launch::async, mem_align_GPU, process_data); // does nothing if process_data->n_seqs is 0
-			mem_align_GPU(process_data);
+		auto processAsync = std::async(std::launch::async, mem_align_GPU, process_data); // does nothing if process_data->n_seqs is 0
 
 		// wait for output task to finish before doing next batch input
-		// outputAsync.wait();
+		outputAsync.wait();
 		// async input next batch
-		// auto inputAsync = std::async(std::launch::async, loadInputMiniBatch, transfer_data, superbatch_data, n_processed);
-			loadInputMiniBatch(transfer_data, superbatch_data, n_loaded);
-			n_loaded += transfer_data->n_seqs;
+		auto inputAsync = std::async(std::launch::async, loadInputMiniBatch, transfer_data, superbatch_data, n_loaded);
 		
-		// inputAsync.wait();
-		// processAsync.wait();
+		inputAsync.wait();
+		processAsync.wait();
+		n_loaded += transfer_data->n_seqs;
 
-		// swap output of current processed batch to "transfer", and "transfer" to process for next loop
-		// i.e., swap seqs_io <-> seqs_processed on host, and swap pointers on device
 		// process_data->n_seqs is now the number of seqs to output in next iteration
 		// transfer_data->n_seqs is now the number of seqs to process in next interation
+		// swap output of current processed batch to "transfer", and "transfer" to process for next loop
 		swapData(process_data, transfer_data);
 		// after this swap, process_data->n_seqs is the number of seqs to process in next iteration
 		// 					transfer_data->n_seqs is the number of seqs to output in next iteration

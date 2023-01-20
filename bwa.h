@@ -58,6 +58,8 @@ typedef struct {
 typedef struct {
 	int l_seq, id;
 	char *name, *comment, *seq, *qual, *sam;
+	int8_t l_name, l_comment;
+	int16_t l_qual;
 } bseq1_t;
 
 extern int bwa_verbose;

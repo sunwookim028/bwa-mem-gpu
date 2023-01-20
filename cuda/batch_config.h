@@ -13,7 +13,7 @@
 #define MB_SAM_LIMIT MB_MAX_COUNT * 5000       // chunk size of sam output
 
 // super-batch config
-#define SB_MAX_COUNT 1000000                   // max number of reads
+#define SB_MAX_COUNT 5000000                   // max number of reads
 #define SB_NAME_LIMIT SB_MAX_COUNT * 100       // chunk size of name
 #define SB_COMMENT_LIMIT SB_MAX_COUNT * 100    // chunk size of comment
 #define SB_SEQ_LIMIT SB_MAX_COUNT *SEQ_MAXLEN  // chunk size of seq

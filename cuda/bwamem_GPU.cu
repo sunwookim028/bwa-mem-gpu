@@ -3429,32 +3429,6 @@ __global__ void SAMGEN_concatenate_kernel(
 
 
 
-/* ----------------------- MAIN FUNCTION FOR GENERATING ALIGNMENT RESULTS -----------------*/
-// __global__ void generate_sam_kernel(
-// 	mem_opt_t *d_opt, 			// user-defined options
-// 	bntseq_t *d_bns, 
-// 	uint8_t *d_pac, 
-// 	bseq1_t* d_seqs,			// array of sequence info
-// 	int n, 						// number of reads being processed in a batch
-// 	mem_alnreg_v* d_regs,		// array of regs
-// 	void* d_buffer_pools 		// for CUDA kernel memory management
-// 	)
-// {
-// 	void* d_buffer_ptr = CUDAKernelSelectPool(d_buffer_pools, threadIdx.x % 32); 	// the buffer pool this thread is using	
-// 	uint32_t i = blockIdx.x*blockDim.x + threadIdx.x;		// ID of the read to process
-
-// 	if (i>=n) return; 	// don't run the padded threads
-
-// 	if (!(d_opt->flag&MEM_F_PE)) {
-// 		mem_reg2sam(d_opt, d_bns, d_pac, &d_seqs[i], &d_regs[i], 0, 0, d_buffer_ptr);
-// 		// free(w->regs[i].a);
-// 	} else {
-// 		// FOR FUTURE DEVELOPMENT
-// 		// mem_sam_pe(d_opt, d_bns, d_pac, d_pes, i, &d_seqs[i<<1], &d_regs[i<<1], d_buffer_ptr);
-// 		// free(w->regs[i<<1|0].a); free(w->regs[i<<1|1].a);
-// 	}
-// }
-
 /*  main function for bwamem in GPU 
 	return to seqs.sam
  */
@@ -3624,6 +3598,10 @@ void mem_align_GPU(process_data_t *process_data)
 	int n_seeds;
 	gpuErrchk( cudaMemcpyAsync(&n_seeds, d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost, process_stream) );
 	if (bwa_verbose>=4) fprintf(stderr, "%d seeds\n", n_seeds);
+	if (n_seeds == 0){
+		process_data->n_processed += process_data->n_seqs;
+		return;
+	}
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SMITHWATERMAN]: preprocessing2 ... \n", __func__);
 	SMITHWATERMAN_preprocessing2_kernel <<< ceil((float)n_seeds/32.0), 32, 0, process_stream >>> (
 			d_opt, d_bns, d_pac, d_seqs,

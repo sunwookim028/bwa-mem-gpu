@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fstream>
+#include <climits>
 using namespace std;
 ofstream perf_profile_file("perf_profile.txt");
 

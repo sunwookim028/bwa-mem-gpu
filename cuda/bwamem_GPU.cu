@@ -14,6 +14,11 @@
 #include "streams.cuh"
 #include "batch_config.h"
 #include "../kmers_index/hashKMerIndex.h"
+#include <chrono>
+using namespace std::chrono;
+#include <fstream>
+using namespace std;
+extern ofstream perf_profile_file;
 
 __device__ __constant__ unsigned char d_nst_nt4_table[256] = {
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
@@ -3471,6 +3476,9 @@ void mem_align_GPU(process_data_t *process_data)
 	auto d_buffer_pools = process_data->d_buffer_pools;
 	cudaStream_t process_stream = *((cudaStream_t*)process_data->CUDA_stream);
 
+	perf_profile_file << process_data->n_processed << "," ;
+	auto start = high_resolution_clock::now();
+
 	/* ----------------------- Preprocessing: convert letters to bits --------------------------------------*/
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [PREPROCESS ]: convert letters to bits ...\n", __func__);
 	PREPROCESS_convert_bit_encoding_kernel <<< n_seqs, 32, 0, process_stream >>> (d_seqs);
@@ -3583,6 +3591,11 @@ void mem_align_GPU(process_data_t *process_data)
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
+	auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<milliseconds>(stop-start);
+	perf_profile_file << duration.count() << ",";
+
+	start = high_resolution_clock::now();
 	/* ----------------------- Fourth part of pipeline: Smith-Waterman extension --------------------------------------*/
 	/* pre-processing for SW extension: count number of seeds a read has, write seed_record to global mem, and allocate vector mem_alnreg_t for each read */
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SMITHEWATERMAN]: preprocessing1 ... ", __func__);
@@ -3633,6 +3646,9 @@ void mem_align_GPU(process_data_t *process_data)
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 
+	stop = high_resolution_clock::now();
+	duration = duration_cast<milliseconds>(stop-start);
+	perf_profile_file << duration.count() << ",";
 
 	//  paired-end statistics 
 	// if (opt->flag&MEM_F_PE) { 
@@ -3659,6 +3675,8 @@ void mem_align_GPU(process_data_t *process_data)
 	// 	free(h_regs); 
 	// }
 	
+	start = high_resolution_clock::now();
+
 	/* Mark alignments that we want to write to SAM */
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: Launch kernel mark_primary ...\n", __func__);
 	FINALIZEALN_mark_primary_kernel <<< n_seqs, 256, 0, process_stream >>> (d_opt, d_regs, d_buffer_pools);
@@ -3764,6 +3782,10 @@ void mem_align_GPU(process_data_t *process_data)
 	);
 	gpuErrchk( cudaStreamSynchronize(process_stream) );
 	gpuErrchk( cudaPeekAtLastError() );
+
+	stop = high_resolution_clock::now();
+	duration = duration_cast<milliseconds>(stop-start);
+	perf_profile_file << duration.count() << std::endl;
 
 	process_data->n_processed += process_data->n_seqs;
 	

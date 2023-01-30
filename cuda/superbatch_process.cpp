@@ -5,6 +5,9 @@
 #include <sys/time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fstream>
+using namespace std;
+ofstream perf_profile_file("perf_profile.txt");
 
 /**
  * @brief initiate memory for a super batch
@@ -123,6 +126,8 @@ static void processSuperBatch(superbatch_data_t *data, transfer_data_t *mini_tra
  */
 void superBatchMain(ktp_aux_t *aux)
 {
+    perf_profile_file << "batch,SMEM_CHN(ms),BSW(ms),SAM(ms)\n";
+
     // init memory for 2 superbatches, 1 for processing and 1 for transfer
     superbatch_data_t *super_process = newSuperBatchData();
     superbatch_data_t *super_transfer = newSuperBatchData();

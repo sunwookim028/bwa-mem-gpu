@@ -204,5 +204,6 @@ void miniBatchMain(superbatch_data_t *superbatch_data, transfer_data_t *transfer
 
 	// output the final minibatch
 	writeOutputMiniBatch(transfer_data);
+	resetTransfer(transfer_data);
 	return;
 }

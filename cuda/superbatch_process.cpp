@@ -106,7 +106,7 @@ static int loadInputSuperBatch(kseq_t *ks, kseq_t *ks2, int actual_chunk_size, i
     // sort reads
     if (bwa_verbose >= 3)
         clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
-    sortReads(reads, n_seqs_read);
+    // sortReads(reads, n_seqs_read);
     if (bwa_verbose >= 3)
         clock_gettime(CLOCK_MONOTONIC_RAW, &timing_stop);
     if (bwa_verbose >= 3)

@@ -39,7 +39,7 @@ endif
 all:$(PROG)
 
 bwa:libbwa.a $(AOBJS) main.o
-		g++ $(CFLAGS) $(DFLAGS) $(AOBJS) main.o -o $@ -L. -lbwa -L/usr/local/cuda/lib64 -lcuda -lcudart -lcudadevrt $(LIBS)
+		g++ $(CFLAGS) $(DFLAGS) $(AOBJS) main.o -o $@ -L. -lbwa -L/usr/local/cuda/lib64 -lcudart -lcudadevrt $(LIBS)
 
 bwamem-lite:libbwa.a example.o
 		$(CC) $(CFLAGS) $(DFLAGS) example.o -o $@ -L. -lbwa $(LIBS)

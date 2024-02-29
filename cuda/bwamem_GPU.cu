@@ -1366,7 +1366,9 @@ __global__ void MEMFINDING_collect_intv_kernel_try1(
 	const bwt_t *d_bwt,
 	const bseq1_t *d_seqs,
 	int n_seqs,
-	smem_aux_t *d_aux, // aux output
+	smem_aux_t *d_aux, // aux output.
+                     // right extension result BWT intervals
+                     // are stored in a global memory region.
 	kmers_bucket_t *d_kmerHashTab,
 	void *d_buffer_pools)
 {
@@ -1662,7 +1664,7 @@ __global__ void SEEDCHAINING_filter_seeds_kernel(
 	)
 {
 	// seqID = blockIdx.x
-	bwtintv_t *mem_a = d_aux[blockIdx.x].mem.a;
+	bwtintv_t *mem_a = d_aux[blockIdx.x].mem.a; // Global memory read.
 	int n_mem = d_aux[blockIdx.x].mem.n;
 	if (n_mem>SEEDCHAINING_MAX_N_MEM){printf("number of MEM too large: %d \n", n_mem); __trap();}
 	int max_occ = d_opt->max_occ;	// max length of an interval that we can count
@@ -3480,10 +3482,12 @@ void mem_align_GPU(process_data_t *process_data)
 	auto start = high_resolution_clock::now();
 
 	/* ----------------------- Preprocessing: convert letters to bits --------------------------------------*/
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [PREPROCESS ]: convert letters to bits ...\n", __func__);
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [PREPROCESS ]: done on CPU. convert letters to bits ...\n", __func__);
+  /*
 	PREPROCESS_convert_bit_encoding_kernel <<< n_seqs, 32, 0, process_stream >>> (d_seqs);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  */
 
 	/* ----------------------- First part of pipeline: find SMEM intervals --------------------------------------*/
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [MEM FINDING]: collect MEM intervals ...\n", __func__);
@@ -3502,8 +3506,8 @@ void mem_align_GPU(process_data_t *process_data)
 
 	/* ----------------------- Second part of pipeline: chaining seeds --------------------------------------*/
 	/* separate seeds from bwt intervals, filter out duplicated seeds */
-	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING]: seeds separating and filtering ...\n", __func__);
-	SEEDCHAINING_filter_seeds_kernel <<< n_seqs, WARPSIZE, 0, process_stream >>>(
+	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING fused]: seeds separating and filtering ...\n", __func__);
+	SEEDCHAINING_filter_seeds_kernel <<< n_seqs, 128, 0, process_stream >>>(
 		d_opt, d_aux, d_buffer_pools);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
@@ -3765,14 +3769,17 @@ void mem_align_GPU(process_data_t *process_data)
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
 
 	/* generate SAM for each aln */
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SAMGEN]: generate SAM for each aln ...\n", __func__);
+	if (bwa_verbose>=4) {
+    fprintf(stderr, "[M::%-25s] **** [SAMGEN]: generate SAM for each aln ...\n", __func__);
+    fprintf(stderr, "[M::%-25s] **** [SAMGEN]: n_seeds=%d ...\n", __func__, n_seeds);
+  }
 	SAMGEN_aln2sam_finegrain_kernel <<< ceil((float)n_seeds/32), 32, 0, process_stream >>> (
 		d_opt, d_bns, d_seqs,
 		d_alns, d_seed_records, n_seeds,
 		d_buffer_pools
 	);
 	gpuErrchk2( cudaPeekAtLastError() );
-	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+	//gpuErrchk2( cudaStreamSynchronize(process_stream) );
 	/* finalize SAM strings for each read */
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SAMGEN]: concatenate all SAM for each read ...\n", __func__);
 	SAMGEN_concatenate_kernel <<< ceil((float)n_seqs/32), 32, 0, process_stream >>> (

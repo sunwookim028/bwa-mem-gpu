@@ -2,7 +2,7 @@
 #define BATCH_CONFIG_H
 
 
-#define SEQ_MAXLEN 301// max length of a seq we want to process
+#define SEQ_MAXLEN 310// max length of a seq we want to process
 
 // mini-batch config
 #define MB_MAX_COUNT 20000                     // max number of reads

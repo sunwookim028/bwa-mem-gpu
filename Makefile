@@ -17,7 +17,7 @@ INCLUDES=
 LIBS=		-lm -lz -lpthread
 SUBDIRS=	.
 CUDADIR=    ./cuda
-CUDA_ARCH = sm_52
+CUDA_ARCH = sm_75
 NVCC_OPTIM_FLAGS= -Xptxas -O4 -Xcompiler -O4 --device-c -arch=$(CUDA_ARCH)
 NVCC_DEBUG_FLAGS= -g -G -O0 --device-c -arch=$(CUDA_ARCH)
 

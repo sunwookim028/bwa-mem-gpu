@@ -43,6 +43,25 @@
 int bwa_verbose = 3;
 char bwa_rg_id[256];
 char *bwa_pg;
+const unsigned char h_nst_nt4_table[256] = {
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 5 /*'-'*/, 4, 4,
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  3, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  3, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4
+};
+
 
 /************************
  * Batch FASTA/Q reader *
@@ -84,7 +103,13 @@ static inline void kseq2bseq2(const kseq_t *ks, bseq1_t *s, superbatch_data_t *o
 	// copy seq to host's memory
 	if (out->seqs_size+ks->seq.l+1 > SB_SEQ_LIMIT){ fprintf(stderr, "[W::%s] FATAL: Memory limit exceeded for seq.\n", __func__); exit(1); }
 	temp = &(out->seqs[out->seqs_size]);
-	memcpy(temp, ks->seq.s, ks->seq.l); temp[ks->seq.l] = '\0';
+  uint8_t b; int j;
+  for (j=0; j<ks->seq.l; j++) {
+		b = ks->seq.s[j] < 4? (uint8_t)ks->seq.s[j] : (uint8_t)h_nst_nt4_table[(int)ks->seq.s[j]];
+		temp[j] = (char)b;
+  }
+  temp[j] = '\0';
+	//memcpy(temp, ks->seq.s, ks->seq.l); temp[ks->seq.l] = '\0';
 	s->seq = (char*)(out->seqs + out->seqs_size);
 	out->seqs_size += ks->seq.l + 1;
 	// copy comment if not NULL

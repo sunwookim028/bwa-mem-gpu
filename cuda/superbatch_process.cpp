@@ -24,6 +24,10 @@ static superbatch_data_t *newSuperBatchData()
     batch->seqs = (char *)malloc(SB_SEQ_LIMIT);
     batch->comment = (char *)malloc(SB_COMMENT_LIMIT);
     batch->qual = (char *)malloc(SB_QUAL_LIMIT);
+    batch->name_size = 0;
+    batch->seqs_size = 0;
+    batch->comment_size = 0;
+    batch->qual_size = 0;
     if (batch->reads == nullptr || batch->name == nullptr || batch->seqs == nullptr || batch->comment == nullptr || batch->qual == nullptr)
     {
         fprintf(stderr, "[M::%-25s] can't malloc superbatch\n", __func__);
@@ -103,7 +107,7 @@ static int loadInputSuperBatch(kseq_t *ks, kseq_t *ks2, int actual_chunk_size, i
     if (bwa_verbose >= 3)
         fprintf(stderr, "[M::%-25s] ***load %'d reads from disk took %lu ms\n", __func__, n_seqs_read, (timing_stop.tv_nsec - timing_start.tv_nsec) / 1000000);
 
-    // sort reads
+    /* sort reads
     if (bwa_verbose >= 3)
         clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
     // sortReads(reads, n_seqs_read);
@@ -111,6 +115,7 @@ static int loadInputSuperBatch(kseq_t *ks, kseq_t *ks2, int actual_chunk_size, i
         clock_gettime(CLOCK_MONOTONIC_RAW, &timing_stop);
     if (bwa_verbose >= 3)
         fprintf(stderr, "[M::%-25s] ***sort reads took %lu ms\n", __func__, (timing_stop.tv_nsec - timing_start.tv_nsec) / 1000000);
+        */
 
     return n_seqs_read;
 }

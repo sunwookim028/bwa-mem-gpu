@@ -134,6 +134,7 @@ static void loadInputMiniBatch(transfer_data_t *transfer_data, superbatch_data_t
 static void writeOutputMiniBatch(transfer_data_t *transfer_data)
 {
 	int n_seqs = transfer_data->n_seqs;
+  fprintf(stderr, " Number of results: %d\n", n_seqs);
 	if (n_seqs==0) return;
 	struct timespec timing_start, timing_stop; // variables for printing timings
 	// transfer from device's to host's

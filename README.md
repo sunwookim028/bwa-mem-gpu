@@ -1,4 +1,6 @@
 ## BWA-MEM ON GPU
+This version ignores most of the C source codes in the main directory and replaced such C functions for CUDA kernels. It seems to yield correct answers for cases that I tested (though optional fields in SAM format are not generated and had some minor programming errors) but, it seems to have more room for performance improvement.
+
 GPU implementation of [BWA-MEM](https://github.com/lh3/bwa).
 
 ## Requirements

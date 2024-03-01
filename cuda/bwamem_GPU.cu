@@ -15,10 +15,15 @@
 #include "batch_config.h"
 #include "../kmers_index/hashKMerIndex.h"
 #include <chrono>
+#include "../profiling.h"
+
+
 using namespace std::chrono;
 #include <fstream>
 using namespace std;
 extern ofstream perf_profile_file;
+
+extern uint64_t proc_freq;
 
 __device__ __constant__ unsigned char d_nst_nt4_table[256] = {
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
@@ -1366,9 +1371,7 @@ __global__ void MEMFINDING_collect_intv_kernel_try1(
 	const bwt_t *d_bwt,
 	const bseq1_t *d_seqs,
 	int n_seqs,
-	smem_aux_t *d_aux, // aux output.
-                     // right extension result BWT intervals
-                     // are stored in a global memory region.
+	smem_aux_t *d_aux, // aux output
 	kmers_bucket_t *d_kmerHashTab,
 	void *d_buffer_pools)
 {
@@ -1664,7 +1667,7 @@ __global__ void SEEDCHAINING_filter_seeds_kernel(
 	)
 {
 	// seqID = blockIdx.x
-	bwtintv_t *mem_a = d_aux[blockIdx.x].mem.a; // Global memory read.
+	bwtintv_t *mem_a = d_aux[blockIdx.x].mem.a;
 	int n_mem = d_aux[blockIdx.x].mem.n;
 	if (n_mem>SEEDCHAINING_MAX_N_MEM){printf("number of MEM too large: %d \n", n_mem); __trap();}
 	int max_occ = d_opt->max_occ;	// max length of an interval that we can count
@@ -3441,6 +3444,8 @@ __global__ void SAMGEN_concatenate_kernel(
  */
 void mem_align_GPU(process_data_t *process_data)
 {
+  uint64_t total_tim, total_lap;
+  total_tim = __rdtsc();
 	int n_seqs = process_data->n_seqs;
 	if (n_seqs==0) return;
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** reset process stream ... \n", __func__);
@@ -3482,15 +3487,21 @@ void mem_align_GPU(process_data_t *process_data)
 	auto start = high_resolution_clock::now();
 
 	/* ----------------------- Preprocessing: convert letters to bits --------------------------------------*/
-	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [PREPROCESS ]: done on CPU. convert letters to bits ...\n", __func__);
-  /*
+  uint64_t tim, lap;
+  tim = total_tim = __rdtsc();
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [PREPROCESS ]: convert letters to bits ...\n", __func__);
 	PREPROCESS_convert_bit_encoding_kernel <<< n_seqs, 32, 0, process_stream >>> (d_seqs);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
-  */
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "PREPROCESS_convert_bit_encoding_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* ----------------------- First part of pipeline: find SMEM intervals --------------------------------------*/
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [MEM FINDING]: collect MEM intervals ...\n", __func__);
+  //ANOT The syntax below: n_seqs blocks of 320 threads, 512 (size_t) size 
+  // shared memory area allocated dynamically for each n_seqs block, with 
+  // process_stream as the runtime stream.
 	MEMFINDING_collect_intv_kernel <<< n_seqs, 320, 512, process_stream >>> (
 			d_opt, d_bwt, d_seqs,
 			d_aux,	// output
@@ -3503,16 +3514,22 @@ void mem_align_GPU(process_data_t *process_data)
 	// 	d_buffer_pools);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "MEMFINDING_collect_intv_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* ----------------------- Second part of pipeline: chaining seeds --------------------------------------*/
+  tim = __rdtsc();
 	/* separate seeds from bwt intervals, filter out duplicated seeds */
-	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING fused]: seeds separating and filtering ...\n", __func__);
-	SEEDCHAINING_filter_seeds_kernel <<< n_seqs, 128, 0, process_stream >>>(
+	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING]: seeds separating and filtering ...\n", __func__);
+	SEEDCHAINING_filter_seeds_kernel <<< n_seqs, WARPSIZE, 0, process_stream >>>(
 		d_opt, d_aux, d_buffer_pools);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "SEEDCHAINING_filter_seeds_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* translate seed info from bwt index */
+  tim = __rdtsc();
 	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING]: translating seed info ...\n", __func__);
 	SEEDCHAINING_translate_seedinfo_kernel <<< n_seqs, 128, 0, process_stream >>> (
 		d_opt, d_bwt, d_bns, d_seqs, d_aux,
@@ -3520,22 +3537,31 @@ void mem_align_GPU(process_data_t *process_data)
 		d_buffer_pools);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "SEEDCHAINING_translate_seedinfo_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* sort seeds by rbeg for each read */
+  tim = __rdtsc();
 	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING]: sorting seeds by rbeg (low n_seeds) ...\n", __func__);
 	SEEDCHAINING_sortSeeds_low_kernel <<< n_seqs, SORTSEEDSLOW_BLOCKDIMX, 0, process_stream >>> (
 		d_seq_seeds,
 		d_buffer_pools);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "SEEDCHAINING_sortSeeds_low_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
+  tim = __rdtsc();
 	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING]: sorting seeds by rbeg (high n_seeds) ...\n", __func__);
 	SEEDCHAINING_sortSeeds_high_kernel <<< n_seqs, SORTSEEDSHIGH_BLOCKDIMX, 0, process_stream >>> (
 		d_seq_seeds,
 		d_buffer_pools);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "SEEDCHAINING_sortSeeds_high_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* seed chaining */
+  tim = __rdtsc();
 	if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEED CHAINING]: chaining seeds ...\n", __func__);
 	SEEDCHAINING_chain_kernel <<< n_seqs, SEEDCHAINING_CHAIN_BLOCKDIMX, 0, process_stream >>> (
 		d_opt, d_bns, d_seqs, d_seq_seeds,
@@ -3543,6 +3569,8 @@ void mem_align_GPU(process_data_t *process_data)
 		d_buffer_pools);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "SEEDCHAINING_chain_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	// /* second kernel: chaining seeds */
 	// if (bwa_verbose>=4)  fprintf(stderr, "[M::%-25s] **** [SEEDCHAINING]: Launch kernel mem_chain ...\n", __func__);
@@ -3570,14 +3598,18 @@ void mem_align_GPU(process_data_t *process_data)
 	// gpuErrchk2( cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_size, d_sortkey_in, d_sortkey_out, d_seqids_in, d_seqids_out, gpu_data.n_seqs) );
 
 	/* ----------------------- Third part of pipeline: Filtering chains --------------------------------------*/
+  tim = __rdtsc();
 	/* sort chains */
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [CHAIN FILTERING]: sorting chains ...\n", __func__);
 	CHAINFILTERING_sortChains_kernel <<< n_seqs, SORTCHAIN_BLOCKDIMX, MAX_N_CHAIN*2*sizeof(uint16_t)+sizeof(mem_chain_t**), process_stream >>> (
 		d_chains, d_buffer_pools);
 	gpuErrchk2( cudaPeekAtLastError());
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "CHAINFILTERING_sortChains_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* filter chains */
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [CHAIN FILTERING]: Launch kernel mem_chain_flt ...\n", __func__);
 	CHAINFILTERING_filter_kernel <<< n_seqs, CHAIN_FLT_BLOCKSIZE, MAX_N_CHAIN*(3*sizeof(uint16_t)+sizeof(uint8_t)), process_stream >>> (
 			d_opt, 
@@ -3585,8 +3617,11 @@ void mem_align_GPU(process_data_t *process_data)
 			d_buffer_pools);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "CHAINFILTERING_filter_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* fourth kernel: mem_flt_chained_seeds */
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [CHAIN FILTERING]: Launch kernel mem_flt_chained_seeds ...\n", __func__);
 	CHAINFILTERING_flt_chained_seeds_kernel <<< dimGrid_readlevel, dimBlock_readlevel, 0, process_stream >>> (
 			d_opt, d_bns, d_pac,
@@ -3594,6 +3629,8 @@ void mem_align_GPU(process_data_t *process_data)
 			n_seqs, d_buffer_pools);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "CHAINFILTERING_flt_chained_seeds_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	auto stop = high_resolution_clock::now();
 	auto duration = duration_cast<milliseconds>(stop-start);
@@ -3602,6 +3639,7 @@ void mem_align_GPU(process_data_t *process_data)
 	start = high_resolution_clock::now();
 	/* ----------------------- Fourth part of pipeline: Smith-Waterman extension --------------------------------------*/
 	/* pre-processing for SW extension: count number of seeds a read has, write seed_record to global mem, and allocate vector mem_alnreg_t for each read */
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SMITHEWATERMAN]: preprocessing1 ... ", __func__);
 	SMITHWATERMAN_preprocessing1_kernel <<< dimGrid_readlevel, dimBlock_readlevel, 0, process_stream >>> (
 			d_chains, d_regs, d_seed_records, d_Nseeds, n_seqs,
@@ -3609,8 +3647,11 @@ void mem_align_GPU(process_data_t *process_data)
 			);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "SMITHWATERMAN_preprocessing1_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* pre-processing for SW extension: prepare target and query strings for each seed */
+  tim = __rdtsc();
 	// find number of seeds
 	int n_seeds;
 	gpuErrchk2( cudaMemcpyAsync(&n_seeds, d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost, process_stream) );
@@ -3627,10 +3668,13 @@ void mem_align_GPU(process_data_t *process_data)
 			);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "SMITHWATERMAN_preprocessing2_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* fifth kernel: SW extension 
 	launch n_seeds threads, each thread extend 1 seed
 	*/
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SMITHWATERMAN]: Launch kernel extend ... \n", __func__);
 	SMITHWATERMAN_extend_kernel <<< n_seeds, WARPSIZE, 0, process_stream >>> (
 			d_opt,
@@ -3640,8 +3684,11 @@ void mem_align_GPU(process_data_t *process_data)
 			d_Nseeds);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "SMITHWATERMAN_extend_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* Post processing SW: remove duplicated alignments */
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SMITHWATERMAN]: post-processing remove duplicated alignments ... \n", __func__);
 	SMITHWATERMAN_postprocessing_kernel <<< n_seqs, 320, 0, process_stream >>> (
 		d_opt, d_bns,
@@ -3649,6 +3696,8 @@ void mem_align_GPU(process_data_t *process_data)
 		);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "SMITHWATERMAN_postprocessing_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	stop = high_resolution_clock::now();
 	duration = duration_cast<milliseconds>(stop-start);
@@ -3682,19 +3731,26 @@ void mem_align_GPU(process_data_t *process_data)
 	start = high_resolution_clock::now();
 
 	/* Mark alignments that we want to write to SAM */
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: Launch kernel mark_primary ...\n", __func__);
 	FINALIZEALN_mark_primary_kernel <<< n_seqs, 256, 0, process_stream >>> (d_opt, d_regs, d_buffer_pools);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "FINALIZEALN_mark_primary_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* reorder alignments so that alt alignments are placed lower and higher score are placed higher */
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: Launch kernel reorder alignments ...\n", __func__);
  	FINALIZEALN_reorderAlns_kernel <<< dimGrid_readlevel, dimBlock_readlevel, 0, process_stream >>>(
 		d_regs, n_seqs, d_buffer_pools);
  	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "FINALIZEALN_reorderAlns_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* preprocessing for global SW alignments */
+  tim = __rdtsc();
 	cudaMemsetAsync(d_Nseeds, 0, sizeof(int), process_stream);		// reset seed info
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: Launch kernel preprocessing 1 ... ", __func__);
  	FINALIZEALN_preprocessing1_kernel <<< dimGrid_readlevel, dimBlock_readlevel, 0, process_stream >>>(
@@ -3705,7 +3761,10 @@ void mem_align_GPU(process_data_t *process_data)
 	gpuErrchk2( cudaMemcpyAsync(&n_seeds, d_Nseeds, sizeof(int), cudaMemcpyDeviceToHost, process_stream) );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
 	if (bwa_verbose>=4) fprintf(stderr, "%d aligments\n", n_seeds);
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "FINALIZEALN_preprocessing1_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: Launch kernel preprocessing 2 ...\n", __func__);
  	FINALIZEALN_preprocessing2_kernel <<< ceil((float)n_seeds/32), 32, 0, process_stream >>>(
  		d_opt, d_seqs,
@@ -3717,14 +3776,20 @@ void mem_align_GPU(process_data_t *process_data)
  	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
 	auto n_sortkeys = n_seeds;
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "FINALIZEALN_preprocessing2_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	// reverse query and target if aln position is on reverse strand
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: reverse seqs ...\n", __func__);
  	FINALIZEALN_reverseSeq_kernel <<< n_seeds, 32, 0, process_stream >>> (d_seed_records, d_alns, d_buffer_pools);
  	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "FINALIZEALN_reverseSeq_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* now we sort alignments for better warp efficiency in next kernel */
+  tim = __rdtsc();
 	void *d_temp_storage = NULL;
 	size_t temp_storage_size = 0;
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: sort by bandwidth*ref_length ..... %.2f MB\n", __func__, (float)temp_storage_size/1000000);
@@ -3737,9 +3802,12 @@ void mem_align_GPU(process_data_t *process_data)
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
 	cudaFree(d_temp_storage);
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "FINALIZEALN_RadixSort: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* global SW */
 	// low banddiwth
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: Launch kernel global Smith-Waterman  ...\n", __func__);
 	FINALIZEALN_globalSW_kernel <<< ceil((float)n_seeds/32), 32, 0, process_stream >>> (
 		d_opt,
@@ -3757,8 +3825,11 @@ void mem_align_GPU(process_data_t *process_data)
 	// 	gpu_data.d_buffer_pools);
 	// gpuErrchk2( cudaPeekAtLastError() );
 	// gpuErrchk2( cudaDeviceSynchronize() );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "FINALIZEALN_globalSW_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* finalize aln */
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [FINALIZEALN]: gather all info and finalize aln ...\n", __func__);
 	FINALIZEALN_final_kernel <<< ceil((float)n_seeds/32), 32, 0, process_stream >>> (
 		d_opt, d_bns, d_seqs,
@@ -3767,20 +3838,23 @@ void mem_align_GPU(process_data_t *process_data)
 	);
 	gpuErrchk2( cudaPeekAtLastError() );
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "FINALIZEALN_final_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 
 	/* generate SAM for each aln */
-	if (bwa_verbose>=4) {
-    fprintf(stderr, "[M::%-25s] **** [SAMGEN]: generate SAM for each aln ...\n", __func__);
-    fprintf(stderr, "[M::%-25s] **** [SAMGEN]: n_seeds=%d ...\n", __func__, n_seeds);
-  }
+  tim = __rdtsc();
+	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SAMGEN]: generate SAM for each aln ...\n", __func__);
 	SAMGEN_aln2sam_finegrain_kernel <<< ceil((float)n_seeds/32), 32, 0, process_stream >>> (
 		d_opt, d_bns, d_seqs,
 		d_alns, d_seed_records, n_seeds,
 		d_buffer_pools
 	);
 	gpuErrchk2( cudaPeekAtLastError() );
-	//gpuErrchk2( cudaStreamSynchronize(process_stream) );
+	gpuErrchk2( cudaStreamSynchronize(process_stream) );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "SAMGEN_aln2sam_finegrain_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
 	/* finalize SAM strings for each read */
+  tim = __rdtsc();
 	if (bwa_verbose>=4) fprintf(stderr, "[M::%-25s] **** [SAMGEN]: concatenate all SAM for each read ...\n", __func__);
 	SAMGEN_concatenate_kernel <<< ceil((float)n_seqs/32), 32, 0, process_stream >>> (
 		d_alns,
@@ -3789,6 +3863,9 @@ void mem_align_GPU(process_data_t *process_data)
 	);
 	gpuErrchk2( cudaStreamSynchronize(process_stream) );
 	gpuErrchk2( cudaPeekAtLastError() );
+  lap = __rdtsc() - tim;
+  fprintf(stderr, "SAMGEN_concatenate_kernel: %0.6lf s\n", lap * 1.0 / proc_freq);
+
 
 	stop = high_resolution_clock::now();
 	duration = duration_cast<milliseconds>(stop-start);
@@ -3796,6 +3873,8 @@ void mem_align_GPU(process_data_t *process_data)
 
 	process_data->n_processed += process_data->n_seqs;
 	
+  total_lap = __rdtsc() - total_tim;
+  fprintf(stderr, "PROCESS_E2E_mem_align_GPU_all_kernels: %0.6lf s\n", total_lap * 1.0 / proc_freq);
 	return;
 
 // printBufferInfoHost(gpu_data.d_buffer_pools);

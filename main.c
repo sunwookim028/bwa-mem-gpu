@@ -28,6 +28,7 @@
 #include <string.h>
 #include "kstring.h"
 #include "utils.h"
+#include "profiling.h"
 
 #ifndef PACKAGE_VERSION
 #define PACKAGE_VERSION "0.7.17-r1198-dirty"
@@ -84,8 +85,14 @@ static int usage()
 	return 1;
 }
 
+uint64_t proc_freq;
 int main(int argc, char *argv[])
 {
+  // Measure system frequency for profiling.
+    uint64_t tim = __rdtsc();
+    sleep(1);
+    proc_freq = __rdtsc() - tim;
+
 	extern char *bwa_pg;
 	int i, ret;
 	double t_real;

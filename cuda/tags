@@ -1,0 +1,291 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ALL_THREADS	ksw_CUDA.cu	423;"	d	file:
+BATCH_CONFIG_H	batch_config.h	2;"	d
+CHAINFILTERING_filter_kernel	bwamem_GPU.cu	/^__global__ void CHAINFILTERING_filter_kernel($/;"	f
+CHAINFILTERING_flt_chained_seeds_kernel	bwamem_GPU.cu	/^__global__ void CHAINFILTERING_flt_chained_seeds_kernel($/;"	f
+CHAINFILTERING_sortChains_kernel	bwamem_GPU.cu	/^__global__ void CHAINFILTERING_sortChains_kernel(mem_chain_v* d_chains, void* d_buffer_pools){$/;"	f
+CHAIN_FLT_BLOCKSIZE	bwamem_GPU.cu	2237;"	d	file:
+CUDAKernelCalloc	CUDAKernel_memmgnt.cu	/^__device__ void* CUDAKernelCalloc(void* d_buffer_pool, size_t num, size_t size, uint8_t align_size){$/;"	f
+CUDAKernelMalloc	CUDAKernel_memmgnt.cu	/^__device__ void* CUDAKernelMalloc(void* d_buffer_pool, size_t size, uint8_t align_size){$/;"	f
+CUDAKernelRealloc	CUDAKernel_memmgnt.cu	/^__device__ void* CUDAKernelRealloc(void* d_buffer_pool, void* d_current_ptr, size_t new_size, uint8_t align_size){$/;"	f
+CUDAKernelSelectPool	CUDAKernel_memmgnt.cu	/^__device__ void* CUDAKernelSelectPool(void* d_buffer_pools, int i){$/;"	f
+CUDAKernel_mem_info	CUDAKernel_memmgnt.cu	/^} CUDAKernel_mem_info;$/;"	t	typeref:struct:__anon3	file:
+CUDAResetBufferPool	CUDAKernel_memmgnt.cu	/^__host__ void CUDAResetBufferPool(void* d_buffer_pools, cudaStream_t stream){$/;"	f
+CUDATransferSamOut	streams.cu	/^void CUDATransferSamOut(transfer_data_t *transfer_data){$/;"	f
+CUDATransferSeqsIn	streams.cu	/^void CUDATransferSeqsIn(transfer_data_t *transfer_data){$/;"	f
+CUDA_BufferInit	CUDAKernel_memmgnt.cu	/^__host__ void* CUDA_BufferInit(){$/;"	f
+FINALIZEALN_final_kernel	bwamem_GPU.cu	/^__global__ void FINALIZEALN_final_kernel($/;"	f
+FINALIZEALN_globalSW_kernel	bwamem_GPU.cu	/^__global__ void FINALIZEALN_globalSW_kernel($/;"	f
+FINALIZEALN_mark_primary_kernel	bwamem_GPU.cu	/^__global__ void FINALIZEALN_mark_primary_kernel($/;"	f
+FINALIZEALN_preprocessing1_kernel	bwamem_GPU.cu	/^__global__ void FINALIZEALN_preprocessing1_kernel($/;"	f
+FINALIZEALN_preprocessing2_kernel	bwamem_GPU.cu	/^__global__ void FINALIZEALN_preprocessing2_kernel($/;"	f
+FINALIZEALN_reorderAlns_kernel	bwamem_GPU.cu	/^__global__ void FINALIZEALN_reorderAlns_kernel($/;"	f
+FINALIZEALN_reverseSeq_kernel	bwamem_GPU.cu	/^__global__ void FINALIZEALN_reverseSeq_kernel(seed_record_t *d_seed_records, mem_aln_v *d_alns, void *d_buffer_pools){$/;"	f
+GET_IS_ALT	bwamem_GPU.cu	2240;"	d	file:
+GET_KEPT	bwamem_GPU.cu	2238;"	d	file:
+GLOBALSW_BANDWITH_CUTOFF	bwamem_GPU.cu	3094;"	d	file:
+HASH_LEN	preprocessing.cu	3;"	d	file:
+MAPPING_BOUND	bwamem_GPU.cu	412;"	d	file:
+MAX_BAND_TRY	bwamem_GPU.cu	175;"	d	file:
+MAX_N_ALN	bwamem_GPU.cu	2700;"	d	file:
+MAX_N_CHAIN	bwamem_GPU.cu	2173;"	d	file:
+MAX_STDDEV	bwamem_GPU.cu	413;"	d	file:
+MB_COMMENT_LIMIT	batch_config.h	10;"	d
+MB_MAX_COUNT	batch_config.h	8;"	d
+MB_NAME_LIMIT	batch_config.h	9;"	d
+MB_QUAL_LIMIT	batch_config.h	12;"	d
+MB_SAM_LIMIT	batch_config.h	13;"	d
+MB_SEQ_LIMIT	batch_config.h	11;"	d
+MEMFINDING_READS_PER_THREAD	bwamem_GPU.cu	1368;"	d	file:
+MEMFINDING_collect_intv_concurrent_kernel	bwamem_GPU.cu	/^__global__ void MEMFINDING_collect_intv_concurrent_kernel($/;"	f
+MEMFINDING_collect_intv_kernel	bwamem_GPU.cu	/^__global__ void MEMFINDING_collect_intv_kernel($/;"	f
+MEMFINDING_collect_intv_kernel_try1	bwamem_GPU.cu	/^__global__ void MEMFINDING_collect_intv_kernel_try1($/;"	f
+MEM_HSP_COEF	bwamem_GPU.cu	111;"	d	file:
+MEM_MINSC_COEF	bwamem_GPU.cu	112;"	d	file:
+MEM_SEEDSW_COEF	bwamem_GPU.cu	113;"	d	file:
+MEM_SHORT_EXT	bwamem_GPU.cu	108;"	d	file:
+MEM_SHORT_LEN	bwamem_GPU.cu	109;"	d	file:
+MINIBATCH_PROCESS_H	minibatch_process.h	2;"	d
+MINUS_INF	ksw_CUDA.cu	547;"	d	file:
+MINUS_INF16	ksw_CUDA.cu	548;"	d	file:
+MIN_DIR_CNT	bwamem_GPU.cu	409;"	d	file:
+MIN_DIR_RATIO	bwamem_GPU.cu	410;"	d	file:
+MIN_RATIO	bwamem_GPU.cu	408;"	d	file:
+NBUFFERPOOLS	CUDAKernel_memmgnt.cu	1;"	d	file:
+NKEYS_EACH_THREAD	bwamem_GPU.cu	2174;"	d	file:
+OCC_INTERVAL	bwt_CUDA.cu	32;"	d	file:
+OCC_INTV_MASK	bwt_CUDA.cu	33;"	d	file:
+OCC_INTV_SHIFT	bwt_CUDA.cu	31;"	d	file:
+OUTLIER_BOUND	bwamem_GPU.cu	411;"	d	file:
+PATCH_MAX_R_BW	bwamem_GPU.cu	320;"	d	file:
+PATCH_MIN_SC_RATIO	bwamem_GPU.cu	321;"	d	file:
+POOLSIZE	CUDAKernel_memmgnt.cu	2;"	d	file:
+PREPROCESS_convert_bit_encoding_kernel	bwamem_GPU.cu	/^__global__ void PREPROCESS_convert_bit_encoding_kernel(const bseq1_t *d_seqs){$/;"	f
+SAMGEN_aln2sam_finegrain_kernel	bwamem_GPU.cu	/^__global__ void SAMGEN_aln2sam_finegrain_kernel($/;"	f
+SAMGEN_concatenate_kernel	bwamem_GPU.cu	/^__global__ void SAMGEN_concatenate_kernel($/;"	f
+SB_COMMENT_LIMIT	batch_config.h	18;"	d
+SB_MAX_COUNT	batch_config.h	16;"	d
+SB_NAME_LIMIT	batch_config.h	17;"	d
+SB_QUAL_LIMIT	batch_config.h	20;"	d
+SB_SEQ_LIMIT	batch_config.h	19;"	d
+SEEDCHAINING_CHAIN_BLOCKDIMX	bwamem_GPU.cu	1963;"	d	file:
+SEEDCHAINING_MAX_N_MEM	bwamem_GPU.cu	1662;"	d	file:
+SEEDCHAINING_chain_kernel	bwamem_GPU.cu	/^__global__ void SEEDCHAINING_chain_kernel($/;"	f
+SEEDCHAINING_filter_seeds_kernel	bwamem_GPU.cu	/^__global__ void SEEDCHAINING_filter_seeds_kernel($/;"	f
+SEEDCHAINING_sortSeeds_high_kernel	bwamem_GPU.cu	/^__global__ void SEEDCHAINING_sortSeeds_high_kernel($/;"	f
+SEEDCHAINING_sortSeeds_low_kernel	bwamem_GPU.cu	/^__global__ void SEEDCHAINING_sortSeeds_low_kernel($/;"	f
+SEEDCHAINING_translate_seedinfo_kernel	bwamem_GPU.cu	/^__global__ void SEEDCHAINING_translate_seedinfo_kernel($/;"	f
+SEQ_MAXLEN	batch_config.h	5;"	d
+SET_IS_ALT	bwamem_GPU.cu	2241;"	d	file:
+SET_KEPT	bwamem_GPU.cu	2239;"	d	file:
+SMITHWATERMAN_extend_kernel	bwamem_GPU.cu	/^__global__ void SMITHWATERMAN_extend_kernel($/;"	f
+SMITHWATERMAN_postprocessing_kernel	bwamem_GPU.cu	/^__global__ void SMITHWATERMAN_postprocessing_kernel($/;"	f
+SMITHWATERMAN_preprocessing1_kernel	bwamem_GPU.cu	/^__global__ void SMITHWATERMAN_preprocessing1_kernel($/;"	f
+SMITHWATERMAN_preprocessing2_kernel	bwamem_GPU.cu	/^__global__ void SMITHWATERMAN_preprocessing2_kernel($/;"	f
+SORTCHAIN_BLOCKDIMX	bwamem_GPU.cu	2175;"	d	file:
+SORTSEEDSHIGH_BLOCKDIMX	bwamem_GPU.cu	1832;"	d	file:
+SORTSEEDSHIGH_MAX_NSEEDS	bwamem_GPU.cu	1830;"	d	file:
+SORTSEEDSHIGH_NKEYS_THREAD	bwamem_GPU.cu	1831;"	d	file:
+SORTSEEDSLOW_BLOCKDIMX	bwamem_GPU.cu	1835;"	d	file:
+SORTSEEDSLOW_MAX_NSEEDS	bwamem_GPU.cu	1833;"	d	file:
+SORTSEEDSLOW_NKEYS_THREAD	bwamem_GPU.cu	1834;"	d	file:
+SUPERBATCH_PROCESS_H	superbatch_process.h	2;"	d
+__kb_getp_aux_chn	kbtree_CUDA.cu	/^__device__ static inline int __kb_getp_aux_chn(const kbnode_t * __restrict x, const mem_chain_t * __restrict k, int *r) $/;"	f	file:
+__kb_putp_aux_chn	kbtree_CUDA.cu	/^__device__ static void __kb_putp_aux_chn(kbtree_chn_t *b, kbnode_t *x, const mem_chain_t * __restrict k, void* CUDAKernel_buffer) $/;"	f	file:
+__kb_split_chn	kbtree_CUDA.cu	/^__device__ static void __kb_split_chn(kbtree_chn_t *b, kbnode_t *x, int i, kbnode_t *y, void* CUDAKernel_buffer) $/;"	f	file:
+__kb_traverse	kbtree_CUDA.cu	/^__device__ void __kb_traverse(kbtree_chn_t* b, mem_chain_v* chain, void* CUDAKernel_buffer){$/;"	f
+__kbstack_t	kbtree_CUDA.cu	/^} __kbstack_t;$/;"	t	typeref:struct:__anon4	file:
+__ks_insertsort	ksort_CUDA.h	/^__device__ static inline void __ks_insertsort(bwtintv_t *s, bwtintv_t *t)		$/;"	f
+__ks_insertsort_mem_ars2	ksort_CUDA.h	/^__device__ static inline void __ks_insertsort_mem_ars2(mem_alnreg_t *s, mem_alnreg_t *t)		$/;"	f
+__occ_aux	bwt_CUDA.cu	/^__device__ static inline int __occ_aux(uint64_t y, int c)$/;"	f	file:
+__occ_aux4	bwt_CUDA.cu	105;"	d	file:
+__sort_lt	ksort_CUDA.h	6;"	d
+_get_pac	bntseq_CUDA.cu	5;"	d	file:
+_set_pac	bntseq_CUDA.cu	4;"	d	file:
+a	bwamem_GPU.cu	/^typedef struct { size_t n, m; int *a; } int_v;$/;"	m	struct:__anon2	file:
+a	bwamem_GPU.cu	/^typedef struct { size_t n, m; uint64_t *a; } uint64_v;$/;"	m	struct:__anon1	file:
+a	ksort_CUDA.h	/^typedef struct { size_t n, m; pair64_t *a; } pair64_v;$/;"	m	struct:__anon7
+actual_chunk_size	superbatch_process.h	/^	int copy_comment, actual_chunk_size;$/;"	m	struct:__anon9
+add_cigar	bwamem_GPU.cu	/^__device__ static inline void add_cigar(const mem_opt_t *opt, mem_aln_t *p, kstring_t *str, int which, void* d_buffer_ptr)$/;"	f	file:
+adds_m128i	ksw_CUDA.cu	/^static inline __device__ m128i adds_m128i(m128i a, m128i b){$/;"	f	file:
+allocateIntermediateData	streams.cu	/^void allocateIntermediateData(process_data_t *process_instance){$/;"	f
+alnreg_hlt	ksort_CUDA.h	349;"	d
+alnreg_hlt2	ksort_CUDA.h	435;"	d
+bns_depos_GPU	bwamem_GPU.cu	/^__device__ static inline int64_t bns_depos_GPU(const bntseq_t *bns, int64_t pos, int *is_rev)$/;"	f	file:
+bns_depos_gpu	bntseq_CUDA.cu	/^__device__ static inline int64_t bns_depos_gpu(const bntseq_t *bns, int64_t pos, int *is_rev)$/;"	f	file:
+bns_fetch_seq_gpu	bntseq_CUDA.cu	/^__device__ uint8_t *bns_fetch_seq_gpu(const bntseq_t *bns, const uint8_t *pac, int64_t *beg, int64_t mid, int64_t *end, int *rid, void* d_buffer_ptr)$/;"	f
+bns_get_seq_gpu	bntseq_CUDA.cu	/^__device__ uint8_t *bns_get_seq_gpu(int64_t l_pac, const uint8_t *pac, int64_t beg, int64_t end, int64_t *len, void* d_buffer_ptr)$/;"	f
+bns_intv2rid_gpu	bntseq_CUDA.cu	/^__device__ int bns_intv2rid_gpu(const bntseq_t *bns, int64_t rb, int64_t re)$/;"	f
+bns_pos2rid_gpu	bntseq_CUDA.cu	/^__device__ int bns_pos2rid_gpu(const bntseq_t *bns, int64_t pos_f)$/;"	f
+bwa_gen_cigar2_gpu	bwa_CUDA.cu	/^__device__ uint32_t *bwa_gen_cigar2_gpu(const int8_t mat[25], int o_del, int e_del, int o_ins, int e_ins, int w_, int64_t l_pac, const uint8_t *pac, int l_query, uint8_t *query, int64_t rb, int64_t re, int *score, int *n_cigar, int *NM, void* d_buffer_ptr)$/;"	f
+bwt_2occ4_gpu	bwt_CUDA.cu	/^__device__ static void bwt_2occ4_gpu(const bwt_t *bwt, bwtint_t k, bwtint_t l, bwtint_t cntk[4], bwtint_t cntl[4])$/;"	f	file:
+bwt_B0	bwt_CUDA.cu	431;"	d	file:
+bwt_KMerHashInit	bwt_CUDA.cu	/^__device__ bool bwt_KMerHashInit(int qlen, const uint8_t *q, int i, kmers_bucket_t *d_kmersHashTab, bwtintv_lite_t *interval){$/;"	f
+bwt_bwt	bwt_CUDA.cu	430;"	d	file:
+bwt_extend_gpu	bwt_CUDA.cu	/^__device__ static void bwt_extend_gpu(const bwt_t *bwt, const bwtintv_t *ik, bwtintv_t ok[4], int is_back)$/;"	f	file:
+bwt_extend_right1	bwt_CUDA.cu	/^__device__ bool bwt_extend_right1(const bwt_t *bwt, int qlen, const uint8_t *q, int min_intv, uint64_t max_intv, bwtintv_lite_t *interval){$/;"	f
+bwt_invPsi	bwt_CUDA.cu	/^__device__ static inline bwtint_t bwt_invPsi(const bwt_t *bwt, bwtint_t k) \/\/ compute inverse CSA$/;"	f	file:
+bwt_occ4_gpu	bwt_CUDA.cu	/^__device__ static void bwt_occ4_gpu(const bwt_t *bwt, bwtint_t k, bwtint_t cnt[4])$/;"	f	file:
+bwt_occ_gpu	bwt_CUDA.cu	/^__device__ static bwtint_t bwt_occ_gpu(const bwt_t *bwt, bwtint_t k, ubyte_t c)$/;"	f	file:
+bwt_occ_intv	bwt_CUDA.cu	35;"	d	file:
+bwt_reverse_intvs	bwt_CUDA.cu	/^__device__ static void bwt_reverse_intvs(bwtintv_v *p)$/;"	f	file:
+bwt_sa_gpu	bwt_CUDA.cu	/^__device__ bwtint_t bwt_sa_gpu(const bwt_t *bwt, bwtint_t k)$/;"	f
+bwt_seed_strategy1_gpu	bwt_CUDA.cu	/^__device__ int bwt_seed_strategy1_gpu(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_len, int max_intv, bwtintv_t *mem)$/;"	f
+bwt_smem1a_gpu	bwt_CUDA.cu	/^__device__ int bwt_smem1a_gpu(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, bwtintv_v *mem, bwtintv_v *tmpvec[2], void* d_buffer_ptr)$/;"	f
+bwt_smem_left	bwt_CUDA.cu	/^__device__ void bwt_smem_left(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, int min_seed_len, bwtintv_v *mem)$/;"	f
+bwt_smem_right	bwt_CUDA.cu	/^__device__ void bwt_smem_right(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, int min_seed_len, bwtintv_t *mem_a, kmers_bucket_t *d_kmersHashTab)$/;"	f
+cal_max_gap	bwamem_GPU.cu	/^__device__ static inline int cal_max_gap(const mem_opt_t *opt, int qlen)$/;"	f	file:
+cal_sub	bwamem_GPU.cu	/^__device__ static int cal_sub(const mem_opt_t *opt, mem_alnreg_v *r)$/;"	f	file:
+chn_beg	bwamem_GPU.cu	81;"	d	file:
+chn_end	bwamem_GPU.cu	82;"	d	file:
+compareReads	superbatch_process.cpp	/^static int compareReads(const void *a, const void *b)$/;"	f	file:
+compare_gt_m128i	ksw_CUDA.cu	/^static inline __device__ int compare_gt_m128i(m128i a, m128i b){$/;"	f	file:
+convert2DevAddr	minibatch_process.cpp	/^void convert2DevAddr(transfer_data_t *transfer_data)$/;"	f
+copyReads2PinnedMem	minibatch_process.cpp	/^void copyReads2PinnedMem(superbatch_data_t *superbatch_data, transfer_data_t *transfer_data, int firstReadId, int n_reads){$/;"	f
+copy_comment	superbatch_process.h	/^	int copy_comment, actual_chunk_size;$/;"	m	struct:__anon9
+cudaKernelMemcpy	CUDAKernel_memmgnt.cu	/^__device__ void cudaKernelMemcpy(void* from, void* to, size_t len){$/;"	f
+cudaKernelMemmove	CUDAKernel_memmgnt.cu	/^__device__ void cudaKernelMemmove(void* from, void* to, size_t len){$/;"	f
+cudaKernelSizeOf	CUDAKernel_memmgnt.cu	/^__device__ unsigned cudaKernelSizeOf(void* ptr){$/;"	f
+current_offset	CUDAKernel_memmgnt.cu	/^	unsigned current_offset;	\/\/ current offset to the available part of the chunk$/;"	m	struct:__anon3	file:
+d_charToInt	bwt_CUDA.cu	194;"	d	file:
+d_hashK	bwt_CUDA.cu	/^__device__ int d_hashK(const uint8_t* s){$/;"	f
+d_intToChar	bwt_CUDA.cu	195;"	d	file:
+d_nst_nt4_table	bwamem_GPU.cu	/^__device__ __constant__ unsigned char d_nst_nt4_table[256] = {$/;"	v
+d_nst_nt4_table	preprocessing.cu	/^__device__ __constant__ unsigned char d_nst_nt4_table[256] = {$/;"	v
+depth	ksort_CUDA.h	/^	int depth;$/;"	m	struct:__anon5
+e	ksw_CUDA.cu	/^	int32_t h, e;$/;"	m	struct:__anon8	file:
+eh_t	ksw_CUDA.cu	/^} eh_t;$/;"	t	typeref:struct:__anon8	file:
+end_offset	CUDAKernel_memmgnt.cu	/^	unsigned end_offset;		\/\/ the max offset of the chunk$/;"	m	struct:__anon3	file:
+flt_lt	ksort_CUDA.h	94;"	d
+ftoa	kstring_CUDA.cu	/^__device__ static inline int ftoa(float n, char* res, int afterpoint) $/;"	f	file:
+g_defr	ksw_CUDA.cu	/^__device__ const kswr_t g_defr = { 0, -1, -1, -1, -1, -1, -1 };$/;"	v
+h	ksw_CUDA.cu	/^	int32_t h, e;$/;"	m	struct:__anon8	file:
+hash_64	bwamem_GPU.cu	/^__device__ static inline uint64_t hash_64(uint64_t key)$/;"	f	file:
+hash_kernel	preprocessing.cu	/^__global__ void hash_kernel(bseq1_t* d_seqs, int n_seqs, $/;"	f
+hash_map_kernel	preprocessing.cu	/^ __global__ void hash_map_kernel(int* d_bucket_N, int* d_bucket_ids, int n_bucket, int bucket_maxlen, int* d_hash_map, int n_seqs)$/;"	f
+i	kbtree_CUDA.cu	/^	int i;$/;"	m	struct:__anon4	file:
+idx	superbatch_process.h	/^	bwaidx_t *idx;$/;"	m	struct:__anon9
+infer_bw	bwamem_GPU.cu	/^__device__ static inline int infer_bw(int l1, int l2, int score, int a, int q, int r)$/;"	f	file:
+intToStr	kstring_CUDA.cu	/^__device__ static inline int intToStr(int x, char str[], int d) $/;"	f	file:
+int_v	bwamem_GPU.cu	/^typedef struct { size_t n, m; int *a; } int_v;$/;"	t	typeref:struct:__anon2	file:
+kb_init_chn	kbtree_CUDA.cu	/^__device__ kbtree_chn_t *kb_init_chn(int size, void* CUDAKernel_buffer)		$/;"	f
+kb_intervalp_chn	kbtree_CUDA.cu	/^__device__ void kb_intervalp_chn(kbtree_chn_t *b, const mem_chain_t * __restrict k, mem_chain_t **lower, mem_chain_t **upper)	$/;"	f
+kb_putp_chn	kbtree_CUDA.cu	/^__device__ void kb_putp_chn(kbtree_chn_t *b, const mem_chain_t * __restrict k, void* CUDAKernel_buffer) $/;"	f
+kmerHashTab	superbatch_process.h	/^	kmers_bucket_t *kmerHashTab;$/;"	m	struct:__anon9
+kputc	kstring_CUDA.cu	/^__device__ int kputc(int c, kstring_t *s, void* d_buffer_ptr)$/;"	f
+kputl	kstring_CUDA.cu	/^__device__ int kputl(long c, kstring_t *s, void* d_buffer_ptr)$/;"	f
+kputs	kstring_CUDA.cu	/^__device__ int kputs(const char *p, kstring_t *s, void* d_buffer_ptr)$/;"	f
+kputsn	kstring_CUDA.cu	/^__device__ int kputsn(const char *p, int l, kstring_t *s, void* d_buffer_ptr)$/;"	f
+kputw	kstring_CUDA.cu	/^__device__ int kputw(int c, kstring_t *s, void* d_buffer_ptr)$/;"	f
+kroundup32	kstring_CUDA.cu	6;"	d	file:
+ks	superbatch_process.h	/^	kseq_t *ks, *ks2;$/;"	m	struct:__anon9
+ks2	superbatch_process.h	/^	kseq_t *ks, *ks2;$/;"	m	struct:__anon9
+ks_combsort	ksort_CUDA.h	/^__device__ void ks_combsort(size_t n, bwtintv_t a[])						$/;"	f
+ks_combsort_128	ksort_CUDA.h	/^__device__ static void ks_combsort_128(size_t n, pair64_t a[])						$/;"	f
+ks_combsort_64	ksort_CUDA.h	/^__device__ void ks_combsort_64(size_t n, uint64_t a[])						$/;"	f
+ks_combsort_mem_ars2	ksort_CUDA.h	/^__device__ void ks_combsort_mem_ars2(size_t n, mem_alnreg_t a[])						$/;"	f
+ks_combsort_mem_ars_hash	ksort_CUDA.h	/^__device__ void ks_combsort_mem_ars_hash(size_t n, mem_alnreg_t a[])						$/;"	f
+ks_combsort_mem_ars_hash2	ksort_CUDA.h	/^__device__ void ks_combsort_mem_ars_hash2(size_t n, mem_alnreg_t a[])						$/;"	f
+ks_combsort_mem_flt	ksort_CUDA.h	/^__device__ void ks_combsort_mem_flt(size_t n, mem_chain_t a[])						$/;"	f
+ks_insertsort_128	ksort_CUDA.h	/^__device__ static inline void ks_insertsort_128(pair64_t *s, pair64_t *t)		$/;"	f
+ks_insertsort_64	ksort_CUDA.h	/^__device__ static inline void ks_insertsort_64(uint64_t *s, uint64_t *t){																	$/;"	f
+ks_insertsort_mem_ars_hash	ksort_CUDA.h	/^__device__ static inline void ks_insertsort_mem_ars_hash(mem_alnreg_t *s, mem_alnreg_t *t)		$/;"	f
+ks_insertsort_mem_ars_hash2	ksort_CUDA.h	/^__device__ static inline void ks_insertsort_mem_ars_hash2(mem_alnreg_t *s, mem_alnreg_t *t)		$/;"	f
+ks_insertsort_mem_flt	ksort_CUDA.h	/^__device__ static inline void ks_insertsort_mem_flt(mem_chain_t *s, mem_chain_t *t)		$/;"	f
+ks_introsort	ksort_CUDA.h	/^__device__ void ks_introsort(size_t n, bwtintv_t a[], void* d_buffer_ptr)						$/;"	f
+ks_introsort_128	ksort_CUDA.h	/^__device__ static void ks_introsort_128(size_t n, pair64_t a[], void* d_buffer_ptr)						$/;"	f
+ks_introsort_64	ksort_CUDA.h	/^__device__ void ks_introsort_64(size_t n, uint64_t a[], void* d_buffer_ptr)						$/;"	f
+ks_introsort_mem_ars2	ksort_CUDA.h	/^__device__ void ks_introsort_mem_ars2(size_t n, mem_alnreg_t a[], void* d_buffer_ptr)						$/;"	f
+ks_introsort_mem_ars_hash	ksort_CUDA.h	/^__device__ void ks_introsort_mem_ars_hash(size_t n, mem_alnreg_t a[], void* d_buffer_ptr)						$/;"	f
+ks_introsort_mem_ars_hash2	ksort_CUDA.h	/^__device__ void ks_introsort_mem_ars_hash2(size_t n, mem_alnreg_t a[], void* d_buffer_ptr)						$/;"	f
+ks_introsort_mem_flt	ksort_CUDA.h	/^__device__ void ks_introsort_mem_flt(size_t n, mem_chain_t a[], void* d_buffer_ptr)$/;"	f
+ks_isort_stack_t	ksort_CUDA.h	/^} ks_isort_stack_t;$/;"	t	typeref:struct:__anon5
+ks_resize	kstring_CUDA.cu	/^__device__ void ks_resize(kstring_t *s, size_t size, void* d_buffer_ptr)$/;"	f
+ksprintf	kstring_CUDA.cu	/^__device__ int ksprintf(kstring_t *s, const char *fmt, float alt_sc, void* d_buffer_ptr)$/;"	f
+ksw_align2	ksw_CUDA.cu	/^__device__ kswr_t ksw_align2(int qlen, uint8_t *query, int tlen, uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int xtra, kswq_t **qry, void* d_buffer_ptr)$/;"	f
+ksw_extend2	ksw_CUDA.cu	/^__device__ int ksw_extend2(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int w, int end_bonus, int zdrop, int h0, int *_qle, int *_tle, int *_gtle, int *_gscore, int *_max_off, void* d_buffer_ptr)$/;"	f
+ksw_extend_warp	ksw_CUDA.cu	/^__device__ int ksw_extend_warp(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int h0, int *_qle, int *_tle, int *_gtle, int *_gscore)$/;"	f
+ksw_global2	ksw_CUDA.cu	/^__device__ int ksw_global2(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int w, int *n_cigar_, uint32_t **cigar_, void* d_buffer_ptr)$/;"	f
+ksw_global_warp	ksw_CUDA.cu	/^__device__ int ksw_global_warp(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int *i_max, int *j_max, uint8_t *traceback){$/;"	f
+ksw_i16	ksw_CUDA.cu	/^static __device__ kswr_t ksw_i16(kswq_t *q, int tlen, const uint8_t *target, int _o_del, int _e_del, int _o_ins, int _e_ins, int xtra, void* d_buffer_ptr) \/\/ the first gap costs -(_o+_e)$/;"	f	file:
+ksw_qinit	ksw_CUDA.cu	/^static __device__ kswq_t* ksw_qinit(int size, int qlen, const uint8_t *query, int m, const int8_t *mat, void* d_buffer_ptr)$/;"	f	file:
+ktp_aux_t	superbatch_process.h	/^} ktp_aux_t;$/;"	t	typeref:struct:__anon9
+left	ksort_CUDA.h	/^	void *left, *right;$/;"	m	struct:__anon5
+loadInputMiniBatch	minibatch_process.cpp	/^static void loadInputMiniBatch(transfer_data_t *transfer_data, superbatch_data_t *superbatch_data, int n_loaded)$/;"	f	file:
+loadInputSuperBatch	superbatch_process.cpp	/^static int loadInputSuperBatch(kseq_t *ks, kseq_t *ks2, int actual_chunk_size, int copy_comment, superbatch_data_t *transfer_data)$/;"	f	file:
+m	bwamem_GPU.cu	/^typedef struct { size_t n, m; int *a; } int_v;$/;"	m	struct:__anon2	file:
+m	bwamem_GPU.cu	/^typedef struct { size_t n, m; uint64_t *a; } uint64_v;$/;"	m	struct:__anon1	file:
+m	ksort_CUDA.h	/^typedef struct { size_t n, m; pair64_t *a; } pair64_v;$/;"	m	struct:__anon7
+max2	ksw_CUDA.cu	424;"	d	file:
+max_8	ksw_CUDA.cu	/^static inline __device__ int max_8(m128i xx){$/;"	f	file:
+max_m128i	ksw_CUDA.cu	/^static inline __device__ m128i max_m128i(m128i a, m128i b){$/;"	f	file:
+mem_align_GPU	bwamem_GPU.cu	/^void mem_align_GPU(process_data_t *process_data)$/;"	f
+mem_approx_mapq_se	bwamem_GPU.cu	/^__device__ static int mem_approx_mapq_se(const mem_opt_t *opt, const mem_alnreg_t *a)$/;"	f	file:
+mem_chain2aln	bwamem_GPU.cu	/^__device__ void mem_chain2aln(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const uint8_t *query, const mem_chain_t *c, mem_alnreg_v *av, void* d_buffer_ptr)$/;"	f
+mem_chain_flt_kernel	bwamem_GPU.cu	/^__global__ void mem_chain_flt_kernel(const mem_opt_t *opt, $/;"	f
+mem_chain_kernel	bwamem_GPU.cu	/^__global__ void mem_chain_kernel($/;"	f
+mem_chain_weight	bwamem_GPU.cu	/^__device__ int mem_chain_weight(const mem_chain_t *c)$/;"	f
+mem_collect_intv_kernel1	bwamem_GPU.cu	/^__global__ void mem_collect_intv_kernel1(const mem_opt_t *opt, const bwt_t *bwt, const bseq1_t *d_seqs, $/;"	f
+mem_collect_intv_kernel2	bwamem_GPU.cu	/^__global__ void mem_collect_intv_kernel2(const mem_opt_t *opt, const bwt_t *bwt, const bseq1_t *d_seqs, $/;"	f
+mem_collect_intv_kernel3	bwamem_GPU.cu	/^__global__ void mem_collect_intv_kernel3(const mem_opt_t *opt, const bwt_t *bwt, const bseq1_t *d_seqs, $/;"	f
+mem_flt_chained_seeds	bwamem_GPU.cu	/^__device__ void mem_flt_chained_seeds(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const uint8_t *query, int n_chn, mem_chain_t *a, void* d_buffer_ptr)$/;"	f
+mem_infer_dir	bwamem_GPU.cu	/^__device__ static inline int mem_infer_dir(int64_t l_pac, int64_t b1, int64_t b2, int64_t *dist)$/;"	f	file:
+mem_mark_primary_se_GPU	bwamem_GPU.cu	/^__device__ int mem_mark_primary_se_GPU(const mem_opt_t *d_opt, int n, mem_alnreg_t *a, int id, void* d_buffer_ptr)$/;"	f
+mem_mark_primary_se_core_GPU	bwamem_GPU.cu	/^__device__ static void mem_mark_primary_se_core_GPU(const mem_opt_t *opt, int n, mem_alnreg_t *a, int_v *z, void* d_buffer_ptr)$/;"	f	file:
+mem_matesw	bwamem_GPU.cu	/^__device__ int mem_matesw(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_pestat_t pes[4], const mem_alnreg_t *a, int l_ms, const uint8_t *ms, mem_alnreg_v *ma, void* d_buffer_ptr)$/;"	f
+mem_patch_reg	bwamem_GPU.cu	/^__device__ int mem_patch_reg(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, uint8_t *query, const mem_alnreg_t *a, const mem_alnreg_t *b, int *_w, void* d_buffer_ptr)$/;"	f
+mem_pestat_GPU	bwamem_GPU.cu	/^__device__ void mem_pestat_GPU(const mem_opt_t *opt, int64_t l_pac, int n, const mem_alnreg_v *regs, mem_pestat_t pes[4], void* d_buffer_ptr)$/;"	f
+mem_seed_sw	bwamem_GPU.cu	/^__device__ int mem_seed_sw(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const uint8_t *query, const mem_seed_t *s, void* d_buffer_ptr)$/;"	f
+mem_sort_dedup_patch	bwamem_GPU.cu	/^__device__ int mem_sort_dedup_patch(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, uint8_t *query, int n, mem_alnreg_t *a, void* d_buffer_ptr)$/;"	f
+miniBatchMain	minibatch_process.cpp	/^void miniBatchMain(superbatch_data_t *superbatch_data, transfer_data_t *transfer_data, process_data_t *process_data)$/;"	f
+n	bwamem_GPU.cu	/^typedef struct { size_t n, m; int *a; } int_v;$/;"	m	struct:__anon2	file:
+n	bwamem_GPU.cu	/^typedef struct { size_t n, m; uint64_t *a; } uint64_v;$/;"	m	struct:__anon1	file:
+n	ksort_CUDA.h	/^typedef struct { size_t n, m; pair64_t *a; } pair64_v;$/;"	m	struct:__anon7
+n_processed	superbatch_process.h	/^	int64_t n_processed;$/;"	m	struct:__anon9
+newProcess	streams.cu	/^process_data_t* newProcess($/;"	f
+newSuperBatchData	superbatch_process.cpp	/^static superbatch_data_t *newSuperBatchData()$/;"	f	file:
+newTransfer	streams.cu	/^transfer_data_t* newTransfer(){$/;"	f
+opt	superbatch_process.h	/^	mem_opt_t *opt;$/;"	m	struct:__anon9
+pair64_lt	ksort_CUDA.h	528;"	d
+pair64_t	ksort_CUDA.h	/^} pair64_t;$/;"	t	typeref:struct:__anon6
+pair64_v	ksort_CUDA.h	/^typedef struct { size_t n, m; pair64_t *a; } pair64_v;$/;"	t	typeref:struct:__anon7
+pes0	superbatch_process.h	/^	mem_pestat_t *pes0;$/;"	m	struct:__anon9
+pow5	preprocessing.cu	/^__device__ inline int pow5(int x){$/;"	f
+preprocessing1	preprocessing.cu	/^int* preprocessing1(bseq1_t* d_seqs, int n_seqs)$/;"	f
+printBufferInfo	CUDAKernel_memmgnt.cu	/^__device__ void	printBufferInfo(void* d_buffer_pools, int pool_id){$/;"	f
+printBufferInfoHost	CUDAKernel_memmgnt.cu	/^void printBufferInfoHost(void* d_buffer_pools){$/;"	f
+printBufferInfoHost_kernel	CUDAKernel_memmgnt.cu	/^__global__ void printBufferInfoHost_kernel(void* d_buffer_pools, float* d_usage){$/;"	f
+processSuperBatch	superbatch_process.cpp	/^static void processSuperBatch(superbatch_data_t *data, transfer_data_t *mini_transfer, process_data_t *mini_process)$/;"	f	file:
+push_cigar	ksw_CUDA.cu	/^__device__ static inline uint32_t *push_cigar(int *n_cigar, int *m_cigar, uint32_t *cigar, int op, int len, void* d_buffer_ptr)$/;"	f	file:
+raw_mapq	bwamem_GPU.cu	1004;"	d	file:
+resetProcess	streams.cu	/^void resetProcess(process_data_t *process_data){$/;"	f
+resetSuperBatchData	superbatch_process.cpp	/^static void resetSuperBatchData(superbatch_data_t *data)$/;"	f	file:
+resetTransfer	streams.cu	/^void resetTransfer(transfer_data_t *transfer_data){$/;"	f
+reverse	kstring_CUDA.cu	/^__device__ static inline void reverse(char* str, int len) $/;"	f	file:
+revseq	ksw_CUDA.cu	/^__device__ static inline void revseq(int l, uint8_t *s)$/;"	f	file:
+right	ksort_CUDA.h	/^	void *left, *right;$/;"	m	struct:__anon5
+right_shift_2bytes	ksw_CUDA.cu	/^static inline __device__ m128i right_shift_2bytes(m128i a){$/;"	f	file:
+score	ksw_CUDA.cu	/^__device__ static inline int score(uint8_t A, uint8_t B, const int8_t *mat, int m){$/;"	f	file:
+search_lower_bound_rbeg	bwamem_GPU.cu	/^__device__ inline static int search_lower_bound_rbeg(mem_seed_t *seeds, int seedID, int64_t rbeg_lower_bound){$/;"	f	file:
+set_value_m128i	ksw_CUDA.cu	/^static inline __device__ m128i set_value_m128i(int16_t val){$/;"	f	file:
+sortReads	superbatch_process.cpp	/^static void sortReads(bseq1_t *reads, int n_reads)$/;"	f	file:
+start_width	bwamem_GPU.cu	1313;"	d	file:
+start_width	bwamem_GPU.cu	1429;"	d	file:
+strdup_GPU	kstring_CUDA.cu	/^__device__ char* strdup_GPU(char* src, void* d_buffer_ptr)$/;"	f
+strlen_GPU	kstring_CUDA.cu	/^__device__ int strlen_GPU(const char *p)$/;"	f
+subs_unsigned_m128i	ksw_CUDA.cu	/^static inline __device__ m128i subs_unsigned_m128i(m128i a, m128i b){$/;"	f	file:
+superBatchMain	superbatch_process.cpp	/^void superBatchMain(ktp_aux_t *aux)$/;"	f
+swapData	streams.cu	/^void swapData(process_data_t *process_data, transfer_data_t *transfer_data){$/;"	f
+test_and_merge	bwamem_GPU.cu	/^__device__ static int test_and_merge(const mem_opt_t *opt, int64_t l_pac, mem_chain_t *c, const mem_seed_t *p, int seed_rid, void* CUDAKernel_buffer)$/;"	f	file:
+transferIndex	streams.cu	/^static void transferIndex($/;"	f	file:
+transferOptions	streams.cu	/^static void transferOptions($/;"	f	file:
+uint64_v	bwamem_GPU.cu	/^typedef struct { size_t n, m; uint64_t *a; } uint64_v;$/;"	t	typeref:struct:__anon1	file:
+writeOutputMiniBatch	minibatch_process.cpp	/^static void writeOutputMiniBatch(transfer_data_t *transfer_data)$/;"	f	file:
+x	kbtree_CUDA.cu	/^	kbnode_t *x;$/;"	m	struct:__anon4	file:
+x	ksort_CUDA.h	/^	uint64_t x, y;$/;"	m	struct:__anon6
+y	ksort_CUDA.h	/^	uint64_t x, y;$/;"	m	struct:__anon6

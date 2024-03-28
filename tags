@@ -1,0 +1,1944 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+AC_KSEQ_H	kseq.h	29;"	d
+AC_KSORT_H	ksort.h	56;"	d
+AC_KVEC_H	kvec.h	49;"	d
+AC_VERSION_KHASH_H	khash.h	113;"	d
+ALL_ONE_MASK	bwt_gen.c	49;"	d	file:
+ALL_THREADS	cuda/ksw_CUDA.cu	423;"	d	file:
+ALPHABET_SIZE	bwt_gen.c	40;"	d	file:
+AOBJS	Makefile	/^AOBJS=		bwashm.o bwase.o bwaseqio.o bwtgap.o bwtaln.o bamlite.o \\$/;"	m
+AR	Makefile	/^AR=			ar$/;"	m
+ATTRIBUTE	utils.h	36;"	d
+ATTRIBUTE	utils.h	38;"	d
+BAMLITE_H_	bamlite.h	2;"	d
+BAM_CDEL	bamlite.h	52;"	d
+BAM_CHARD_CLIP	bamlite.h	55;"	d
+BAM_CIGAR_MASK	bamlite.h	48;"	d
+BAM_CIGAR_SHIFT	bamlite.h	47;"	d
+BAM_CINS	bamlite.h	51;"	d
+BAM_CMATCH	bamlite.h	50;"	d
+BAM_CPAD	bamlite.h	56;"	d
+BAM_CREF_SKIP	bamlite.h	53;"	d
+BAM_CSOFT_CLIP	bamlite.h	54;"	d
+BAM_FDUP	bamlite.h	45;"	d
+BAM_FMREVERSE	bamlite.h	40;"	d
+BAM_FMUNMAP	bamlite.h	38;"	d
+BAM_FPAIRED	bamlite.h	35;"	d
+BAM_FPROPER_PAIR	bamlite.h	36;"	d
+BAM_FQCFAIL	bamlite.h	44;"	d
+BAM_FREAD1	bamlite.h	41;"	d
+BAM_FREAD2	bamlite.h	42;"	d
+BAM_FREVERSE	bamlite.h	39;"	d
+BAM_FSECONDARY	bamlite.h	43;"	d
+BAM_FUNMAP	bamlite.h	37;"	d
+BARCODE_LOW_QUAL	bwaseqio.c	149;"	d	file:
+BATCH_CONFIG_H	cuda/batch_config.h	2;"	d
+BITS_IN_BYTE	bwt_gen.c	46;"	d	file:
+BITS_IN_WORD	bwt_gen.c	45;"	d	file:
+BITS_PER_OCC_VALUE	bwt_gen.c	52;"	d	file:
+BIT_PER_CHAR	bwt_gen.c	41;"	d	file:
+BSW2_FLAG_MATESW	bwtsw2.h	9;"	d
+BSW2_FLAG_MOVED	bwtsw2.h	11;"	d
+BSW2_FLAG_RESCUED	bwtsw2.h	12;"	d
+BSW2_FLAG_TANDEM	bwtsw2.h	10;"	d
+BUF_SIZE	kopen.c	349;"	d	file:
+BWAMEM_H_	bwamem.h	28;"	d
+BWASE_H	bwase.h	2;"	d
+BWA_AVG_ERR	bwtaln.h	22;"	d
+BWA_BWT_H	bwt.h	31;"	d
+BWA_CTL_SIZE	bwa.h	41;"	d
+BWA_H_	bwa.h	29;"	d
+BWA_IDX_ALL	bwa.h	39;"	d
+BWA_IDX_BNS	bwa.h	37;"	d
+BWA_IDX_BWT	bwa.h	36;"	d
+BWA_IDX_PAC	bwa.h	38;"	d
+BWA_MAX_BCLEN	bwtaln.h	25;"	d
+BWA_MIN_RDLEN	bwtaln.h	23;"	d
+BWA_MODE_BAM	bwtaln.h	99;"	d
+BWA_MODE_BAM_READ1	bwtaln.h	101;"	d
+BWA_MODE_BAM_READ2	bwtaln.h	102;"	d
+BWA_MODE_BAM_SE	bwtaln.h	100;"	d
+BWA_MODE_CFY	bwtaln.h	97;"	d
+BWA_MODE_COMPREAD	bwtaln.h	95;"	d
+BWA_MODE_GAPE	bwtaln.h	94;"	d
+BWA_MODE_IL13	bwtaln.h	103;"	d
+BWA_MODE_LOGGAP	bwtaln.h	96;"	d
+BWA_MODE_NONSTOP	bwtaln.h	98;"	d
+BWA_PET_STD	bwtaln.h	117;"	d
+BWA_TYPE_MATESW	bwtaln.h	10;"	d
+BWA_TYPE_NO_MATCH	bwtaln.h	7;"	d
+BWA_TYPE_REPEAT	bwtaln.h	9;"	d
+BWA_TYPE_UNIQUE	bwtaln.h	8;"	d
+BWA_UBYTE	bntseq.h	37;"	d
+BWA_UBYTE	bwt.h	42;"	d
+BWT	bwt_gen.c	/^typedef struct BWT {$/;"	s	file:
+BWT	bwt_gen.c	/^} BWT;$/;"	t	typeref:struct:BWT	file:
+BWTALGO_AUTO	bwa.h	43;"	d
+BWTALGO_BWTSW	bwa.h	45;"	d
+BWTALGO_IS	bwa.h	46;"	d
+BWTALGO_RB2	bwa.h	44;"	d
+BWTALN_H	bwtaln.h	2;"	d
+BWTClearTrailingBwtCode	bwt_gen.c	/^void BWTClearTrailingBwtCode(BWT *bwt)$/;"	f
+BWTCreate	bwt_gen.c	/^BWT *BWTCreate(const bgint_t textLength, unsigned int *decodeTable)$/;"	f
+BWTFileSizeInWord	bwt_gen.c	/^static bgint_t BWTFileSizeInWord(const bgint_t numChar)$/;"	f	file:
+BWTGAP_H_	bwtgap.h	2;"	d
+BWTGenerateOccValueFromBwt	bwt_gen.c	/^void BWTGenerateOccValueFromBwt(const unsigned int*  bwt, unsigned int* __restrict occValue,$/;"	f
+BWTINC_INSERT_SORT_NUM_ITEM	bwt_gen.c	60;"	d	file:
+BWTInc	bwt_gen.c	/^typedef struct BWTInc {$/;"	s	file:
+BWTInc	bwt_gen.c	/^} BWTInc;$/;"	t	typeref:struct:BWTInc	file:
+BWTIncBuildBwt	bwt_gen.c	/^static void BWTIncBuildBwt(unsigned int* insertBwt, const bgint_t *relativeRank, const bgint_t numChar,$/;"	f	file:
+BWTIncBuildPackedBwt	bwt_gen.c	/^static void BWTIncBuildPackedBwt(const bgint_t *relativeRank, unsigned int* __restrict bwt, const bgint_t numChar,$/;"	f	file:
+BWTIncBuildRelativeRank	bwt_gen.c	/^static void BWTIncBuildRelativeRank(bgint_t* __restrict sortedRank, bgint_t* __restrict seq,$/;"	f	file:
+BWTIncConstruct	bwt_gen.c	/^static void BWTIncConstruct(BWTInc *bwtInc, const bgint_t numChar)$/;"	f	file:
+BWTIncConstructFromPacked	bwt_gen.c	/^BWTInc *BWTIncConstructFromPacked(const char *inputFileName, bgint_t initialMaxBuildSize, bgint_t incMaxBuildSize)$/;"	f
+BWTIncCreate	bwt_gen.c	/^BWTInc *BWTIncCreate(const bgint_t textLength, unsigned int initialMaxBuildSize, unsigned int incMaxBuildSize)$/;"	f
+BWTIncFree	bwt_gen.c	/^void BWTIncFree(BWTInc *bwtInc)$/;"	f
+BWTIncGetAbsoluteRank	bwt_gen.c	/^static bgint_t BWTIncGetAbsoluteRank(BWT *bwt, bgint_t* __restrict absoluteRank, bgint_t* __restrict seq,$/;"	f	file:
+BWTIncMergeBwt	bwt_gen.c	/^static void BWTIncMergeBwt(const bgint_t *sortedRank, const unsigned int* oldBwt, const unsigned int *insertBwt,$/;"	f	file:
+BWTIncPutPackedTextToRank	bwt_gen.c	/^static void BWTIncPutPackedTextToRank(const unsigned int *packedText, bgint_t* __restrict rank,$/;"	f	file:
+BWTIncSetBuildSizeAndTextAddr	bwt_gen.c	/^static void BWTIncSetBuildSizeAndTextAddr(BWTInc *bwtInc)$/;"	f	file:
+BWTIncSortKey	bwt_gen.c	/^static void BWTIncSortKey(bgint_t* __restrict key, bgint_t* __restrict seq, const bgint_t numItem)$/;"	f	file:
+BWTOccValue	bwt_gen.c	/^bgint_t BWTOccValue(const BWT *bwt, bgint_t index, const unsigned int character)$/;"	f
+BWTOccValueExplicit	bwt_gen.c	/^static inline bgint_t BWTOccValueExplicit(const BWT *bwt, const bgint_t occIndexExplicit,$/;"	f	file:
+BWTOccValueMajorSizeInWord	bwt_gen.c	/^static bgint_t BWTOccValueMajorSizeInWord(const bgint_t numChar)$/;"	f	file:
+BWTOccValueMinorSizeInWord	bwt_gen.c	/^static bgint_t BWTOccValueMinorSizeInWord(const bgint_t numChar)$/;"	f	file:
+BWTResidentSizeInWord	bwt_gen.c	/^static bgint_t BWTResidentSizeInWord(const bgint_t numChar) {$/;"	f	file:
+BWTSaveBwtCodeAndOcc	bwt_gen.c	/^void BWTSaveBwtCodeAndOcc(const BWT *bwt, const char *bwtFileName, const char *occValueFileName)$/;"	f
+BWT_BNTSEQ_H	bntseq.h	29;"	d
+BWT_LITE_H_	bwt_lite.h	2;"	d
+BYTES_IN_WORD	bwt_gen.c	47;"	d	file:
+BackwardDNAOccCount	bwt_gen.c	/^static unsigned int BackwardDNAOccCount(const unsigned int*  dna, const unsigned int index, const unsigned int character,$/;"	f	file:
+BitPerBytePackedChar	bwt_gen.c	/^static unsigned int BitPerBytePackedChar(const unsigned int alphabetSize)$/;"	f	file:
+BitPerWordPackedChar	bwt_gen.c	/^static unsigned int BitPerWordPackedChar(const unsigned int alphabetSize)$/;"	f	file:
+Bytes	bwakit/bwa-postalt.js	/^Bytes.prototype.reverse = function()$/;"	c
+CC	Makefile	/^CC=			gcc$/;"	m
+CFLAGS	Makefile	/^CFLAGS=		-g -Wall -Wno-unused-function -O2$/;"	m
+CHAINFILTERING_filter_kernel	cuda/bwamem_GPU.cu	/^__global__ void CHAINFILTERING_filter_kernel($/;"	f
+CHAINFILTERING_flt_chained_seeds_kernel	cuda/bwamem_GPU.cu	/^__global__ void CHAINFILTERING_flt_chained_seeds_kernel($/;"	f
+CHAINFILTERING_sortChains_kernel	cuda/bwamem_GPU.cu	/^__global__ void CHAINFILTERING_sortChains_kernel(mem_chain_v* d_chains, void* d_buffer_pools){$/;"	f
+CHAIN_FLT_BLOCKSIZE	cuda/bwamem_GPU.cu	2237;"	d	file:
+CHAR_PER_BYTE	bwt_gen.c	43;"	d	file:
+CHAR_PER_WORD	bwt_gen.c	42;"	d	file:
+CIGAR_LN_MASK	bwtaln.h	53;"	d
+CIGAR_OP_SHIFT	bwtaln.h	52;"	d
+CPPCC	Makefile	/^CPPCC=		g++$/;"	m
+CUDADIR	Makefile	/^CUDADIR=    .\/cuda$/;"	m
+CUDAKernelCalloc	cuda/CUDAKernel_memmgnt.cu	/^__device__ void* CUDAKernelCalloc(void* d_buffer_pool, size_t num, size_t size, uint8_t align_size){$/;"	f
+CUDAKernelMalloc	cuda/CUDAKernel_memmgnt.cu	/^__device__ void* CUDAKernelMalloc(void* d_buffer_pool, size_t size, uint8_t align_size){$/;"	f
+CUDAKernelRealloc	cuda/CUDAKernel_memmgnt.cu	/^__device__ void* CUDAKernelRealloc(void* d_buffer_pool, void* d_current_ptr, size_t new_size, uint8_t align_size){$/;"	f
+CUDAKernelSelectPool	cuda/CUDAKernel_memmgnt.cu	/^__device__ void* CUDAKernelSelectPool(void* d_buffer_pools, int i){$/;"	f
+CUDAKernel_mem_info	cuda/CUDAKernel_memmgnt.cu	/^} CUDAKernel_mem_info;$/;"	t	typeref:struct:__anon5	file:
+CUDAResetBufferPool	cuda/CUDAKernel_memmgnt.cu	/^__host__ void CUDAResetBufferPool(void* d_buffer_pools, cudaStream_t stream){$/;"	f
+CUDATransferSamOut	cuda/streams.cu	/^void CUDATransferSamOut(transfer_data_t *transfer_data){$/;"	f
+CUDATransferSeqsIn	cuda/streams.cu	/^void CUDATransferSeqsIn(transfer_data_t *transfer_data){$/;"	f
+CUDA_ARCH	Makefile	/^CUDA_ARCH = sm_75$/;"	m
+CUDA_BufferInit	cuda/CUDAKernel_memmgnt.cu	/^__host__ void* CUDA_BufferInit(){$/;"	f
+CUDA_PADDING	bwa.h	/^	int CUDA_PADDING;$/;"	m	struct:__anon27
+CUDA_stream	bwa.h	/^    void *CUDA_stream;   \/\/ process stream$/;"	m	struct:__anon38
+CUDA_stream	bwa.h	/^    void *CUDA_stream;   \/\/ transfer stream$/;"	m	struct:__anon39
+ConvertBytePackedToWordPacked	bwt_gen.c	/^static void ConvertBytePackedToWordPacked(const unsigned char *input, unsigned int *output, const unsigned int alphabetSize,$/;"	f	file:
+D	bwtsw2_core.c	/^	int I, D, G;$/;"	m	struct:__anon2	file:
+DATADUMP_HPP	kmers_index/datadump.hpp	2;"	d
+DFLAGS	Makefile	/^DFLAGS=		-DHAVE_PTHREAD $(WRAP_MALLOC)$/;"	m
+DNA_OCC_CNT_TABLE_SIZE_IN_WORD	bwt_gen.c	50;"	d	file:
+DNA_OCC_SUM_EXCEPTION	bwt_gen.c	71;"	d	file:
+E	ksw.c	/^	__m128i *qp, *H0, *H1, *E, *Hmax;$/;"	m	struct:_kswq_t	file:
+EQUAL_KEY_THRESHOLD	bwt_gen.c	696;"	d	file:
+EXT_STDDEV	bwtsw2_pair.c	19;"	d	file:
+Examples	bwakit/run-bwamem	/^Examples:$/;"	l
+FALSE	bwt_gen.c	58;"	d	file:
+FINALIZEALN_final_kernel	cuda/bwamem_GPU.cu	/^__global__ void FINALIZEALN_final_kernel($/;"	f
+FINALIZEALN_globalSW_kernel	cuda/bwamem_GPU.cu	/^__global__ void FINALIZEALN_globalSW_kernel($/;"	f
+FINALIZEALN_mark_primary_kernel	cuda/bwamem_GPU.cu	/^__global__ void FINALIZEALN_mark_primary_kernel($/;"	f
+FINALIZEALN_preprocessing1_kernel	cuda/bwamem_GPU.cu	/^__global__ void FINALIZEALN_preprocessing1_kernel($/;"	f
+FINALIZEALN_preprocessing2_kernel	cuda/bwamem_GPU.cu	/^__global__ void FINALIZEALN_preprocessing2_kernel($/;"	f
+FINALIZEALN_reorderAlns_kernel	cuda/bwamem_GPU.cu	/^__global__ void FINALIZEALN_reorderAlns_kernel($/;"	f
+FINALIZEALN_reverseSeq_kernel	cuda/bwamem_GPU.cu	/^__global__ void FINALIZEALN_reverseSeq_kernel(seed_record_t *d_seed_records, mem_aln_v *d_alns, void *d_buffer_pools){$/;"	f
+FROM_D	bwtaln.h	33;"	d
+FROM_I	bwtaln.h	32;"	d
+FROM_M	bwtaln.h	31;"	d
+FROM_S	bwtaln.h	34;"	d
+FSYNC_ON_FLUSH	utils.c	27;"	d	file:
+ForwardDNAAllOccCountNoLimit	bwt_gen.c	/^static void ForwardDNAAllOccCountNoLimit(const unsigned int*  dna, const bgint_t index,$/;"	f	file:
+ForwardDNAOccCount	bwt_gen.c	/^static unsigned int ForwardDNAOccCount(const unsigned int*  dna, const unsigned int index, const unsigned int character,$/;"	f	file:
+G	bwtsw2.h	/^	int len, G, G2;$/;"	m	struct:__anon74
+G	bwtsw2_core.c	/^	int I, D, G;$/;"	m	struct:__anon2	file:
+G2	bwtsw2.h	/^	int len, G, G2;$/;"	m	struct:__anon74
+GET_IS_ALT	cuda/bwamem_GPU.cu	2240;"	d	file:
+GET_KEPT	cuda/bwamem_GPU.cu	2238;"	d	file:
+GLOBALSW_BANDWITH_CUTOFF	cuda/bwamem_GPU.cu	3094;"	d	file:
+GenerateDNAOccCountTable	bwt_gen.c	/^static void GenerateDNAOccCountTable(unsigned int *dnaDecodeTable)$/;"	f	file:
+H0	ksw.c	/^	__m128i *qp, *H0, *H1, *E, *Hmax;$/;"	m	struct:_kswq_t	file:
+H1	ksw.c	/^	__m128i *qp, *H0, *H1, *E, *Hmax;$/;"	m	struct:_kswq_t	file:
+HASHKMERINDEX_H	kmers_index/hashKMerIndex.h	2;"	d
+HASHKMER_HPP	kmers_index/hashKMer.hpp	2;"	d
+HASH_LEN	cuda/preprocessing.cu	3;"	d	file:
+Hmax	ksw.c	/^	__m128i *qp, *H0, *H1, *E, *Hmax;$/;"	m	struct:_kswq_t	file:
+I	bwtsw2_core.c	/^	int I, D, G;$/;"	m	struct:__anon2	file:
+INCLUDES	Makefile	/^INCLUDES=	$/;"	m
+INSERT_SORT_NUM_ITEM	QSufSort.h	35;"	d
+KBTREE_INIT	kbtree.h	360;"	d
+KB_DEFAULT_SIZE	kbtree.h	369;"	d
+KEY	QSufSort.h	34;"	d
+KHASH_DECLARE	khash.h	345;"	d
+KHASH_INIT	khash.h	353;"	d
+KHASH_INIT2	khash.h	349;"	d
+KHASH_MAP_INIT_INT	khash.h	580;"	d
+KHASH_MAP_INIT_INT64	khash.h	595;"	d
+KHASH_MAP_INIT_STR	khash.h	611;"	d
+KHASH_SET_INIT_INT	khash.h	572;"	d
+KHASH_SET_INIT_INT64	khash.h	587;"	d
+KHASH_SET_INIT_STR	khash.h	603;"	d
+KMER_K	kmers_index/hashKMerIndex.h	4;"	d
+KO_FILE	kopen.c	256;"	d	file:
+KO_FTP	kopen.c	259;"	d	file:
+KO_HTTP	kopen.c	258;"	d	file:
+KO_PIPE	kopen.c	257;"	d	file:
+KO_STDIN	kopen.c	255;"	d	file:
+KSEQ_DECLARE	example.c	/^KSEQ_DECLARE(gzFile)$/;"	f
+KSEQ_DECLARE	kseq.h	232;"	d
+KSEQ_DECLARE	maxk.c	/^KSEQ_DECLARE(gzFile)$/;"	f
+KSEQ_INIT	kseq.h	230;"	d
+KSEQ_INIT2	kseq.h	224;"	d
+KSEQ_INIT2	utils.c	/^KSEQ_INIT2(, gzFile, err_gzread)$/;"	f
+KSORT_INIT	bwamem.c	/^KSORT_INIT(mem_ars2, mem_alnreg_t, alnreg_slt2)$/;"	f
+KSORT_INIT	bwamem.c	/^KSORT_INIT(mem_flt, mem_chain_t, flt_lt)$/;"	f
+KSORT_INIT	ksort.h	72;"	d
+KSORT_INIT_GENERIC	ksort.h	270;"	d
+KSORT_INIT_STR	ksort.h	271;"	d
+KSORT_SWAP	ksort.h	70;"	d
+KSTREAM_INIT	kseq.h	147;"	d
+KSTRING_H	kstring.h	2;"	d
+KSTRING_T	kseq.h	83;"	d
+KSTRING_T	kstring.h	16;"	d
+KSW_XBYTE	ksw.h	6;"	d
+KSW_XSTART	ksw.h	9;"	d
+KSW_XSTOP	ksw.h	7;"	d
+KSW_XSUBO	ksw.h	8;"	d
+KS_SEP_LINE	kseq.h	41;"	d
+KS_SEP_MAX	kseq.h	42;"	d
+KS_SEP_SPACE	kseq.h	39;"	d
+KS_SEP_TAB	kseq.h	40;"	d
+L2	bwt.h	/^	bwtint_t L2[5]; \/\/ C(), cumulative count$/;"	m	struct:__anon50
+L2	bwt_lite.h	/^	uint32_t *bwt, *occ, *sa, L2[5];$/;"	m	struct:__anon44
+LH3_BWTSW2_H	bwtsw2.h	2;"	d
+LH3_UTILS_H	utils.h	28;"	d
+LIBS	Makefile	/^LIBS=		-lm -lz -lpthread$/;"	m
+LIKELY	ksw.c	37;"	d	file:
+LIKELY	ksw.c	40;"	d	file:
+LIKELY	rle.h	7;"	d
+LIKELY	rle.h	9;"	d
+LOBJS	Makefile	/^LOBJS=		utils.o kthread.o kstring.o ksw.o bwt.o bntseq.o bwa.o bwamem.o bwamem_pair.o bwamem_extra.o malloc_wrap.o \\$/;"	m
+MALLOC_WRAP_H	malloc_wrap.h	2;"	d
+MAPPING_BOUND	bwamem_pair.c	46;"	d	file:
+MAPPING_BOUND	cuda/bwamem_GPU.cu	412;"	d	file:
+MASK_LEVEL	bwtsw2_core.c	27;"	d	file:
+MAX_BAND_TRY	bwamem.c	637;"	d	file:
+MAX_BAND_TRY	cuda/bwamem_GPU.cu	175;"	d	file:
+MAX_ERR	pemerge.c	20;"	d	file:
+MAX_N_ALN	cuda/bwamem_GPU.cu	2700;"	d	file:
+MAX_N_CHAIN	cuda/bwamem_GPU.cu	2173;"	d	file:
+MAX_SCORE_RATIO	pemerge.c	19;"	d	file:
+MAX_STDDEV	bwamem_pair.c	47;"	d	file:
+MAX_STDDEV	bwtsw2_pair.c	18;"	d	file:
+MAX_STDDEV	cuda/bwamem_GPU.cu	413;"	d	file:
+MB_COMMENT_LIMIT	cuda/batch_config.h	10;"	d
+MB_MAX_COUNT	cuda/batch_config.h	8;"	d
+MB_NAME_LIMIT	cuda/batch_config.h	9;"	d
+MB_QUAL_LIMIT	cuda/batch_config.h	12;"	d
+MB_SAM_LIMIT	cuda/batch_config.h	13;"	d
+MB_SEQ_LIMIT	cuda/batch_config.h	11;"	d
+MEMFINDING_READS_PER_THREAD	cuda/bwamem_GPU.cu	1368;"	d	file:
+MEMFINDING_collect_intv_concurrent_kernel	cuda/bwamem_GPU.cu	/^__global__ void MEMFINDING_collect_intv_concurrent_kernel($/;"	f
+MEMFINDING_collect_intv_kernel	cuda/bwamem_GPU.cu	/^__global__ void MEMFINDING_collect_intv_kernel($/;"	f
+MEMFINDING_collect_intv_kernel_try1	cuda/bwamem_GPU.cu	/^__global__ void MEMFINDING_collect_intv_kernel_try1($/;"	f
+MEM_F_ALL	bwa.h	76;"	d
+MEM_F_KEEP_SUPP_MAPQ	bwa.h	83;"	d
+MEM_F_NOPAIRING	bwa.h	75;"	d
+MEM_F_NO_MULTI	bwa.h	77;"	d
+MEM_F_NO_RESCUE	bwa.h	78;"	d
+MEM_F_PE	bwa.h	74;"	d
+MEM_F_PRIMARY5	bwa.h	82;"	d
+MEM_F_REF_HDR	bwa.h	79;"	d
+MEM_F_SMARTPE	bwa.h	81;"	d
+MEM_F_SOFTCLIP	bwa.h	80;"	d
+MEM_F_XB	bwa.h	84;"	d
+MEM_HSP_COEF	bwamem.c	574;"	d	file:
+MEM_HSP_COEF	cuda/bwamem_GPU.cu	111;"	d	file:
+MEM_MAPQ_COEF	bwa.h	68;"	d
+MEM_MAPQ_MAX	bwa.h	69;"	d
+MEM_MINSC_COEF	bwamem.c	575;"	d	file:
+MEM_MINSC_COEF	cuda/bwamem_GPU.cu	112;"	d	file:
+MEM_SEEDSW_COEF	bwamem.c	576;"	d	file:
+MEM_SEEDSW_COEF	cuda/bwamem_GPU.cu	113;"	d	file:
+MEM_SHORT_EXT	bwamem.c	571;"	d	file:
+MEM_SHORT_EXT	cuda/bwamem_GPU.cu	108;"	d	file:
+MEM_SHORT_LEN	bwamem.c	572;"	d	file:
+MEM_SHORT_LEN	cuda/bwamem_GPU.cu	109;"	d	file:
+MINIBATCH_PROCESS_H	cuda/minibatch_process.h	2;"	d
+MINUS_INF	bwtsw2_core.c	26;"	d	file:
+MINUS_INF	cuda/ksw_CUDA.cu	547;"	d	file:
+MINUS_INF	ksw.c	490;"	d	file:
+MINUS_INF16	cuda/ksw_CUDA.cu	548;"	d	file:
+MIN_AVAILABLE_WORD	bwt_gen.c	62;"	d	file:
+MIN_DIR_CNT	bwamem_pair.c	43;"	d	file:
+MIN_DIR_CNT	cuda/bwamem_GPU.cu	409;"	d	file:
+MIN_DIR_RATIO	bwamem_pair.c	44;"	d	file:
+MIN_DIR_RATIO	cuda/bwamem_GPU.cu	410;"	d	file:
+MIN_HASH_WIDTH	bwape.c	41;"	d	file:
+MIN_RATIO	bwamem_pair.c	42;"	d	file:
+MIN_RATIO	bwtsw2_pair.c	16;"	d	file:
+MIN_RATIO	cuda/bwamem_GPU.cu	408;"	d	file:
+MP_CHUNK_SIZE	rope.c	13;"	d	file:
+NBUFFERPOOLS	cuda/CUDAKernel_memmgnt.cu	1;"	d	file:
+NKEYS_EACH_THREAD	cuda/bwamem_GPU.cu	2174;"	d	file:
+NM	bwa.h	/^	uint32_t is_rev:1, is_alt:1, mapq:8, NM:22; \/\/ is_rev: whether on the reverse strand; mapq: mapping quality; NM: edit distance$/;"	m	struct:__anon34
+NVCC_DEBUG_FLAGS	Makefile	/^NVCC_DEBUG_FLAGS= -g -G -O0 --device-c -arch=$(CUDA_ARCH)$/;"	m
+NVCC_FLAGS	Makefile	/^	NVCC_FLAGS = $(NVCC_DEBUG_FLAGS)$/;"	m
+NVCC_FLAGS	Makefile	/^	NVCC_FLAGS = $(NVCC_OPTIM_FLAGS)$/;"	m
+NVCC_OPTIM_FLAGS	Makefile	/^NVCC_OPTIM_FLAGS= -Xptxas -O4 -Xcompiler -O4 --device-c -arch=$(CUDA_ARCH)$/;"	m
+N_multi	bwtaln.h	/^	int n_multi, N_multi;$/;"	m	struct:__anon21
+Note	bwakit/run-bwamem	/^   Note: HLA typing is only effective for high-coverage data. The typing accuracy varies$/;"	l
+Note	bwakit/run-bwamem	/^   Note: streamed duplicate marking requires all reads from a single paired-end library$/;"	l
+Note	bwakit/run-bwamem	/^   Note: the adaptor trimmer included in bwa.kit is chosen because it fits the current$/;"	l
+OCC_INTERVAL	bwt.h	38;"	d
+OCC_INTERVAL	bwt_gen.c	54;"	d	file:
+OCC_INTERVAL	cuda/bwt_CUDA.cu	32;"	d	file:
+OCC_INTERVAL_MAJOR	bwt_gen.c	55;"	d	file:
+OCC_INTV_MASK	bwt.h	39;"	d
+OCC_INTV_MASK	cuda/bwt_CUDA.cu	33;"	d	file:
+OCC_INTV_SHIFT	bwt.h	37;"	d
+OCC_INTV_SHIFT	cuda/bwt_CUDA.cu	31;"	d	file:
+OCC_VALUE_PER_WORD	bwt_gen.c	53;"	d	file:
+OUTLIER_BOUND	bwamem_pair.c	45;"	d	file:
+OUTLIER_BOUND	bwape.c	79;"	d	file:
+OUTLIER_BOUND	bwtsw2_pair.c	17;"	d	file:
+OUTLIER_BOUND	cuda/bwamem_GPU.cu	411;"	d	file:
+Options	bwakit/run-bwamem	/^Options: -o STR    prefix for output files                       [inferred from input]$/;"	l
+PACKAGE_VERSION	main.c	34;"	d	file:
+PATCH_MAX_R_BW	bwamem.c	410;"	d	file:
+PATCH_MAX_R_BW	cuda/bwamem_GPU.cu	320;"	d	file:
+PATCH_MIN_SC_RATIO	bwamem.c	411;"	d	file:
+PATCH_MIN_SC_RATIO	cuda/bwamem_GPU.cu	321;"	d	file:
+POOLSIZE	cuda/CUDAKernel_memmgnt.cu	2;"	d	file:
+PREPROCESS_convert_bit_encoding_kernel	cuda/bwamem_GPU.cu	/^__global__ void PREPROCESS_convert_bit_encoding_kernel(const bseq1_t *d_seqs){$/;"	f
+PROFILING_H	profiling.h	3;"	d
+PROG	Makefile	/^PROG=		bwa$/;"	m
+QSINT_MAX	QSufSort.h	38;"	d
+QSufSortBucketSort	QSufSort.c	/^static void QSufSortBucketSort(qsint_t* __restrict V, qsint_t* __restrict I, const qsint_t numChar, const qsint_t alphabetSize)$/;"	f	file:
+QSufSortChoosePivot	QSufSort.c	/^static qsint_t QSufSortChoosePivot(qsint_t* __restrict V, qsint_t* __restrict I, const qsint_t lowestPos, $/;"	f	file:
+QSufSortGenerateSaFromInverse	QSufSort.c	/^void QSufSortGenerateSaFromInverse(const qsint_t* V, qsint_t* __restrict I, const qsint_t numChar)$/;"	f
+QSufSortInsertSortSplit	QSufSort.c	/^static void QSufSortInsertSortSplit(qsint_t* __restrict V, qsint_t* __restrict I, const qsint_t lowestPos, $/;"	f	file:
+QSufSortSortSplit	QSufSort.c	/^static void QSufSortSortSplit(qsint_t* __restrict V, qsint_t* __restrict I, const qsint_t lowestPos, $/;"	f	file:
+QSufSortSuffixSort	QSufSort.c	/^void QSufSortSuffixSort(qsint_t* __restrict V, qsint_t* __restrict I, const qsint_t numChar, const qsint_t largestInputSymbol, $/;"	f
+QSufSortTransform	QSufSort.c	/^static qsint_t QSufSortTransform(qsint_t* __restrict V, qsint_t* __restrict I, const qsint_t numChar, const qsint_t largestInputSymbol, $/;"	f	file:
+RLE6_H_	rle.h	2;"	d
+RLE_MIN_SPACE	rle.h	35;"	d
+ROPE_DEF_BLOCK_LEN	rope.h	9;"	d
+ROPE_DEF_MAX_NODES	rope.h	8;"	d
+ROPE_H_	rope.h	2;"	d
+ROPE_MAX_DEPTH	rope.h	7;"	d
+SAI_MAGIC	bwtaln.h	36;"	d
+SAMGEN_aln2sam_finegrain_kernel	cuda/bwamem_GPU.cu	/^__global__ void SAMGEN_aln2sam_finegrain_kernel($/;"	f
+SAMGEN_concatenate_kernel	cuda/bwamem_GPU.cu	/^__global__ void SAMGEN_concatenate_kernel($/;"	f
+SAM_FMR	bwtaln.h	17;"	d
+SAM_FMU	bwtaln.h	15;"	d
+SAM_FPD	bwtaln.h	12;"	d
+SAM_FPP	bwtaln.h	13;"	d
+SAM_FR1	bwtaln.h	18;"	d
+SAM_FR2	bwtaln.h	19;"	d
+SAM_FSC	bwtaln.h	20;"	d
+SAM_FSR	bwtaln.h	16;"	d
+SAM_FSU	bwtaln.h	14;"	d
+SB_COMMENT_LIMIT	cuda/batch_config.h	18;"	d
+SB_MAX_COUNT	cuda/batch_config.h	16;"	d
+SB_NAME_LIMIT	cuda/batch_config.h	17;"	d
+SB_QUAL_LIMIT	cuda/batch_config.h	20;"	d
+SB_SEQ_LIMIT	cuda/batch_config.h	19;"	d
+SEEDCHAINING_CHAIN_BLOCKDIMX	cuda/bwamem_GPU.cu	1963;"	d	file:
+SEEDCHAINING_MAX_N_MEM	cuda/bwamem_GPU.cu	1662;"	d	file:
+SEEDCHAINING_chain_kernel	cuda/bwamem_GPU.cu	/^__global__ void SEEDCHAINING_chain_kernel($/;"	f
+SEEDCHAINING_filter_seeds_kernel	cuda/bwamem_GPU.cu	/^__global__ void SEEDCHAINING_filter_seeds_kernel($/;"	f
+SEEDCHAINING_sortSeeds_high_kernel	cuda/bwamem_GPU.cu	/^__global__ void SEEDCHAINING_sortSeeds_high_kernel($/;"	f
+SEEDCHAINING_sortSeeds_low_kernel	cuda/bwamem_GPU.cu	/^__global__ void SEEDCHAINING_sortSeeds_low_kernel($/;"	f
+SEEDCHAINING_translate_seedinfo_kernel	cuda/bwamem_GPU.cu	/^__global__ void SEEDCHAINING_translate_seedinfo_kernel($/;"	f
+SEQ_MAXLEN	cuda/batch_config.h	5;"	d
+SET_IS_ALT	cuda/bwamem_GPU.cu	2241;"	d	file:
+SET_KEPT	cuda/bwamem_GPU.cu	2239;"	d	file:
+SMITHWATERMAN_extend_kernel	cuda/bwamem_GPU.cu	/^__global__ void SMITHWATERMAN_extend_kernel($/;"	f
+SMITHWATERMAN_postprocessing_kernel	cuda/bwamem_GPU.cu	/^__global__ void SMITHWATERMAN_postprocessing_kernel($/;"	f
+SMITHWATERMAN_preprocessing1_kernel	cuda/bwamem_GPU.cu	/^__global__ void SMITHWATERMAN_preprocessing1_kernel($/;"	f
+SMITHWATERMAN_preprocessing2_kernel	cuda/bwamem_GPU.cu	/^__global__ void SMITHWATERMAN_preprocessing2_kernel($/;"	f
+SORTCHAIN_BLOCKDIMX	cuda/bwamem_GPU.cu	2175;"	d	file:
+SORTSEEDSHIGH_BLOCKDIMX	cuda/bwamem_GPU.cu	1832;"	d	file:
+SORTSEEDSHIGH_MAX_NSEEDS	cuda/bwamem_GPU.cu	1830;"	d	file:
+SORTSEEDSHIGH_NKEYS_THREAD	cuda/bwamem_GPU.cu	1831;"	d	file:
+SORTSEEDSLOW_BLOCKDIMX	cuda/bwamem_GPU.cu	1835;"	d	file:
+SORTSEEDSLOW_MAX_NSEEDS	cuda/bwamem_GPU.cu	1833;"	d	file:
+SORTSEEDSLOW_NKEYS_THREAD	cuda/bwamem_GPU.cu	1834;"	d	file:
+STATE_D	bwtgap.c	13;"	d	file:
+STATE_I	bwtgap.c	12;"	d	file:
+STATE_M	bwtgap.c	11;"	d	file:
+SUBDIRS	Makefile	/^SUBDIRS=	.$/;"	m
+SUPERBATCH_PROCESS_H	cuda/superbatch_process.h	2;"	d
+SW_BW	bwase.c	167;"	d	file:
+SW_MIN_MAPQ	bwape.c	406;"	d	file:
+SW_MIN_MATCH_LEN	bwape.c	405;"	d	file:
+T	bwa.h	/^	int T;                  \/\/ output score threshold; only affecting output$/;"	m	struct:__anon26
+T	pemerge.c	/^	int T;$/;"	m	struct:__anon48	file:
+TRUE	bwt_gen.c	57;"	d	file:
+TextLengthFromBytePacked	bwt_gen.c	/^static bgint_t TextLengthFromBytePacked(bgint_t bytePackedLength, unsigned int bitPerChar,$/;"	f	file:
+UNLIKELY	ksw.c	38;"	d	file:
+UNLIKELY	ksw.c	41;"	d	file:
+USE_MALLOC_WRAPPERS	malloc_wrap.c	7;"	d	file:
+USE_VERBOSE_ZLIB_WRAPPERS	bamlite.h	11;"	d
+Usage	bwakit/run-bwamem	/^Usage:   run-bwamem [options] <idxbase> <file1> [file2]$/;"	l
+WRAP_MALLOC	Makefile	/^WRAP_MALLOC=-DUSE_MALLOC_WRAPPERS$/;"	m
+XA	bwa.h	/^	char *XA;        \/\/ alternative mappings$/;"	m	struct:__anon34
+XA_drop_ratio	bwa.h	/^	float XA_drop_ratio;    \/\/ when counting hits for the XA tag, ignore alignments with score < XA_drop_ratio * max_score; only effective for the XA tag$/;"	m	struct:__anon26
+_KO_NO_NET	kopen.c	22;"	d	file:
+__AC_KBTREE_H	kbtree.h	29;"	d
+__AC_KHASH_H	khash.h	105;"	d
+__AC_KSW_H	ksw.h	2;"	d
+__KB_DEL	kbtree.h	231;"	d
+__KB_GET	kbtree.h	133;"	d
+__KB_GET_AUX0	kbtree.h	103;"	d
+__KB_GET_AUX1	kbtree.h	117;"	d
+__KB_INIT	kbtree.h	54;"	d
+__KB_INTERVAL	kbtree.h	151;"	d
+__KB_KEY	kbtree.h	43;"	d
+__KB_PTR	kbtree.h	44;"	d
+__KB_PUT	kbtree.h	174;"	d
+__KB_TREE_T	kbtree.h	46;"	d
+__KHASH_IMPL	khash.h	198;"	d
+__KHASH_PROTOTYPES	khash.h	189;"	d
+__KHASH_TYPE	khash.h	181;"	d
+__KSEQ_BASIC	kseq.h	155;"	d
+__KSEQ_READ	kseq.h	175;"	d
+__KSEQ_TYPE	kseq.h	217;"	d
+__KS_BASIC	kseq.h	54;"	d
+__KS_GETC	kseq.h	70;"	d
+__KS_GETUNTIL	kseq.h	94;"	d
+__KS_TYPE	kseq.h	44;"	d
+__QSUFSORT_H__	QSufSort.h	30;"	d
+__ac_HASH_UPPER	khash.h	/^static const double __ac_HASH_UPPER = 0.77;$/;"	v
+__ac_Wang_hash	khash.h	/^static kh_inline khint_t __ac_Wang_hash(khint_t key)$/;"	f
+__ac_X31_hash_string	khash.h	/^static kh_inline khint_t __ac_X31_hash_string(const char *s)$/;"	f
+__ac_fsize	khash.h	160;"	d
+__ac_inc	khash.h	155;"	d
+__ac_inc	khash.h	157;"	d
+__ac_isdel	khash.h	147;"	d
+__ac_iseither	khash.h	148;"	d
+__ac_isempty	khash.h	146;"	d
+__ac_set_isboth_false	khash.h	151;"	d
+__ac_set_isdel_false	khash.h	149;"	d
+__ac_set_isdel_true	khash.h	152;"	d
+__ac_set_isempty_false	khash.h	150;"	d
+__bwa_seqio_t	bwaseqio.c	/^struct __bwa_seqio_t {$/;"	s	file:
+__cigar_create	bwtaln.h	57;"	d
+__cigar_len	bwtaln.h	56;"	d
+__cigar_op	bwtaln.h	55;"	d
+__err_connect	kopen.c	43;"	d	file:
+__err_connect	kopen.c	58;"	d	file:
+__gen_ap	bwtsw2_aux.c	91;"	d	file:
+__hitG_lt	bwtsw2_core.c	42;"	d	file:
+__kb_destroy	kbtree.h	72;"	d
+__kb_get_first	kbtree.h	96;"	d
+__kb_getp_aux_chn	cuda/kbtree_CUDA.cu	/^__device__ static inline int __kb_getp_aux_chn(const kbnode_t * __restrict x, const mem_chain_t * __restrict k, int *r) $/;"	f	file:
+__kb_putp_aux_chn	cuda/kbtree_CUDA.cu	/^__device__ static void __kb_putp_aux_chn(kbtree_chn_t *b, kbnode_t *x, const mem_chain_t * __restrict k, void* CUDAKernel_buffer) $/;"	f	file:
+__kb_split_chn	cuda/kbtree_CUDA.cu	/^__device__ static void __kb_split_chn(kbtree_chn_t *b, kbnode_t *x, int i, kbnode_t *y, void* CUDAKernel_buffer) $/;"	f	file:
+__kb_traverse	cuda/kbtree_CUDA.cu	/^__device__ void __kb_traverse(kbtree_chn_t* b, mem_chain_v* chain, void* CUDAKernel_buffer){$/;"	f
+__kb_traverse	kbtree.h	336;"	d
+__kbstack_t	cuda/kbtree_CUDA.cu	/^} __kbstack_t;$/;"	t	typeref:struct:__anon6	file:
+__kbstack_t	kbtree.h	/^} __kbstack_t;$/;"	t	typeref:struct:__anon58
+__ks_insertsort	cuda/ksort_CUDA.h	/^__device__ static inline void __ks_insertsort(bwtintv_t *s, bwtintv_t *t)		$/;"	f
+__ks_insertsort_mem_ars2	cuda/ksort_CUDA.h	/^__device__ static inline void __ks_insertsort_mem_ars2(mem_alnreg_t *s, mem_alnreg_t *t)		$/;"	f
+__kstring_t	kseq.h	/^typedef struct __kstring_t {$/;"	s
+__kstring_t	kstring.h	/^typedef struct __kstring_t {$/;"	s
+__left_lt	bwtsw2_aux.c	22;"	d	file:
+__max_16	ksw.c	118;"	d	file:
+__max_8	ksw.c	239;"	d	file:
+__mempool_t	bwtsw2_core.c	/^typedef struct __mempool_t {$/;"	s	file:
+__nst_nt4_table__	kmers_index/hashKMer.hpp	/^const int __nst_nt4_table__[256] = {$/;"	v
+__occ_aux	bwt.c	/^static inline int __occ_aux(uint64_t y, int c)$/;"	f	file:
+__occ_aux	cuda/bwt_CUDA.cu	/^__device__ static inline int __occ_aux(uint64_t y, int c)$/;"	f	file:
+__occ_aux4	bwt.c	165;"	d	file:
+__occ_aux4	cuda/bwt_CUDA.cu	105;"	d	file:
+__pairing_aux	bwape.c	166;"	d	file:
+__pairing_aux2	bwape.c	183;"	d	file:
+__rdtsc	profiling.h	/^static inline unsigned long long __rdtsc(void)$/;"	f
+__set_fixed	bwape.c	539;"	d	file:
+__set_left_coor	bwape.c	532;"	d	file:
+__set_rght_coor	bwape.c	525;"	d	file:
+__smem_i	bwamem_extra.c	/^struct __smem_i {$/;"	s	file:
+__sort_lt	cuda/ksort_CUDA.h	6;"	d
+_err_fatal_simple	utils.c	/^void _err_fatal_simple(const char *func, const char *msg)$/;"	f
+_err_fatal_simple_core	utils.c	/^void _err_fatal_simple_core(const char *func, const char *msg)$/;"	f
+_get_pac	bntseq.c	230;"	d	file:
+_get_pac	cuda/bntseq_CUDA.cu	5;"	d	file:
+_hsaip_lt	bwtsw2_chain.c	15;"	d	file:
+_kswq_t	ksw.c	/^struct _kswq_t {$/;"	s	file:
+_opt	bwtsw2_aux.c	/^	const bsw2opt_t *_opt;$/;"	m	struct:__anon80	file:
+_seq	bwtsw2_aux.c	/^	bsw2seq_t *_seq;$/;"	m	struct:__anon80	file:
+_set_pac	bntseq.c	229;"	d	file:
+_set_pac	cuda/bntseq_CUDA.cu	4;"	d	file:
+a	bwa.h	/^	int a, b;               \/\/ match score and mismatch penalty$/;"	m	struct:__anon26
+a	bwa.h	/^	mem_seed_t *a;$/;"	m	struct:__anon28
+a	bwa.h	/^typedef struct { int n, m; mem_alnreg_t *a; } mem_alnreg_v;$/;"	m	struct:__anon32
+a	bwa.h	/^typedef struct { int n, m; mem_chain_t *a;  } mem_chain_v;$/;"	m	struct:__anon30
+a	bwa.h	/^typedef struct { int n; mem_aln_t *a; } mem_aln_v;$/;"	m	struct:__anon35
+a	bwakit/bwa-postalt.js	/^	var c, opt = { a:1, b:4, o:6, e:1, min_mapq:10, min_sc:90, max_nm_sc:10, min_pa_ratio:1 };$/;"	p	class:collect_hla_hits.bwa_postalt.c
+a	bwape.c	/^	bwtint_t *a;$/;"	m	struct:__anon65	file:
+a	bwt.h	/^typedef struct { int n, m; bwtintv_t *a; } bwtintv_v;$/;"	m	struct:__anon52
+a	bwtsw2.h	/^	int a, b, q, r, t, qr, bw, max_ins, max_chain_gap;$/;"	m	struct:__anon73
+a	cuda/bwamem_GPU.cu	/^typedef struct { size_t n, m; int *a; } int_v;$/;"	m	struct:__anon12	file:
+a	cuda/bwamem_GPU.cu	/^typedef struct { size_t n, m; uint64_t *a; } uint64_v;$/;"	m	struct:__anon11	file:
+a	cuda/ksort_CUDA.h	/^typedef struct { size_t n, m; pair64_t *a; } pair64_v;$/;"	m	struct:__anon9
+a	pemerge.c	/^	int a, b, q, r, w;$/;"	m	struct:__anon48	file:
+a	utils.h	/^typedef struct { size_t n, m; pair64_t *a; } pair64_v;$/;"	m	struct:__anon43
+a	utils.h	/^typedef struct { size_t n, m; uint64_t *a; } uint64_v;$/;"	m	struct:__anon42
+actual_chunk_size	cuda/superbatch_process.h	/^	int copy_comment, actual_chunk_size;$/;"	m	struct:__anon13
+add1	bntseq.c	/^static uint8_t *add1(const kseq_t *seq, bntseq_t *bns, uint8_t *pac, int64_t *m_pac, int *m_seqs, int *m_holes, bntamb1_t **q)$/;"	f	file:
+add_cigar	bwamem.c	/^static inline void add_cigar(const mem_opt_t *opt, mem_aln_t *p, kstring_t *str, int which)$/;"	f	file:
+add_cigar	cuda/bwamem_GPU.cu	/^__device__ static inline void add_cigar(const mem_opt_t *opt, mem_aln_t *p, kstring_t *str, int which, void* d_buffer_ptr)$/;"	f	file:
+adds_m128i	cuda/ksw_CUDA.cu	/^static inline __device__ m128i adds_m128i(m128i a, m128i b){$/;"	f	file:
+allocateIntermediateData	cuda/streams.cu	/^void allocateIntermediateData(process_data_t *process_instance){$/;"	f
+aln	bwtaln.h	/^	bwt_aln1_t *aln;$/;"	m	struct:__anon19
+aln_buf_t	bwape.c	/^} aln_buf_t;$/;"	t	typeref:struct:__anon68	file:
+aln_mem	bwtsw2.h	/^	uint8_t *aln_mem;$/;"	m	struct:__anon77
+aln_score	bwtgap.c	15;"	d	file:
+alnreg_hlt	bwamem.c	404;"	d	file:
+alnreg_hlt	cuda/ksort_CUDA.h	349;"	d
+alnreg_hlt2	bwamem.c	407;"	d	file:
+alnreg_hlt2	cuda/ksort_CUDA.h	435;"	d
+alnreg_slt	bwamem.c	401;"	d	file:
+alnreg_slt2	bwamem.c	398;"	d	file:
+alt_sc	bwa.h	/^	int alt_sc;$/;"	m	struct:__anon31
+alt_sc	bwa.h	/^	int score, sub, alt_sc;$/;"	m	struct:__anon34
+amb	bntseq.h	/^	char amb;$/;"	m	struct:__anon54
+ambs	bntseq.h	/^	bntamb1_t *ambs; \/\/ n_holes elements$/;"	m	struct:__anon55
+anno	bntseq.h	/^	char *name, *anno;$/;"	m	struct:__anon53
+anns	bntseq.h	/^	bntann1_t *anns; \/\/ n_seqs elements$/;"	m	struct:__anon55
+ap_prior	bwape.c	/^	double avg, std, ap_prior;$/;"	m	struct:__anon66	file:
+ap_prior	bwtaln.h	/^	double ap_prior;$/;"	m	struct:__anon21
+arch	Makefile	/^	nvcc -I. --device-link -arch=$(CUDA_ARCH) bwamem_GPU.o CUDAKernel_memmgnt.o bwt_CUDA.o bntseq_CUDA.o kbtree_CUDA.o ksw_CUDA.o bwa_CUDA.o kstring_CUDA.o streams.o --output-file GPULink.o$/;"	m
+arr	bwape.c	/^	pair64_v arr;$/;"	m	struct:__anon67	file:
+array	bwtsw2_core.c	/^	bsw2cell_t *array;$/;"	m	struct:__anon3	file:
+aux	bwamem.c	/^	smem_aux_t **aux;$/;"	m	struct:__anon69	file:
+aux	bwtsw2.h	/^	bsw2aux_t *aux;$/;"	m	struct:__anon76
+availableWord	bwt_gen.c	/^	bgint_t availableWord;$/;"	m	struct:BWTInc	file:
+average	bwt_gen.c	64;"	d	file:
+avg	bwa.h	/^	double avg, std; \/\/ mean and stddev of the insert size distribution$/;"	m	struct:__anon33
+avg	bwape.c	/^	double avg, std, ap_prior;$/;"	m	struct:__anon66	file:
+avg	bwtsw2_pair.c	/^	double avg, std;$/;"	m	struct:__anon62	file:
+b	bwa.h	/^	int a, b;               \/\/ match score and mismatch penalty$/;"	m	struct:__anon26
+b	bwakit/bwa-postalt.js	/^	var c, opt = { a:1, b:4, o:6, e:1, min_mapq:10, min_sc:90, max_nm_sc:10, min_pa_ratio:1 };$/;"	p	class:collect_hla_hits.bwa_postalt.c
+b	bwtsw2.h	/^	int a, b, q, r, t, qr, bw, max_ins, max_chain_gap;$/;"	m	struct:__anon73
+b	pemerge.c	/^	int a, b, q, r, w;$/;"	m	struct:__anon48	file:
+b128_eq	bwape.c	29;"	d	file:
+b128_hash	bwape.c	30;"	d	file:
+bam1_aux	bamlite.h	86;"	d
+bam1_cigar	bamlite.h	81;"	d
+bam1_core_t	bamlite.h	/^} bam1_core_t;$/;"	t	typeref:struct:__anon46
+bam1_mstrand	bamlite.h	80;"	d
+bam1_qname	bamlite.h	82;"	d
+bam1_qual	bamlite.h	84;"	d
+bam1_seq	bamlite.h	83;"	d
+bam1_seqi	bamlite.h	85;"	d
+bam1_strand	bamlite.h	79;"	d
+bam1_t	bamlite.h	/^} bam1_t;$/;"	t	typeref:struct:__anon47
+bamFile	bamlite.h	/^typedef gzFile bamFile;$/;"	t
+bam_close	bamlite.h	18;"	d
+bam_close	bamlite.h	23;"	d
+bam_destroy1	bamlite.h	89;"	d
+bam_dopen	bamlite.h	17;"	d
+bam_dopen	bamlite.h	22;"	d
+bam_header_destroy	bamlite.c	/^void bam_header_destroy(bam_header_t *header)$/;"	f
+bam_header_init	bamlite.c	/^bam_header_t *bam_header_init()$/;"	f
+bam_header_read	bamlite.c	/^bam_header_t *bam_header_read(bamFile fp)$/;"	f
+bam_header_t	bamlite.h	/^} bam_header_t;$/;"	t	typeref:struct:__anon45
+bam_init1	bamlite.h	88;"	d
+bam_is_be	bamlite.c	/^int bam_is_be;$/;"	v
+bam_is_big_endian	bamlite.c	/^static inline int bam_is_big_endian()$/;"	f	file:
+bam_nt16_nt4_table	bwaseqio.c	/^static char bam_nt16_nt4_table[] = { 4, 0, 1, 4, 2, 4, 4, 4, 3, 4, 4, 4, 4, 4, 4, 4 };$/;"	v	file:
+bam_open	bamlite.h	16;"	d
+bam_open	bamlite.h	21;"	d
+bam_read	bamlite.h	19;"	d
+bam_read	bamlite.h	24;"	d
+bam_read1	bamlite.c	/^int bam_read1(bamFile fp, bam1_t *b)$/;"	f
+bam_swap_endian_2	bamlite.c	/^static inline uint16_t bam_swap_endian_2(uint16_t v)$/;"	f	file:
+bam_swap_endian_2p	bamlite.c	/^static inline void *bam_swap_endian_2p(void *x)$/;"	f	file:
+bam_swap_endian_4	bamlite.c	/^static inline uint32_t bam_swap_endian_4(uint32_t v)$/;"	f	file:
+bam_swap_endian_4p	bamlite.c	/^static inline void *bam_swap_endian_4p(void *x)$/;"	f	file:
+bam_swap_endian_8	bamlite.c	/^static inline uint64_t bam_swap_endian_8(uint64_t v)$/;"	f	file:
+bam_swap_endian_8p	bamlite.c	/^static inline void *bam_swap_endian_8p(void *x)$/;"	f	file:
+bamlite_gzclose	bamlite.c	/^int bamlite_gzclose(gzFile file) {$/;"	f
+bamlite_gzopen	bamlite.c	/^gzFile bamlite_gzopen(const char *fn, const char *mode) {$/;"	f
+bamlite_gzread	bamlite.c	/^int bamlite_gzread(gzFile file, void *ptr, unsigned int len) {$/;"	f
+bc	bwtaln.h	/^	char bc[BWA_MAX_BCLEN+1]; \/\/ null terminated; up to BWA_MAX_BCLEN bases$/;"	m	struct:__anon19
+bc	rope.h	/^	int64_t bc[6];$/;"	m	struct:__anon61
+beg	bwtsw2.h	/^	int beg, end;$/;"	m	struct:__anon74
+beg	bwtsw2_pair.c	/^	int n_cigar, beg, end, len;$/;"	m	struct:__anon63	file:
+beg	rope.h	/^	int beg;$/;"	m	struct:__anon61
+best	bwtgap.h	/^	int n_stacks, best, n_entries;$/;"	m	struct:__anon83
+bgint_t	bwt_gen.c	/^typedef uint64_t bgint_t;$/;"	t	file:
+bid	bwtaln.h	/^	int bid;$/;"	m	struct:__anon16
+bin	bamlite.h	/^	uint32_t bin:16, qual:8, l_qname:8;$/;"	m	struct:__anon46
+block_len	rope.h	/^	int32_t max_nodes, block_len; \/\/ both MUST BE even numbers$/;"	m	struct:__anon59
+bns	bwa.h	/^	bntseq_t *bns; \/\/ information on the reference sequences$/;"	m	struct:__anon24
+bns	bwamem.c	/^	const bntseq_t *bns;$/;"	m	struct:__anon69	file:
+bns	bwtsw2_aux.c	/^	const bntseq_t *bns;$/;"	m	struct:__anon80	file:
+bns_cnt_ambi	bntseq.c	/^int bns_cnt_ambi(const bntseq_t *bns, int64_t pos_f, int len, int *ref_id)$/;"	f
+bns_depos	bntseq.h	/^static inline int64_t bns_depos(const bntseq_t *bns, int64_t pos, int *is_rev)$/;"	f
+bns_depos_GPU	cuda/bwamem_GPU.cu	/^__device__ static inline int64_t bns_depos_GPU(const bntseq_t *bns, int64_t pos, int *is_rev)$/;"	f	file:
+bns_depos_gpu	cuda/bntseq_CUDA.cu	/^__device__ static inline int64_t bns_depos_gpu(const bntseq_t *bns, int64_t pos, int *is_rev)$/;"	f	file:
+bns_destroy	bntseq.c	/^void bns_destroy(bntseq_t *bns)$/;"	f
+bns_dump	bntseq.c	/^void bns_dump(const bntseq_t *bns, const char *prefix)$/;"	f
+bns_fasta2bntseq	bntseq.c	/^int64_t bns_fasta2bntseq(gzFile fp_fa, const char *prefix, int for_only)$/;"	f
+bns_fetch_seq	bntseq.c	/^uint8_t *bns_fetch_seq(const bntseq_t *bns, const uint8_t *pac, int64_t *beg, int64_t mid, int64_t *end, int *rid)$/;"	f
+bns_fetch_seq_gpu	cuda/bntseq_CUDA.cu	/^__device__ uint8_t *bns_fetch_seq_gpu(const bntseq_t *bns, const uint8_t *pac, int64_t *beg, int64_t mid, int64_t *end, int *rid, void* d_buffer_ptr)$/;"	f
+bns_get_seq	bntseq.c	/^uint8_t *bns_get_seq(int64_t l_pac, const uint8_t *pac, int64_t beg, int64_t end, int64_t *len)$/;"	f
+bns_get_seq_gpu	cuda/bntseq_CUDA.cu	/^__device__ uint8_t *bns_get_seq_gpu(int64_t l_pac, const uint8_t *pac, int64_t beg, int64_t end, int64_t *len, void* d_buffer_ptr)$/;"	f
+bns_intv2rid	bntseq.c	/^int bns_intv2rid(const bntseq_t *bns, int64_t rb, int64_t re)$/;"	f
+bns_intv2rid_gpu	cuda/bntseq_CUDA.cu	/^__device__ int bns_intv2rid_gpu(const bntseq_t *bns, int64_t rb, int64_t re)$/;"	f
+bns_pac	bwtaln.h	28;"	d
+bns_pos2rid	bntseq.c	/^int bns_pos2rid(const bntseq_t *bns, int64_t pos_f)$/;"	f
+bns_pos2rid_gpu	cuda/bntseq_CUDA.cu	/^__device__ int bns_pos2rid_gpu(const bntseq_t *bns, int64_t pos_f)$/;"	f
+bns_restore	bntseq.c	/^bntseq_t *bns_restore(const char *prefix)$/;"	f
+bns_restore_core	bntseq.c	/^bntseq_t *bns_restore_core(const char *ann_filename, const char* amb_filename, const char* pac_filename)$/;"	f
+bntamb1_t	bntseq.h	/^} bntamb1_t;$/;"	t	typeref:struct:__anon54
+bntann1_t	bntseq.h	/^} bntann1_t;$/;"	t	typeref:struct:__anon53
+bntseq_t	bntseq.h	/^} bntseq_t;$/;"	t	typeref:struct:__anon55
+bseq1_t	bwa.h	/^} bseq1_t;$/;"	t	typeref:struct:__anon25
+bseq_classify	bwa.c	/^void bseq_classify(int n, bseq1_t *seqs, int m[2], bseq1_t *sep[2])$/;"	f
+bseq_read	bwa.c	/^bseq1_t *bseq_read(int chunk_size, int *n_, void *ks1_, void *ks2_)$/;"	f
+bseq_read2	bwa.c	/^void bseq_read2(int chunk_size, int *n_, void *ks1_, void *ks2_, superbatch_data_t *transfer_data)$/;"	f
+bsw2_aln	bwtsw2_aux.c	/^void bsw2_aln(const bsw2opt_t *opt, const bntseq_t *bns, bwt_t * const target, const char *fn, const char *fn2)$/;"	f
+bsw2_aln1_core	bwtsw2_aux.c	/^static bwtsw2_t *bsw2_aln1_core(const bsw2opt_t *opt, const bntseq_t *bns, uint8_t *pac, const bwt_t *target,$/;"	f	file:
+bsw2_aln_core	bwtsw2_aux.c	/^static void bsw2_aln_core(bsw2seq_t *_seq, const bsw2opt_t *_opt, const bntseq_t *bns, uint8_t *pac, const bwt_t *target, int is_pe)$/;"	f	file:
+bsw2_chain_filter	bwtsw2_chain.c	/^void bsw2_chain_filter(const bsw2opt_t *opt, int len, bwtsw2_t *b[2])$/;"	f
+bsw2_connectivity	bwtsw2_core.c	/^static khash_t(64) *bsw2_connectivity(const bwtl_t *b)$/;"	f
+bsw2_core	bwtsw2_core.c	/^bwtsw2_t **bsw2_core(const bntseq_t *bns, const bsw2opt_t *opt, const bwtl_t *target, const bwt_t *query, bsw2global_t *pool)$/;"	f
+bsw2_debug_hits	bwtsw2_aux.c	/^void bsw2_debug_hits(const bwtsw2_t *b)$/;"	f
+bsw2_destroy	bwtsw2_aux.c	/^void bsw2_destroy(bwtsw2_t *b)$/;"	f
+bsw2_dup_no_cigar	bwtsw2_aux.c	/^bwtsw2_t *bsw2_dup_no_cigar(const bwtsw2_t *b)$/;"	f
+bsw2_extend_left	bwtsw2_aux.c	/^void bsw2_extend_left(const bsw2opt_t *opt, bwtsw2_t *b, uint8_t *_query, int lq, uint8_t *pac, bwtint_t l_pac, uint8_t *_mem)$/;"	f
+bsw2_extend_rght	bwtsw2_aux.c	/^void bsw2_extend_rght(const bsw2opt_t *opt, bwtsw2_t *b, uint8_t *query, int lq, uint8_t *pac, bwtint_t l_pac, uint8_t *_mem)$/;"	f
+bsw2_global_destroy	bwtsw2_core.c	/^void bsw2_global_destroy(bsw2global_t *pool)$/;"	f
+bsw2_global_init	bwtsw2_core.c	/^bsw2global_t *bsw2_global_init()$/;"	f
+bsw2_init_opt	bwtsw2_aux.c	/^bsw2opt_t *bsw2_init_opt()$/;"	f
+bsw2_pair	bwtsw2_pair.c	/^void bsw2_pair(const bsw2opt_t *opt, int64_t l_pac, const uint8_t *pac, int n, bsw2seq1_t *seq, bwtsw2_t **hits)$/;"	f
+bsw2_pair1	bwtsw2_pair.c	/^void bsw2_pair1(const bsw2opt_t *opt, int64_t l_pac, const uint8_t *pac, const bsw2pestat_t *st, const bsw2hit_t *h, int l_mseq, const char *mseq, bsw2hit_t *a, int8_t g_mat[25])$/;"	f
+bsw2_resolve_duphits	bwtsw2_core.c	/^int bsw2_resolve_duphits(const bntseq_t *bns, const bwt_t *bwt, bwtsw2_t *b, int IS)$/;"	f
+bsw2_resolve_query_overlaps	bwtsw2_core.c	/^int bsw2_resolve_query_overlaps(bwtsw2_t *b, float mask_level)$/;"	f
+bsw2_stat	bwtsw2_pair.c	/^bsw2pestat_t bsw2_stat(int n, bwtsw2_t **buf, kstring_t *msg, int max_ins)$/;"	f
+bsw2aux_t	bwtsw2.h	/^} bsw2aux_t;$/;"	t	typeref:struct:__anon75
+bsw2cell_t	bwtsw2_core.c	/^} bsw2cell_t;$/;"	t	typeref:struct:__anon2	file:
+bsw2entry_p	bwtsw2_core.c	/^} bsw2entry_t, *bsw2entry_p;$/;"	t	typeref:struct:__anon3	file:
+bsw2entry_t	bwtsw2_core.c	/^} bsw2entry_t, *bsw2entry_p;$/;"	t	typeref:struct:__anon3	file:
+bsw2global_t	bwtsw2.h	/^} bsw2global_t;$/;"	t	typeref:struct:__anon77
+bsw2hit_t	bwtsw2.h	/^} bsw2hit_t;$/;"	t	typeref:struct:__anon74
+bsw2opt_t	bwtsw2.h	/^} bsw2opt_t;$/;"	t	typeref:struct:__anon73
+bsw2pestat_t	bwtsw2_pair.c	/^} bsw2pestat_t;$/;"	t	typeref:struct:__anon62	file:
+bsw2seq1_t	bwtsw2.h	/^} bsw2seq1_t;$/;"	t	typeref:struct:__anon78
+bsw2seq_t	bwtsw2_aux.c	/^} bsw2seq_t;$/;"	t	typeref:struct:__anon79	file:
+bsw2stack_t	bwtsw2_core.c	/^} bsw2stack_t;$/;"	t	typeref:struct:__anon4	file:
+buildSize	bwt_gen.c	/^	bgint_t buildSize;$/;"	m	struct:BWTInc	file:
+bw	bwtsw2.h	/^	int a, b, q, r, t, qr, bw, max_ins, max_chain_gap;$/;"	m	struct:__anon73
+bwa_aln	bwtaln.c	/^int bwa_aln(int argc, char *argv[])$/;"	f
+bwa_aln2seq	bwase.c	/^void bwa_aln2seq(int n_aln, const bwt_aln1_t *aln, bwa_seq_t *s)$/;"	f
+bwa_aln2seq_core	bwase.c	/^void bwa_aln2seq_core(int n_aln, const bwt_aln1_t *aln, bwa_seq_t *s, int set_main, int n_multi)$/;"	f
+bwa_aln_core	bwtaln.c	/^void bwa_aln_core(const char *prefix, const char *fn_fa, const gap_opt_t *opt)$/;"	f
+bwa_approx_mapQ	bwase.c	/^int bwa_approx_mapQ(const bwa_seq_t *p, int mm)$/;"	f
+bwa_bam_open	bwaseqio.c	/^bwa_seqio_t *bwa_bam_open(const char *fn, int which)$/;"	f
+bwa_bwt2sa	bwtindex.c	/^int bwa_bwt2sa(int argc, char *argv[]) \/\/ the "bwt2sa" command$/;"	f
+bwa_bwtsw2	bwtsw2_main.c	/^int bwa_bwtsw2(int argc, char *argv[])$/;"	f
+bwa_bwtupdate	bwtindex.c	/^int bwa_bwtupdate(int argc, char *argv[]) \/\/ the "bwtupdate" command$/;"	f
+bwa_cal_maxdiff	bwtaln.c	/^int bwa_cal_maxdiff(int l, double err, double thres)$/;"	f
+bwa_cal_md1	bwase.c	/^char *bwa_cal_md1(int n_cigar, bwa_cigar_t *cigar, int len, bwtint_t pos, ubyte_t *seq,$/;"	f
+bwa_cal_pac_pos	bwase.c	/^void bwa_cal_pac_pos(const bntseq_t *bns, const char *prefix, int n_seqs, bwa_seq_t *seqs, int max_mm, float fnr)$/;"	f
+bwa_cal_pac_pos_core	bwase.c	/^void bwa_cal_pac_pos_core(const bntseq_t *bns, const bwt_t *bwt, bwa_seq_t *seq, const int max_mm, const float fnr)$/;"	f
+bwa_cal_pac_pos_pe	bwape.c	/^int bwa_cal_pac_pos_pe(const bntseq_t *bns, const char *prefix, bwt_t *const _bwt, int n_seqs, bwa_seq_t *seqs[2], FILE *fp_sa[2], isize_info_t *ii,$/;"	f
+bwa_cal_sa_reg_gap	bwtaln.c	/^void bwa_cal_sa_reg_gap(int tid, bwt_t *const bwt, int n_seqs, bwa_seq_t *seqs, const gap_opt_t *opt)$/;"	f
+bwa_cigar_t	bwtaln.h	/^typedef uint16_t bwa_cigar_t;$/;"	t
+bwa_correct_trimmed	bwase.c	/^void bwa_correct_trimmed(bwa_seq_t *s)$/;"	f
+bwa_escape	bwa.c	/^static char *bwa_escape(char *s)$/;"	f	file:
+bwa_fa2pac	bntseq.c	/^int bwa_fa2pac(int argc, char *argv[])$/;"	f
+bwa_fill_scmat	bwa.c	/^void bwa_fill_scmat(int a, int b, int8_t mat[25])$/;"	f
+bwa_free_read_seq	bwaseqio.c	/^void bwa_free_read_seq(int n_seqs, bwa_seq_t *seqs)$/;"	f
+bwa_gen_cigar	bwa.c	/^uint32_t *bwa_gen_cigar(const int8_t mat[25], int q, int r, int w_, int64_t l_pac, const uint8_t *pac, int l_query, uint8_t *query, int64_t rb, int64_t re, int *score, int *n_cigar, int *NM)$/;"	f
+bwa_gen_cigar2	bwa.c	/^uint32_t *bwa_gen_cigar2(const int8_t mat[25], int o_del, int e_del, int o_ins, int e_ins, int w_, int64_t l_pac, const uint8_t *pac, int l_query, uint8_t *query, int64_t rb, int64_t re, int *score, int *n_cigar, int *NM)$/;"	f
+bwa_gen_cigar2_gpu	cuda/bwa_CUDA.cu	/^__device__ uint32_t *bwa_gen_cigar2_gpu(const int8_t mat[25], int o_del, int e_del, int o_ins, int e_ins, int w_, int64_t l_pac, const uint8_t *pac, int l_query, uint8_t *query, int64_t rb, int64_t re, int *score, int *n_cigar, int *NM, void* d_buffer_ptr)$/;"	f
+bwa_idx2mem	bwa.c	/^int bwa_idx2mem(bwaidx_t *idx)$/;"	f
+bwa_idx_build	bwtindex.c	/^int bwa_idx_build(const char *fa, const char *prefix, int algo_type, int block_size)$/;"	f
+bwa_idx_destroy	bwa.c	/^void bwa_idx_destroy(bwaidx_t *idx)$/;"	f
+bwa_idx_infer_prefix	bwa.c	/^char *bwa_idx_infer_prefix(const char *hint)$/;"	f
+bwa_idx_load	bwa.c	/^bwaidx_t *bwa_idx_load(const char *hint, int which)$/;"	f
+bwa_idx_load_bwt	bwa.c	/^bwt_t *bwa_idx_load_bwt(const char *hint)$/;"	f
+bwa_idx_load_from_disk	bwa.c	/^bwaidx_t *bwa_idx_load_from_disk(const char *hint, int which)$/;"	f
+bwa_idx_load_from_shm	bwashm.c	/^bwaidx_t *bwa_idx_load_from_shm(const char *hint)$/;"	f
+bwa_index	bwtindex.c	/^int bwa_index(int argc, char *argv[]) \/\/ the "index" command$/;"	f
+bwa_init_pe_opt	bwape.c	/^pe_opt_t *bwa_init_pe_opt()$/;"	f
+bwa_insert_header	bwa.c	/^char *bwa_insert_header(const char *s, char *hdr)$/;"	f
+bwa_mem2idx	bwa.c	/^int bwa_mem2idx(int64_t l_mem, uint8_t *mem, bwaidx_t *idx)$/;"	f
+bwa_open_reads	bwtaln.c	/^bwa_seqio_t *bwa_open_reads(int mode, const char *fn_fa)$/;"	f
+bwa_pac2bwt	bwtindex.c	/^int bwa_pac2bwt(int argc, char *argv[]) \/\/ the "pac2bwt" command; IMPORTANT: bwt generated at this step CANNOT be used with BWA. bwtupdate is required!$/;"	f
+bwa_paired_sw	bwape.c	/^ubyte_t *bwa_paired_sw(const bntseq_t *bns, const ubyte_t *_pacseq, int n_seqs, bwa_seq_t *seqs[2], const pe_opt_t *popt, const isize_info_t *ii)$/;"	f
+bwa_pemerge	pemerge.c	/^int bwa_pemerge(const pem_opt_t *opt, bseq1_t x[2])$/;"	f
+bwa_pg	bwa.c	/^char *bwa_pg;$/;"	v
+bwa_postalt	bwakit/bwa-postalt.js	/^function bwa_postalt(args)$/;"	f	function:collect_hla_hits
+bwa_print_sam1	bwase.c	/^void bwa_print_sam1(const bntseq_t *bns, bwa_seq_t *p, const bwa_seq_t *mate, int mode, int max_top2)$/;"	f
+bwa_print_sam_hdr	bwa.c	/^void bwa_print_sam_hdr(const bntseq_t *bns, const char *hdr_line)$/;"	f
+bwa_print_seq	bwase.c	/^void bwa_print_seq(FILE *stream, bwa_seq_t *seq) {$/;"	f
+bwa_read_bam	bwaseqio.c	/^static bwa_seq_t *bwa_read_bam(bwa_seqio_t *bs, int n_needed, int *n, int is_comp, int trim_qual)$/;"	f	file:
+bwa_read_seq	bwaseqio.c	/^bwa_seq_t *bwa_read_seq(bwa_seqio_t *bs, int n_needed, int *n, int mode, int trim_qual)$/;"	f
+bwa_refine_gapped	bwase.c	/^void bwa_refine_gapped(const bntseq_t *bns, int n_seqs, bwa_seq_t *seqs, ubyte_t *_pacseq)$/;"	f
+bwa_refine_gapped_core	bwase.c	/^bwa_cigar_t *bwa_refine_gapped_core(bwtint_t l_pac, const ubyte_t *pacseq, int len, ubyte_t *seq, int ref_shift, bwtint_t *_rb, int *n_cigar)$/;"	f
+bwa_rg_id	bwa.c	/^char bwa_rg_id[256];$/;"	v
+bwa_sa2pos	bwase.c	/^bwtint_t bwa_sa2pos(const bntseq_t *bns, const bwt_t *bwt, bwtint_t sapos, int ref_len, int *strand)$/;"	f
+bwa_sai2sam_pe	bwape.c	/^int bwa_sai2sam_pe(int argc, char *argv[])$/;"	f
+bwa_sai2sam_pe_core	bwape.c	/^void bwa_sai2sam_pe_core(const char *prefix, char *const fn_sa[2], char *const fn_fa[2], pe_opt_t *popt, const char *rg_line)$/;"	f
+bwa_sai2sam_se	bwase.c	/^int bwa_sai2sam_se(int argc, char *argv[])$/;"	f
+bwa_sai2sam_se_core	bwase.c	/^void bwa_sai2sam_se_core(const char *prefix, const char *fn_sa, const char *fn_fa, int n_occ, const char *rg_line)$/;"	f
+bwa_seq_close	bwaseqio.c	/^void bwa_seq_close(bwa_seqio_t *bs)$/;"	f
+bwa_seq_len	bwtindex.c	/^int64_t bwa_seq_len(const char *fn_pac)$/;"	f
+bwa_seq_open	bwaseqio.c	/^bwa_seqio_t *bwa_seq_open(const char *fn)$/;"	f
+bwa_seq_t	bwtaln.h	/^} bwa_seq_t;$/;"	t	typeref:struct:__anon19
+bwa_seqio_t	bwtaln.h	/^typedef struct __bwa_seqio_t bwa_seqio_t;$/;"	t	typeref:struct:__bwa_seqio_t
+bwa_set_rg	bwa.c	/^char *bwa_set_rg(const char *s)$/;"	f
+bwa_shm_destroy	bwashm.c	/^int bwa_shm_destroy(void)$/;"	f
+bwa_shm_list	bwashm.c	/^int bwa_shm_list(void)$/;"	f
+bwa_shm_stage	bwashm.c	/^int bwa_shm_stage(bwaidx_t *idx, const char *hint, const char *_tmpfn)$/;"	f
+bwa_shm_test	bwashm.c	/^int bwa_shm_test(const char *hint)$/;"	f
+bwa_sw_core	bwape.c	/^bwa_cigar_t *bwa_sw_core(bwtint_t l_pac, const ubyte_t *pacseq, int len, const ubyte_t *seq, int64_t *beg, int reglen, int *n_cigar, uint32_t *_cnt)$/;"	f
+bwa_trim_read	bwaseqio.c	/^int bwa_trim_read(int trim_qual, bwa_seq_t *p)$/;"	f
+bwa_verbose	bwa.c	/^int bwa_verbose = 3;$/;"	v
+bwaidx_t	bwa.h	/^} bwaidx_t;$/;"	t	typeref:struct:__anon24
+bwase_initialize	bwase.c	/^void bwase_initialize() $/;"	f
+bwt	bwa.h	/^	bwt_t    *bwt; \/\/ FM-index$/;"	m	struct:__anon24
+bwt	bwamem.c	/^	const bwt_t *bwt;$/;"	m	struct:__anon69	file:
+bwt	bwamem_extra.c	/^	const bwt_t *bwt;$/;"	m	struct:__smem_i	file:
+bwt	bwt.h	/^	uint32_t *bwt; \/\/ BWT$/;"	m	struct:__anon50
+bwt	bwt_gen.c	/^	BWT *bwt;$/;"	m	struct:BWTInc	file:
+bwt	bwt_lite.h	/^	uint32_t *bwt, *occ, *sa, L2[5];$/;"	m	struct:__anon44
+bwt	bwtaln.c	/^	bwt_t *bwt;$/;"	m	struct:__anon14	file:
+bwtCode	bwt_gen.c	/^	unsigned int *bwtCode;				\/\/ BWT code$/;"	m	struct:BWT	file:
+bwtSizeInWord	bwt_gen.c	/^	bgint_t bwtSizeInWord;				\/\/ Temporary variable to hold the memory allocated$/;"	m	struct:BWT	file:
+bwt_2occ	bwt.c	/^void bwt_2occ(const bwt_t *bwt, bwtint_t k, bwtint_t l, ubyte_t c, bwtint_t *ok, bwtint_t *ol)$/;"	f
+bwt_2occ4	bwt.c	/^void bwt_2occ4(const bwt_t *bwt, bwtint_t k, bwtint_t l, bwtint_t cntk[4], bwtint_t cntl[4])$/;"	f
+bwt_2occ4_gpu	cuda/bwt_CUDA.cu	/^__device__ static void bwt_2occ4_gpu(const bwt_t *bwt, bwtint_t k, bwtint_t l, bwtint_t cntk[4], bwtint_t cntl[4])$/;"	f	file:
+bwt_B0	bwt.h	80;"	d
+bwt_B0	cuda/bwt_CUDA.cu	431;"	d	file:
+bwt_B00	bwtindex.c	148;"	d	file:
+bwt_KMerHashInit	cuda/bwt_CUDA.cu	/^__device__ bool bwt_KMerHashInit(int qlen, const uint8_t *q, int i, kmers_bucket_t *d_kmersHashTab, bwtintv_lite_t *interval){$/;"	f
+bwt_aln1_t	bwtaln.h	/^} bwt_aln1_t;$/;"	t	typeref:struct:__anon17
+bwt_bwt	bwt.h	74;"	d
+bwt_bwt	cuda/bwt_CUDA.cu	430;"	d	file:
+bwt_bwtgen	bwt_gen.c	/^void bwt_bwtgen(const char *fn_pac, const char *fn_bwt)$/;"	f
+bwt_bwtgen2	bwt_gen.c	/^void bwt_bwtgen2(const char *fn_pac, const char *fn_bwt, int block_size)$/;"	f
+bwt_bwtgen_main	bwt_gen.c	/^int bwt_bwtgen_main(int argc, char *argv[])$/;"	f
+bwt_bwtupdate_core	bwtindex.c	/^void bwt_bwtupdate_core(bwt_t *bwt)$/;"	f
+bwt_cal_sa	bwt.c	/^void bwt_cal_sa(bwt_t *bwt, int intv)$/;"	f
+bwt_cal_width	bwtaln.c	/^int bwt_cal_width(const bwt_t *bwt, int len, const ubyte_t *str, bwt_width_t *width)$/;"	f
+bwt_destroy	bwt.c	/^void bwt_destroy(bwt_t *bwt)$/;"	f
+bwt_dump_bwt	bwt.c	/^void bwt_dump_bwt(const char *fn, const bwt_t *bwt)$/;"	f
+bwt_dump_sa	bwt.c	/^void bwt_dump_sa(const char *fn, const bwt_t *bwt)$/;"	f
+bwt_extend	bwt.c	/^void bwt_extend(const bwt_t *bwt, const bwtintv_t *ik, bwtintv_t ok[4], int is_back)$/;"	f
+bwt_extend_gpu	cuda/bwt_CUDA.cu	/^__device__ static void bwt_extend_gpu(const bwt_t *bwt, const bwtintv_t *ik, bwtintv_t ok[4], int is_back)$/;"	f	file:
+bwt_extend_right1	cuda/bwt_CUDA.cu	/^__device__ bool bwt_extend_right1(const bwt_t *bwt, int qlen, const uint8_t *q, int min_intv, uint64_t max_intv, bwtintv_lite_t *interval){$/;"	f
+bwt_gen_cnt_table	bwt.c	/^void bwt_gen_cnt_table(bwt_t *bwt)$/;"	f
+bwt_invPsi	bwt.c	/^static inline bwtint_t bwt_invPsi(const bwt_t *bwt, bwtint_t k) \/\/ compute inverse CSA$/;"	f	file:
+bwt_invPsi	cuda/bwt_CUDA.cu	/^__device__ static inline bwtint_t bwt_invPsi(const bwt_t *bwt, bwtint_t k) \/\/ compute inverse CSA$/;"	f	file:
+bwt_match_exact	bwt.c	/^int bwt_match_exact(const bwt_t *bwt, int len, const ubyte_t *str, bwtint_t *sa_begin, bwtint_t *sa_end)$/;"	f
+bwt_match_exact_alt	bwt.c	/^int bwt_match_exact_alt(const bwt_t *bwt, int len, const ubyte_t *str, bwtint_t *k0, bwtint_t *l0)$/;"	f
+bwt_match_gap	bwtgap.c	/^bwt_aln1_t *bwt_match_gap(bwt_t *const bwt, int len, const ubyte_t *seq, bwt_width_t *width,$/;"	f
+bwt_multi1_t	bwtaln.h	/^} bwt_multi1_t;$/;"	t	typeref:struct:__anon18
+bwt_occ	bwt.c	/^bwtint_t bwt_occ(const bwt_t *bwt, bwtint_t k, ubyte_t c)$/;"	f
+bwt_occ4	bwt.c	/^void bwt_occ4(const bwt_t *bwt, bwtint_t k, bwtint_t cnt[4])$/;"	f
+bwt_occ4_gpu	cuda/bwt_CUDA.cu	/^__device__ static void bwt_occ4_gpu(const bwt_t *bwt, bwtint_t k, bwtint_t cnt[4])$/;"	f	file:
+bwt_occ_gpu	cuda/bwt_CUDA.cu	/^__device__ static bwtint_t bwt_occ_gpu(const bwt_t *bwt, bwtint_t k, ubyte_t c)$/;"	f	file:
+bwt_occ_intv	bwt.h	75;"	d
+bwt_occ_intv	cuda/bwt_CUDA.cu	35;"	d	file:
+bwt_pac2bwt	bwtindex.c	/^bwt_t *bwt_pac2bwt(const char *fn_pac, int use_is)$/;"	f
+bwt_restore_bwt	bwt.c	/^bwt_t *bwt_restore_bwt(const char *fn)$/;"	f
+bwt_restore_sa	bwt.c	/^void bwt_restore_sa(const char *fn, bwt_t *bwt)$/;"	f
+bwt_reverse_intvs	bwt.c	/^static void bwt_reverse_intvs(bwtintv_v *p)$/;"	f	file:
+bwt_reverse_intvs	cuda/bwt_CUDA.cu	/^__device__ static void bwt_reverse_intvs(bwtintv_v *p)$/;"	f	file:
+bwt_sa	bwt.c	/^bwtint_t bwt_sa(const bwt_t *bwt, bwtint_t k)$/;"	f
+bwt_sa_gpu	cuda/bwt_CUDA.cu	/^__device__ bwtint_t bwt_sa_gpu(const bwt_t *bwt, bwtint_t k)$/;"	f
+bwt_seed_strategy1	bwt.c	/^int bwt_seed_strategy1(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_len, int max_intv, bwtintv_t *mem)$/;"	f
+bwt_seed_strategy1_gpu	cuda/bwt_CUDA.cu	/^__device__ int bwt_seed_strategy1_gpu(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_len, int max_intv, bwtintv_t *mem)$/;"	f
+bwt_set_intv	bwt.h	82;"	d
+bwt_size	bwt.h	/^	bwtint_t bwt_size; \/\/ size of bwt, about seq_len\/4$/;"	m	struct:__anon50
+bwt_size	bwt_lite.h	/^	uint32_t seq_len, bwt_size, n_occ;$/;"	m	struct:__anon44
+bwt_smem1	bwt.c	/^int bwt_smem1(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, bwtintv_v *mem, bwtintv_v *tmpvec[2])$/;"	f
+bwt_smem1a	bwt.c	/^int bwt_smem1a(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, bwtintv_v *mem, bwtintv_v *tmpvec[2])$/;"	f
+bwt_smem1a_gpu	cuda/bwt_CUDA.cu	/^__device__ int bwt_smem1a_gpu(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, bwtintv_v *mem, bwtintv_v *tmpvec[2], void* d_buffer_ptr)$/;"	f
+bwt_smem_left	cuda/bwt_CUDA.cu	/^__device__ void bwt_smem_left(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, int min_seed_len, bwtintv_v *mem)$/;"	f
+bwt_smem_right	cuda/bwt_CUDA.cu	/^__device__ void bwt_smem_right(const bwt_t *bwt, int len, const uint8_t *q, int x, int min_intv, uint64_t max_intv, int min_seed_len, bwtintv_t *mem_a, kmers_bucket_t *d_kmersHashTab)$/;"	f
+bwt_t	bwt.h	/^} bwt_t;$/;"	t	typeref:struct:__anon50
+bwt_width_t	bwtaln.h	/^} bwt_width_t;$/;"	t	typeref:struct:__anon16
+bwtint_t	bwt.h	/^typedef uint64_t bwtint_t;$/;"	t
+bwtintv_t	bwt.h	/^} bwtintv_t;$/;"	t	typeref:struct:__anon51
+bwtintv_v	bwt.h	/^typedef struct { int n, m; bwtintv_t *a; } bwtintv_v;$/;"	t	typeref:struct:__anon52
+bwtl_2occ4	bwt_lite.c	/^void bwtl_2occ4(const bwtl_t *bwt, uint32_t k, uint32_t l, uint32_t cntk[4], uint32_t cntl[4])$/;"	f
+bwtl_B0	bwt_lite.h	13;"	d
+bwtl_destroy	bwt_lite.c	/^void bwtl_destroy(bwtl_t *bwt)$/;"	f
+bwtl_occ	bwt_lite.c	/^uint32_t bwtl_occ(const bwtl_t *bwt, uint32_t k, uint8_t c)$/;"	f
+bwtl_occ4	bwt_lite.c	/^void bwtl_occ4(const bwtl_t *bwt, uint32_t k, uint32_t cnt[4])$/;"	f
+bwtl_seq2bwtl	bwt_lite.c	/^bwtl_t *bwtl_seq2bwtl(int len, const uint8_t *seq)$/;"	f
+bwtl_t	bwt_lite.h	/^} bwtl_t;$/;"	t	typeref:struct:__anon44
+bwtsw2_t	bwtsw2.h	/^} bwtsw2_t;$/;"	t	typeref:struct:__anon76
+c	bwakit/typeHLA.js	/^var c, thres_len = 50, thres_ratio = .8, thres_nm = 5, thres_frac = .33, dbg = false;$/;"	v
+c	rope.h	/^	int64_t c[6]; \/\/ marginal counts$/;"	m	struct:__anon59
+c	rope.h	/^	int64_t c[6]; \/\/ marginal counts$/;"	m	struct:rpnode_s
+c1	bwtaln.h	/^	uint64_t c1:28, c2:28, seQ:8; \/\/ number of top1 and top2 hits; single-end mapQ$/;"	m	struct:__anon19
+c2	bwtaln.h	/^	uint64_t c1:28, c2:28, seQ:8; \/\/ number of top1 and top2 hits; single-end mapQ$/;"	m	struct:__anon19
+cal_max_gap	bwamem.c	/^static inline int cal_max_gap(const mem_opt_t *opt, int qlen)$/;"	f	file:
+cal_max_gap	cuda/bwamem_GPU.cu	/^__device__ static inline int cal_max_gap(const mem_opt_t *opt, int qlen)$/;"	f	file:
+cal_sub	bwamem_pair.c	/^static int cal_sub(const mem_opt_t *opt, mem_alnreg_v *r)$/;"	f	file:
+cal_sub	cuda/bwamem_GPU.cu	/^__device__ static int cal_sub(const mem_opt_t *opt, mem_alnreg_v *r)$/;"	f	file:
+calloc	malloc_wrap.h	26;"	d
+calloc	malloc_wrap.h	28;"	d
+ceilLog2	bwt_gen.c	/^static unsigned int ceilLog2(const unsigned int input)$/;"	f	file:
+chain	bwtsw2_chain.c	/^	int chain; \/\/ also reuse as a counter$/;"	m	struct:__anon64	file:
+chainID	bwa.h	/^	uint16_t chainID;	\/\/ index on the chain vector of the read$/;"	m	struct:__anon36
+chain_cmp	bwamem.c	193;"	d	file:
+chaining	bwtsw2_chain.c	/^static int chaining(const bsw2opt_t *opt, int shift, int n, hsaip_t *z, hsaip_t *chain)$/;"	f	file:
+charToInt	kmers_index/hashKMer.hpp	29;"	d
+chartoInt	kmers_index/hashKMer.hpp	80;"	d
+chn_beg	bwamem.c	328;"	d	file:
+chn_beg	cuda/bwamem_GPU.cu	81;"	d	file:
+chn_end	bwamem.c	329;"	d	file:
+chn_end	cuda/bwamem_GPU.cu	82;"	d	file:
+chr	bwtsw2.h	/^	int flag, nn, n_cigar, chr, pos, qual, mchr, mpos, pqual, isize, nm;$/;"	m	struct:__anon75
+chr	is.c	34;"	d	file:
+chunk_size	bwa.h	/^	int chunk_size;         \/\/ process chunk_size-bp sequences in a batch$/;"	m	struct:__anon26
+chunk_size	bwtsw2.h	/^	int n_threads, chunk_size;$/;"	m	struct:__anon73
+chunk_size	pemerge.c	/^	int chunk_size;$/;"	m	struct:__anon48	file:
+cigar	bwa.h	/^	uint32_t *cigar; \/\/ CIGAR in the BAM encoding: opLen<<4|op; op to integer mapping: MIDSH=>01234$/;"	m	struct:__anon34
+cigar	bwtaln.h	/^	bwa_cigar_t *cigar;$/;"	m	struct:__anon18
+cigar	bwtaln.h	/^	bwa_cigar_t *cigar;$/;"	m	struct:__anon19
+cigar	bwtsw2.h	/^	uint32_t *cigar;$/;"	m	struct:__anon75
+cigar	bwtsw2_pair.c	/^	uint32_t *cigar;$/;"	m	struct:__anon63	file:
+cigar2pos	bwakit/bwa-postalt.js	/^function cigar2pos(cigar, pos)$/;"	f
+clip_len	bwtaln.h	/^	int clip_len;$/;"	m	struct:__anon19
+cmd2argv	kopen.c	/^static char **cmd2argv(const char *cmd)$/;"	f	file:
+cnt	bwtsw2_core.c	/^	int cnt; \/\/ if cnt!=0, then there must be memory leak$/;"	m	struct:__mempool_t	file:
+cnt	pemerge.c	/^	int64_t cnt[MAX_ERR+1];$/;"	m	struct:__anon49	file:
+cnt_table	bwt.h	/^	uint32_t cnt_table[256];$/;"	m	struct:__anon50
+cnt_table	bwt_lite.h	/^	uint32_t cnt_table[256];$/;"	m	struct:__anon44
+coef	bwtsw2.h	/^	float mask_level, coef;$/;"	m	struct:__anon73
+collect_hla_hits	bwakit/bwa-postalt.js	/^function collect_hla_hits(idx, ctg, start, end, hla) \/\/ collect reads hit to HLA genes$/;"	f
+comment	bwa.h	/^	char *comment;	   \/\/ big chunk of all comments$/;"	m	struct:superbatch_data_t
+comment	bwa.h	/^	char *name, *comment, *seq, *qual, *sam;$/;"	m	struct:__anon25
+comment	bwtsw2.h	/^	char *name, *seq, *qual, *sam, *comment;$/;"	m	struct:__anon78
+comment_size	bwa.h	/^	long comment_size; \/\/ total length of comment strings$/;"	m	struct:superbatch_data_t
+compareReads	cuda/superbatch_process.cpp	/^static int compareReads(const void *a, const void *b)$/;"	f	file:
+compare_gt_m128i	cuda/ksw_CUDA.cu	/^static inline __device__ int compare_gt_m128i(m128i a, m128i b){$/;"	f	file:
+convert2DevAddr	cuda/minibatch_process.cpp	/^void convert2DevAddr(transfer_data_t *transfer_data)$/;"	f
+copyReads2PinnedMem	cuda/minibatch_process.cpp	/^void copyReads2PinnedMem(superbatch_data_t *superbatch_data, transfer_data_t *transfer_data, int firstReadId, int n_reads){$/;"	f
+copy_comment	cuda/superbatch_process.h	/^	int copy_comment, actual_chunk_size;$/;"	m	struct:__anon13
+core	bamlite.h	/^	bam1_core_t core;$/;"	m	struct:__anon47
+cpos	bwtsw2_core.c	/^	int cpos[4];$/;"	m	struct:__anon2	file:
+cputime	utils.c	/^double cputime()$/;"	f
+cpy_cmt	bwtsw2.h	/^	int skip_sw:8, cpy_cmt:8, hard_clip:16;$/;"	m	struct:__anon73
+createHashKTable	kmers_index/hashKMer.hpp	/^kmers_bucket_t* createHashKTable(const bwt_t *bwt){$/;"	f
+csub	bwa.h	/^	int csub;       \/\/ SW score of a tandem hit$/;"	m	struct:__anon31
+ctrl_fd	kopen.c	/^	int max_response, ctrl_fd;$/;"	m	struct:__anon70	file:
+cudaKernelMemcpy	cuda/CUDAKernel_memmgnt.cu	/^__device__ void cudaKernelMemcpy(void* from, void* to, size_t len){$/;"	f
+cudaKernelMemmove	cuda/CUDAKernel_memmgnt.cu	/^__device__ void cudaKernelMemmove(void* from, void* to, size_t len){$/;"	f
+cudaKernelSizeOf	cuda/CUDAKernel_memmgnt.cu	/^__device__ unsigned cudaKernelSizeOf(void* ptr){$/;"	f
+cumulativeCountInCurrentBuild	bwt_gen.c	/^	bgint_t *cumulativeCountInCurrentBuild;$/;"	m	struct:BWTInc	file:
+cumulativeFreq	bwt_gen.c	/^	bgint_t *cumulativeFreq;			\/\/ cumulative frequency$/;"	m	struct:BWT	file:
+current_offset	cuda/CUDAKernel_memmgnt.cu	/^	unsigned current_offset;	\/\/ current offset to the available part of the chunk$/;"	m	struct:__anon5	file:
+cut_tail	bwtsw2_core.c	/^static void cut_tail(bsw2entry_t *u, int T, bsw2entry_t *aux)$/;"	f	file:
+cv	kthread.c	/^	pthread_cond_t cv;$/;"	m	struct:ktp_t	file:
+d	rope.h	/^	int d; \/\/ the current depth in the B+-tree$/;"	m	struct:__anon60
+d_Nseeds	bwa.h	/^	int *d_Nseeds;			\/\/ total number of seeds$/;"	m	struct:__anon38
+d_alns	bwa.h	/^	mem_aln_v * d_alns;		\/\/ alignment vectors, size nseqs$/;"	m	struct:__anon38
+d_aux	bwa.h	/^	smem_aux_t* d_aux;		\/\/ collections of SA intervals, vector of size nseqs$/;"	m	struct:__anon38
+d_bns	bwa.h	/^	bntseq_t* d_bns;		$/;"	m	struct:__anon38
+d_buffer_pools	bwa.h	/^	void* d_buffer_pools;	\/\/ buffer pools$/;"	m	struct:__anon38
+d_bwt	bwa.h	/^	bwt_t* d_bwt;			\/\/ bwt$/;"	m	struct:__anon38
+d_chains	bwa.h	/^	mem_chain_v *d_chains;	\/\/ chain vectors of size nseqs$/;"	m	struct:__anon38
+d_charToInt	cuda/bwt_CUDA.cu	194;"	d	file:
+d_hashK	cuda/bwt_CUDA.cu	/^__device__ int d_hashK(const uint8_t* s){$/;"	f
+d_intToChar	cuda/bwt_CUDA.cu	195;"	d	file:
+d_kmerHashTab	bwa.h	/^	kmers_bucket_t* d_kmerHashTab;$/;"	m	struct:__anon38
+d_nst_nt4_table	cuda/bwamem_GPU.cu	/^__device__ __constant__ unsigned char d_nst_nt4_table[256] = {$/;"	v
+d_nst_nt4_table	cuda/preprocessing.cu	/^__device__ __constant__ unsigned char d_nst_nt4_table[256] = {$/;"	v
+d_opt	bwa.h	/^	mem_opt_t* d_opt;		\/\/ user-defined options$/;"	m	struct:__anon38
+d_pac	bwa.h	/^	uint8_t* d_pac; $/;"	m	struct:__anon38
+d_pes	bwa.h	/^	mem_pestat_t* d_pes; 	\/\/ paired-end stats$/;"	m	struct:__anon38
+d_regs	bwa.h	/^	mem_alnreg_v *d_regs;	\/\/ alignment info vectors, size nseqs$/;"	m	struct:__anon38
+d_seed_records	bwa.h	/^	seed_record_t *d_seed_records; 	\/\/ global records of seeds, a big chunk of memory$/;"	m	struct:__anon38
+d_seqIDs_in	bwa.h	/^	int *d_seqIDs_in;$/;"	m	struct:__anon38
+d_seqIDs_out	bwa.h	/^	int *d_seqIDs_out;$/;"	m	struct:__anon38
+d_seq_comment_ptr	bwa.h	/^    char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon38
+d_seq_comment_ptr	bwa.h	/^    char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon39
+d_seq_name_ptr	bwa.h	/^    char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon38
+d_seq_name_ptr	bwa.h	/^    char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon39
+d_seq_qual_ptr	bwa.h	/^    char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon38
+d_seq_qual_ptr	bwa.h	/^    char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon39
+d_seq_sam_ptr	bwa.h	/^    char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon38
+d_seq_sam_ptr	bwa.h	/^    char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon39
+d_seq_sam_size	bwa.h	/^	int *d_seq_sam_size;	\/\/ length of sam on device$/;"	m	struct:__anon39
+d_seq_sam_size	bwa.h	/^	int *d_seq_sam_size;	\/\/ length of sam on device, also used for all threads to atomic write SAM$/;"	m	struct:__anon38
+d_seq_seeds	bwa.h	/^	mem_seed_v* d_seq_seeds;\/\/ seeds array for each read$/;"	m	struct:__anon38
+d_seq_seq_ptr	bwa.h	/^    char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon38
+d_seq_seq_ptr	bwa.h	/^    char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon39
+d_seqs	bwa.h	/^	bseq1_t *d_seqs;		\/\/ reads$/;"	m	struct:__anon38
+d_seqs	bwa.h	/^	bseq1_t *d_seqs;		\/\/ reads$/;"	m	struct:__anon39
+d_sortkeys_in	bwa.h	/^	int *d_sortkeys_in;$/;"	m	struct:__anon38
+d_sortkeys_out	bwa.h	/^	int *d_sortkeys_out;$/;"	m	struct:__anon38
+data	bamlite.h	/^	uint8_t *data;$/;"	m	struct:__anon47
+data	kthread.c	/^	void *data;$/;"	m	struct:__anon23	file:
+data	kthread.c	/^	void *data;$/;"	m	struct:kt_for_t	file:
+data_len	bamlite.h	/^	int l_aux, data_len, m_data;$/;"	m	struct:__anon47
+decodeTable	bwt_gen.c	/^	unsigned int *decodeTable;			\/\/ For decoding BWT by table lookup$/;"	m	struct:BWT	file:
+depth	cuda/ksort_CUDA.h	/^	int depth;$/;"	m	struct:__anon7
+depth	ksort.h	/^	int depth;$/;"	m	struct:__anon40
+drop_ratio	bwa.h	/^	float drop_ratio;       \/\/ drop a chain if its seed coverage is below drop_ratio times the seed coverage of a better chain overlapping with the small chain$/;"	m	struct:__anon26
+dummy	bwtaln.h	/^	uint32_t len:20, strand:1, type:2, dummy:1, extra_flag:8;$/;"	m	struct:__anon19
+dumpArray	kmers_index/datadump.hpp	/^void dumpArray(T *arr, unsigned long long arr_size, const std::string& file_name){$/;"	f
+dumpObject	kmers_index/datadump.hpp	/^void dumpObject(T object, const std::string& file_name){$/;"	f
+dupkstring	bwa.c	/^static inline char *dupkstring(const kstring_t *str, int dupempty)$/;"	f	file:
+e	bwakit/bwa-postalt.js	/^	var c, opt = { a:1, b:4, o:6, e:1, min_mapq:10, min_sc:90, max_nm_sc:10, min_pa_ratio:1 };$/;"	p	class:collect_hla_hits.bwa_postalt.c
+e	cuda/ksw_CUDA.cu	/^	int32_t h, e;$/;"	m	struct:__anon10	file:
+e	ksw.c	/^	int32_t h, e;$/;"	m	struct:__anon15	file:
+e_del	bwa.h	/^	int o_del, e_del;$/;"	m	struct:__anon26
+e_ins	bwa.h	/^	int o_ins, e_ins;$/;"	m	struct:__anon26
+eh_t	cuda/ksw_CUDA.cu	/^} eh_t;$/;"	t	typeref:struct:__anon10	file:
+eh_t	ksw.c	/^} eh_t;$/;"	t	typeref:struct:__anon15	file:
+end	bwtsw2.h	/^	int beg, end;$/;"	m	struct:__anon74
+end	bwtsw2_pair.c	/^	int n_cigar, beg, end, len;$/;"	m	struct:__anon63	file:
+end_offset	cuda/CUDAKernel_memmgnt.cu	/^	unsigned end_offset;		\/\/ the max offset of the chunk$/;"	m	struct:__anon5	file:
+err_fatal	utils.c	/^void err_fatal(const char *header, const char *fmt, ...)$/;"	f
+err_fatal_core	utils.c	/^void err_fatal_core(const char *header, const char *fmt, ...)$/;"	f
+err_fatal_simple	utils.h	41;"	d
+err_fatal_simple_core	utils.h	42;"	d
+err_fclose	utils.c	/^int err_fclose(FILE *stream) $/;"	f
+err_fflush	utils.c	/^int err_fflush(FILE *stream) $/;"	f
+err_fprintf	utils.c	/^int err_fprintf(FILE *stream, const char *format, ...) $/;"	f
+err_fputc	utils.c	/^int err_fputc(int c, FILE *stream)$/;"	f
+err_fputs	utils.c	/^int err_fputs(const char *s, FILE *stream)$/;"	f
+err_fread_noeof	utils.c	/^size_t err_fread_noeof(void *ptr, size_t size, size_t nmemb, FILE *stream)$/;"	f
+err_fseek	utils.c	/^int err_fseek(FILE *stream, long offset, int whence)$/;"	f
+err_ftell	utils.c	/^long err_ftell(FILE *stream)$/;"	f
+err_fwrite	utils.c	/^size_t err_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)$/;"	f
+err_gzclose	utils.c	/^int err_gzclose(gzFile file)$/;"	f
+err_gzread	utils.c	/^int err_gzread(gzFile file, void *ptr, unsigned int len)$/;"	f
+err_msg	pemerge.c	/^static const char *err_msg[MAX_ERR+1] = {$/;"	v	file:
+err_printf	utils.c	/^int err_printf(const char *format, ...) $/;"	f
+err_putchar	utils.h	80;"	d
+err_puts	utils.c	/^int err_puts(const char *s)$/;"	f
+err_rewind	utils.h	73;"	d
+err_xreopen_core	utils.c	/^FILE *err_xreopen_core(const char *func, const char *fn, const char *mode, FILE *fp)$/;"	f
+err_xzopen_core	utils.c	/^gzFile err_xzopen_core(const char *func, const char *fn, const char *mode)$/;"	f
+extra_flag	bwtaln.h	/^	uint32_t len:20, strand:1, type:2, dummy:1, extra_flag:8;$/;"	m	struct:__anon19
+failed	bwa.h	/^	int failed;      \/\/ non-zero if the orientation is not supported by sufficient data$/;"	m	struct:__anon33
+failed	bwtsw2_pair.c	/^	int low, high, failed;$/;"	m	struct:__anon62	file:
+fd	kopen.c	/^	int type, fd;$/;"	m	struct:__anon71	file:
+fill_cell	bwtsw2_core.c	/^static inline int fill_cell(const bsw2opt_t *o, int match_score, bsw2cell_t *c[4])$/;"	f	file:
+first	bwa.h	/^	int16_t n, m, first, rid;$/;"	m	struct:__anon29
+firstCharInLastIteration	bwt_gen.c	/^	unsigned int firstCharInLastIteration;$/;"	m	struct:BWTInc	file:
+fix_cigar	bwtsw2_aux.c	/^static int fix_cigar(const bntseq_t *bns, bsw2hit_t *p, int n_cigar, uint32_t *cigar)$/;"	f	file:
+flag	bamlite.h	/^	uint32_t flag:16, n_cigar:16;$/;"	m	struct:__anon46
+flag	bwa.h	/^	int flag;               \/\/ see MEM_F_* macros$/;"	m	struct:__anon26
+flag	bwa.h	/^	int flag;        \/\/ extra flag$/;"	m	struct:__anon34
+flag	bwtsw2.h	/^	int flag, nn, n_cigar, chr, pos, qual, mchr, mpos, pqual, isize, nm;$/;"	m	struct:__anon75
+flag	bwtsw2.h	/^	uint32_t flag:18, n_seeds:13, is_rev:1;$/;"	m	struct:__anon74
+flag	bwtsw2_chain.c	/^	uint32_t flag:1, idx:31;$/;"	m	struct:__anon64	file:
+flag	pemerge.c	/^	int flag; \/\/ bit 1: print merged; 2: print unmerged$/;"	m	struct:__anon48	file:
+flag_fr	bwtsw2_aux.c	/^static void flag_fr(bwtsw2_t *b[2])$/;"	f	file:
+flt_lt	bwamem.c	331;"	d	file:
+flt_lt	cuda/ksort_CUDA.h	94;"	d
+fnr	bwtaln.h	/^	float fnr;$/;"	m	struct:__anon20
+force_isize	bwtaln.h	/^	int max_isize, force_isize;$/;"	m	struct:__anon21
+fp	bwaseqio.c	/^	bamFile fp;$/;"	m	struct:__bwa_seqio_t	file:
+fp_pac	bntseq.h	/^	FILE *fp_pac;$/;"	m	struct:__anon55
+frac_rep	bwa.h	/^	float frac_rep;$/;"	m	struct:__anon27
+frac_rep	bwa.h	/^	float frac_rep;$/;"	m	struct:__anon29
+frac_rep	bwa.h	/^	float frac_rep;$/;"	m	struct:__anon31
+fread_fix	bwt.c	/^static bwtint_t fread_fix(FILE *fp, bwtint_t size, void *a)$/;"	f	file:
+ftoa	cuda/kstring_CUDA.cu	/^__device__ static inline int ftoa(float n, char* res, int afterpoint) $/;"	f	file:
+ftp_open	kopen.c	/^static int ftp_open(const char *fn)$/;"	f	file:
+ftpaux_t	kopen.c	/^} ftpaux_t;$/;"	t	typeref:struct:__anon70	file:
+full_len	bwtaln.h	/^	uint32_t full_len:20, nm:12;$/;"	m	struct:__anon19
+func	kthread.c	/^	void (*func)(void*,long,int);$/;"	m	struct:kt_for_t	file:
+func	kthread.c	/^	void *(*func)(void*, int, void*);$/;"	m	struct:ktp_t	file:
+g_default_cell	bwtsw2_core.c	/^static const bsw2cell_t g_default_cell = { 0, 0, MINUS_INF, MINUS_INF, MINUS_INF, 0, 0, 0, -1, -1, {-1, -1, -1, -1} };$/;"	v	file:
+g_defr	cuda/ksw_CUDA.cu	/^__device__ const kswr_t g_defr = { 0, -1, -1, -1, -1, -1, -1 };$/;"	v
+g_defr	ksw.c	/^const kswr_t g_defr = { 0, -1, -1, -1, -1, -1, -1 };$/;"	v
+g_hash	bwape.c	/^static kh_b128_t *g_hash;$/;"	v	file:
+g_log_n	bwase.c	/^int g_log_n[256];$/;"	v
+gap	bwtaln.h	/^	uint32_t n_cigar:15, gap:8, mm:8, strand:1;$/;"	m	struct:__anon18
+gap_destroy_stack	bwtgap.c	/^void gap_destroy_stack(gap_stack_t *stack)$/;"	f
+gap_entry_t	bwtgap.h	/^} gap_entry_t;$/;"	t	typeref:struct:__anon81
+gap_init_opt	bwtaln.c	/^gap_opt_t *gap_init_opt()$/;"	f
+gap_init_stack	bwtgap.c	/^gap_stack_t *gap_init_stack(int max_mm, int max_gapo, int max_gape, const gap_opt_t *opt)$/;"	f
+gap_init_stack2	bwtgap.c	/^gap_stack_t *gap_init_stack2(int max_score)$/;"	f
+gap_opt_t	bwtaln.h	/^} gap_opt_t;$/;"	t	typeref:struct:__anon20
+gap_pop	bwtgap.c	/^static inline void gap_pop(gap_stack_t *stack, gap_entry_t *e)$/;"	f	file:
+gap_push	bwtgap.c	/^static inline void gap_push(gap_stack_t *stack, int i, bwtint_t k, bwtint_t l, int n_mm, int n_gapo, int n_gape, int n_ins, int n_del,$/;"	f	file:
+gap_reset_stack	bwtgap.c	/^static void gap_reset_stack(gap_stack_t *stack)$/;"	f	file:
+gap_shadow	bwtgap.c	/^static inline void gap_shadow(int x, int len, bwtint_t max, int last_diff_pos, bwt_width_t *w)$/;"	f	file:
+gap_stack1_t	bwtgap.h	/^} gap_stack1_t;$/;"	t	typeref:struct:__anon82
+gap_stack_t	bwtgap.h	/^} gap_stack_t;$/;"	t	typeref:struct:__anon83
+gen_cigar	bwtsw2_aux.c	/^static void gen_cigar(const bsw2opt_t *opt, int lq, uint8_t *seq[2], int64_t l_pac, const uint8_t *pac, bwtsw2_t *b, const char *name)$/;"	f	file:
+getBuckets	is.c	/^static void getBuckets(const int *C, int *B, int k, int end)$/;"	f	file:
+getCounts	is.c	/^static void getCounts(const unsigned char *T, int *C, int n, int k, int cs)$/;"	f	file:
+get_pri_idx	bwamem_extra.c	/^static inline int get_pri_idx(double XA_drop_ratio, const mem_alnreg_t *a, int i)$/;"	f	file:
+get_rlen	bwamem.c	/^static inline int get_rlen(int n_cigar, const uint32_t *cigar)$/;"	f	file:
+getopt	bwakit/bwa-postalt.js	/^var getopt = function(args, ostr) {$/;"	f
+getopt	bwakit/typeHLA.js	/^var getopt = function(args, ostr) {$/;"	f
+gi	bntseq.h	/^	uint32_t gi;$/;"	m	struct:__anon53
+global_bns	bwamem.c	/^static const bntseq_t *global_bns = 0; \/\/ for debugging only$/;"	v	file:
+gsub	bwakit/typeHLA.js	/^var gsub = [], gsuf = [];$/;"	v
+h	bwakit/typeHLA-selctg.js	/^var h = {};$/;"	v
+h	cuda/ksw_CUDA.cu	/^	int32_t h, e;$/;"	m	struct:__anon10	file:
+h	ksw.c	/^	int32_t h, e;$/;"	m	struct:__anon15	file:
+h_nst_nt4_table	bwa.c	/^const unsigned char h_nst_nt4_table[256] = {$/;"	v
+h_perf_genes	bwakit/typeHLA.js	/^var h_perf_genes = {};$/;"	v
+h_pes0	bwa.h	/^	mem_pestat_t* h_pes0;	\/\/ pes0 on host for paired-end stats$/;"	m	struct:__anon38
+h_seq_comment_ptr	bwa.h	/^    char *h_seq_name_ptr, *h_seq_comment_ptr, *h_seq_seq_ptr, *h_seq_qual_ptr, *h_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon38
+h_seq_comment_ptr	bwa.h	/^    char *h_seq_name_ptr, *h_seq_comment_ptr, *h_seq_seq_ptr, *h_seq_qual_ptr, *h_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon39
+h_seq_comment_size	bwa.h	/^	int h_seq_name_size, h_seq_comment_size, h_seq_seq_size, h_seq_qual_size; \/\/ total char length of name, comment, seq, qual in a batch$/;"	m	struct:__anon39
+h_seq_name_ptr	bwa.h	/^    char *h_seq_name_ptr, *h_seq_comment_ptr, *h_seq_seq_ptr, *h_seq_qual_ptr, *h_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon38
+h_seq_name_ptr	bwa.h	/^    char *h_seq_name_ptr, *h_seq_comment_ptr, *h_seq_seq_ptr, *h_seq_qual_ptr, *h_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon39
+h_seq_name_size	bwa.h	/^	int h_seq_name_size, h_seq_comment_size, h_seq_seq_size, h_seq_qual_size; \/\/ total char length of name, comment, seq, qual in a batch$/;"	m	struct:__anon39
+h_seq_qual_ptr	bwa.h	/^    char *h_seq_name_ptr, *h_seq_comment_ptr, *h_seq_seq_ptr, *h_seq_qual_ptr, *h_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon38
+h_seq_qual_ptr	bwa.h	/^    char *h_seq_name_ptr, *h_seq_comment_ptr, *h_seq_seq_ptr, *h_seq_qual_ptr, *h_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon39
+h_seq_qual_size	bwa.h	/^	int h_seq_name_size, h_seq_comment_size, h_seq_seq_size, h_seq_qual_size; \/\/ total char length of name, comment, seq, qual in a batch$/;"	m	struct:__anon39
+h_seq_sam_ptr	bwa.h	/^    char *h_seq_name_ptr, *h_seq_comment_ptr, *h_seq_seq_ptr, *h_seq_qual_ptr, *h_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon38
+h_seq_sam_ptr	bwa.h	/^    char *h_seq_name_ptr, *h_seq_comment_ptr, *h_seq_seq_ptr, *h_seq_qual_ptr, *h_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon39
+h_seq_seq_ptr	bwa.h	/^    char *h_seq_name_ptr, *h_seq_comment_ptr, *h_seq_seq_ptr, *h_seq_qual_ptr, *h_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon38
+h_seq_seq_ptr	bwa.h	/^    char *h_seq_name_ptr, *h_seq_comment_ptr, *h_seq_seq_ptr, *h_seq_qual_ptr, *h_seq_sam_ptr;  \/\/ name, comment, seq, qual, sam output$/;"	m	struct:__anon39
+h_seq_seq_size	bwa.h	/^	int h_seq_name_size, h_seq_comment_size, h_seq_seq_size, h_seq_qual_size; \/\/ total char length of name, comment, seq, qual in a batch$/;"	m	struct:__anon39
+h_seqs	bwa.h	/^    bseq1_t *h_seqs;		\/\/ reads$/;"	m	struct:__anon38
+h_seqs	bwa.h	/^    bseq1_t *h_seqs;		\/\/ reads$/;"	m	struct:__anon39
+hard_clip	bwtsw2.h	/^	int skip_sw:8, cpy_cmt:8, hard_clip:16;$/;"	m	struct:__anon73
+hash	bwa.h	/^	uint64_t hash;$/;"	m	struct:__anon31
+hashK	kmers_index/hashKMer.hpp	/^int hashK(const char* s){$/;"	f
+hash_64	cuda/bwamem_GPU.cu	/^__device__ static inline uint64_t hash_64(uint64_t key)$/;"	f	file:
+hash_64	utils.h	/^static inline uint64_t hash_64(uint64_t key)$/;"	f
+hash_kernel	cuda/preprocessing.cu	/^__global__ void hash_kernel(bseq1_t* d_seqs, int n_seqs, $/;"	f
+hash_map_kernel	cuda/preprocessing.cu	/^ __global__ void hash_map_kernel(int* d_bucket_N, int* d_bucket_ids, int n_bucket, int bucket_maxlen, int* d_hash_map, int n_seqs)$/;"	f
+high	bwa.h	/^	int low, high;   \/\/ lower and upper bounds within which a read pair is considered to be properly paired$/;"	m	struct:__anon33
+high	bwape.c	/^	bwtint_t low, high, high_bayesian;$/;"	m	struct:__anon66	file:
+high	bwtsw2_pair.c	/^	int low, high, failed;$/;"	m	struct:__anon62	file:
+high_bayesian	bwape.c	/^	bwtint_t low, high, high_bayesian;$/;"	m	struct:__anon66	file:
+hits	bwtsw2.h	/^	bsw2hit_t *hits;$/;"	m	struct:__anon76
+hsaip_t	bwtsw2_chain.c	/^} hsaip_t;$/;"	t	typeref:struct:__anon64	file:
+http_open	kopen.c	/^static int http_open(const char *fn)$/;"	f	file:
+i	cuda/kbtree_CUDA.cu	/^	int i;$/;"	m	struct:__anon6	file:
+i	kbtree.h	/^	int i;$/;"	m	struct:__anon58
+i	kthread.c	/^	long i;$/;"	m	struct:__anon22	file:
+i	rope.c	/^	int size, i, n_elems;$/;"	m	struct:__anon84	file:
+ia	rope.h	/^	int ia[ROPE_MAX_DEPTH]; \/\/ index in the parent nodes$/;"	m	struct:__anon60
+id	bwa.h	/^	int l_seq, id;$/;"	m	struct:__anon25
+idx	bwtsw2_chain.c	/^	uint32_t flag:1, idx:31;$/;"	m	struct:__anon64	file:
+idx	cuda/superbatch_process.h	/^	bwaidx_t *idx;$/;"	m	struct:__anon13
+inToChar	kmers_index/hashKMer.hpp	81;"	d
+incMaxBuildSize	bwt_gen.c	/^	bgint_t incMaxBuildSize;$/;"	m	struct:BWTInc	file:
+indel_end_skip	bwtaln.h	/^	int indel_end_skip, max_del_occ, max_entries;$/;"	m	struct:__anon20
+index	kthread.c	/^	int64_t index;$/;"	m	struct:__anon23	file:
+index	kthread.c	/^	int64_t index;$/;"	m	struct:ktp_t	file:
+induceSA	is.c	/^static void induceSA(const unsigned char *T, int *SA, int *C, int *B, int n, int k, int cs)$/;"	f	file:
+infer_bw	bwamem.c	/^static inline int infer_bw(int l1, int l2, int score, int a, int q, int r)$/;"	f	file:
+infer_bw	cuda/bwamem_GPU.cu	/^__device__ static inline int infer_bw(int l1, int l2, int score, int a, int q, int r)$/;"	f	file:
+infer_isize	bwape.c	/^static int infer_isize(int n_seqs, bwa_seq_t *seqs[2], isize_info_t *ii, double ap_prior, int64_t L)$/;"	f	file:
+info	bwt.h	/^	bwtint_t x[3], info;$/;"	m	struct:__anon51
+info	bwtgap.h	/^	uint32_t info; \/\/ score<<21 | i$/;"	m	struct:__anon81
+init_bwtsw2	bwtsw2_core.c	/^static void init_bwtsw2(const bwtl_t *target, const bwt_t *query, bsw2stack_t *s)$/;"	f	file:
+initialMaxBuildSize	bwt_gen.c	/^	bgint_t initialMaxBuildSize;$/;"	m	struct:BWTInc	file:
+initializeVAL	bwt_gen.c	/^static void initializeVAL(unsigned int *startAddr, const bgint_t length, const unsigned int initValue)$/;"	f	file:
+initializeVAL_bg	bwt_gen.c	/^static void initializeVAL_bg(bgint_t *startAddr, const bgint_t length, const bgint_t initValue)$/;"	f	file:
+intToChar	kmers_index/hashKMer.hpp	30;"	d
+intToStr	cuda/kstring_CUDA.cu	/^__device__ static inline int intToStr(int x, char str[], int d) $/;"	f	file:
+int_log2	bwtgap.c	/^static inline int int_log2(uint32_t v)$/;"	f	file:
+int_v	bwamem.c	/^typedef kvec_t(int) int_v;$/;"	t	file:
+int_v	cuda/bwamem_GPU.cu	/^typedef struct { size_t n, m; int *a; } int_v;$/;"	t	typeref:struct:__anon12	file:
+intractg	bwakit/run-bwamem	/^                   intractg: intra-species contig (kb query, highly similar)$/;"	l
+intv_lt	bwamem.c	116;"	d	file:
+intv_ovlp	bwakit/bwa-postalt.js	/^function intv_ovlp(intv, bits)$/;"	f
+inverseHashK	kmers_index/hashKMer.hpp	/^char* inverseHashK(int x){$/;"	f
+inverseSa0	bwt_gen.c	/^	bgint_t inverseSa0;					\/\/ SA-1[0]$/;"	m	struct:BWT	file:
+is	bwtsw2.h	/^	int z, is, t_seeds, multi_2nd;$/;"	m	struct:__anon73
+is_alt	bntseq.h	/^	int32_t is_alt;$/;"	m	struct:__anon53
+is_alt	bwa.h	/^	int n_comp:30, is_alt:2; \/\/ number of sub-alignments chained together$/;"	m	struct:__anon31
+is_alt	bwa.h	/^	uint32_t is_rev:1, is_alt:1, mapq:8, NM:22; \/\/ is_rev: whether on the reverse strand; mapq: mapping quality; NM: edit distance$/;"	m	struct:__anon34
+is_alt	bwa.h	/^	uint32_t w:29, kept:2, is_alt:1;$/;"	m	struct:__anon29
+is_bam	bwaseqio.c	/^	int is_bam, which; \/\/ 1st bit: read1, 2nd bit: read2, 3rd: SE$/;"	m	struct:__bwa_seqio_t	file:
+is_bottom	rope.h	/^	uint64_t l:54, n:9, is_bottom:1; \/\/ $n and $is_bottom are only set for the first node in a bucket$/;"	m	struct:rpnode_s
+is_bwt	is.c	/^int is_bwt(ubyte_t *T, int n)$/;"	f
+is_internal	kbtree.h	/^	int32_t is_internal:1, n:31;$/;"	m	struct:__anon57
+is_pe	bwtsw2_aux.c	/^	int tid, is_pe;$/;"	m	struct:__anon80	file:
+is_preload	bwtaln.h	/^	int type, is_sw, is_preload;$/;"	m	struct:__anon21
+is_rev	bwa.h	/^	uint32_t is_rev:1, is_alt:1, mapq:8, NM:22; \/\/ is_rev: whether on the reverse strand; mapq: mapping quality; NM: edit distance$/;"	m	struct:__anon34
+is_rev	bwtsw2.h	/^	uint32_t flag:18, n_seeds:13, is_rev:1;$/;"	m	struct:__anon74
+is_sa	is.c	/^int is_sa(const ubyte_t *T, int *SA, int n)$/;"	f
+is_shm	bwa.h	/^	int    is_shm;$/;"	m	struct:__anon24
+is_sw	bwtaln.h	/^	int type, is_sw, is_preload;$/;"	m	struct:__anon21
+isize	bamlite.h	/^	int32_t isize;$/;"	m	struct:__anon46
+isize	bwtsw2.h	/^	int flag, nn, n_cigar, chr, pos, qual, mchr, mpos, pqual, isize, nm;$/;"	m	struct:__anon75
+isize_info_t	bwape.c	/^} isize_info_t;$/;"	t	typeref:struct:__anon66	file:
+k	bwtaln.h	/^	bwtint_t k, l;$/;"	m	struct:__anon17
+k	bwtgap.h	/^	bwtint_t k, l; \/\/ (k,l) is the SA region of [i,n-1]$/;"	m	struct:__anon81
+k	bwtsw2.h	/^	bwtint_t k, l;$/;"	m	struct:__anon74
+k	bwtsw2_core.c	/^	bwtint_t k, l;$/;"	m	struct:__anon1	file:
+kb_del	kbtree.h	376;"	d
+kb_delp	kbtree.h	380;"	d
+kb_destroy	kbtree.h	373;"	d
+kb_generic_cmp	kbtree.h	385;"	d
+kb_get	kbtree.h	374;"	d
+kb_getp	kbtree.h	378;"	d
+kb_init	kbtree.h	372;"	d
+kb_init_chn	cuda/kbtree_CUDA.cu	/^__device__ kbtree_chn_t *kb_init_chn(int size, void* CUDAKernel_buffer)		$/;"	f
+kb_interval	kbtree.h	377;"	d
+kb_intervalp	kbtree.h	381;"	d
+kb_intervalp_chn	cuda/kbtree_CUDA.cu	/^__device__ void kb_intervalp_chn(kbtree_chn_t *b, const mem_chain_t * __restrict k, mem_chain_t **lower, mem_chain_t **upper)	$/;"	f
+kb_put	kbtree.h	375;"	d
+kb_putp	kbtree.h	379;"	d
+kb_putp_chn	cuda/kbtree_CUDA.cu	/^__device__ void kb_putp_chn(kbtree_chn_t *b, const mem_chain_t * __restrict k, void* CUDAKernel_buffer) $/;"	f
+kb_size	kbtree.h	383;"	d
+kb_str_cmp	kbtree.h	386;"	d
+kbnode_t	kbtree.h	/^} kbnode_t;$/;"	t	typeref:struct:__anon57
+kbtree_t	kbtree.h	371;"	d
+kcalloc	khash.h	167;"	d
+kclose	kopen.c	/^int kclose(void *a)$/;"	f
+kept	bwa.h	/^	uint32_t w:29, kept:2, is_alt:1;$/;"	m	struct:__anon29
+kfree	khash.h	176;"	d
+kftp_get_response	kopen.c	/^static int kftp_get_response(ftpaux_t *aux)$/;"	f	file:
+kftp_send_cmd	kopen.c	/^static int kftp_send_cmd(ftpaux_t *aux, const char *cmd, int is_get)$/;"	f	file:
+kh_begin	khash.h	515;"	d
+kh_clear	khash.h	441;"	d
+kh_cstr_t	khash.h	/^typedef const char *kh_cstr_t;$/;"	t
+kh_del	khash.h	478;"	d
+kh_destroy	khash.h	434;"	d
+kh_end	khash.h	522;"	d
+kh_exist	khash.h	486;"	d
+kh_foreach	khash.h	545;"	d
+kh_foreach_value	khash.h	559;"	d
+kh_get	khash.h	470;"	d
+kh_init	khash.h	427;"	d
+kh_inline	khash.h	138;"	d
+kh_inline	khash.h	140;"	d
+kh_int64_hash_equal	khash.h	377;"	d
+kh_int64_hash_func	khash.h	373;"	d
+kh_int_hash_equal	khash.h	367;"	d
+kh_int_hash_func	khash.h	363;"	d
+kh_int_hash_func2	khash.h	410;"	d
+kh_key	khash.h	494;"	d
+kh_n_buckets	khash.h	536;"	d
+kh_put	khash.h	461;"	d
+kh_resize	khash.h	449;"	d
+kh_size	khash.h	529;"	d
+kh_str_hash_equal	khash.h	398;"	d
+kh_str_hash_func	khash.h	394;"	d
+kh_val	khash.h	503;"	d
+kh_value	khash.h	508;"	d
+khash_t	khash.h	420;"	d
+khint32_t	khash.h	/^typedef unsigned int khint32_t;$/;"	t
+khint32_t	khash.h	/^typedef unsigned long khint32_t;$/;"	t
+khint64_t	khash.h	/^typedef unsigned long khint64_t;$/;"	t
+khint64_t	khash.h	/^typedef unsigned long long khint64_t;$/;"	t
+khint_t	khash.h	/^typedef khint32_t khint_t;$/;"	t
+khiter_t	khash.h	/^typedef khint_t khiter_t;$/;"	t
+kmalloc	khash.h	170;"	d
+kmerHashTab	cuda/superbatch_process.h	/^	kmers_bucket_t *kmerHashTab;$/;"	m	struct:__anon13
+kmers_bucket_t	kmers_index/hashKMerIndex.h	/^} kmers_bucket_t;$/;"	t	typeref:struct:__anon72
+koaux_t	kopen.c	/^} koaux_t;$/;"	t	typeref:struct:__anon71	file:
+kopen	kopen.c	/^void *kopen(const char *fn, int *_fd)$/;"	f
+kputc	cuda/kstring_CUDA.cu	/^__device__ int kputc(int c, kstring_t *s, void* d_buffer_ptr)$/;"	f
+kputc	kstring.h	/^static inline int kputc(int c, kstring_t *s)$/;"	f
+kputl	cuda/kstring_CUDA.cu	/^__device__ int kputl(long c, kstring_t *s, void* d_buffer_ptr)$/;"	f
+kputl	kstring.h	/^static inline int kputl(long c, kstring_t *s)$/;"	f
+kputs	cuda/kstring_CUDA.cu	/^__device__ int kputs(const char *p, kstring_t *s, void* d_buffer_ptr)$/;"	f
+kputs	kstring.h	/^static inline int kputs(const char *p, kstring_t *s)$/;"	f
+kputsn	cuda/kstring_CUDA.cu	/^__device__ int kputsn(const char *p, int l, kstring_t *s, void* d_buffer_ptr)$/;"	f
+kputsn	kstring.h	/^static inline int kputsn(const char *p, int l, kstring_t *s)$/;"	f
+kputuw	kstring.h	/^static inline int kputuw(unsigned c, kstring_t *s)$/;"	f
+kputw	cuda/kstring_CUDA.cu	/^__device__ int kputw(int c, kstring_t *s, void* d_buffer_ptr)$/;"	f
+kputw	kstring.h	/^static inline int kputw(int c, kstring_t *s)$/;"	f
+krealloc	khash.h	173;"	d
+kroundup32	bamlite.h	76;"	d
+kroundup32	cuda/kstring_CUDA.cu	6;"	d	file:
+kroundup32	khash.h	163;"	d
+kroundup32	kseq.h	91;"	d
+kroundup32	kstring.h	12;"	d
+ks	bwaseqio.c	/^	kseq_t *ks;$/;"	m	struct:__bwa_seqio_t	file:
+ks	cuda/superbatch_process.h	/^	kseq_t *ks, *ks2;$/;"	m	struct:__anon13
+ks2	cuda/superbatch_process.h	/^	kseq_t *ks, *ks2;$/;"	m	struct:__anon13
+ks_combsort	cuda/ksort_CUDA.h	/^__device__ void ks_combsort(size_t n, bwtintv_t a[])						$/;"	f
+ks_combsort	ksort.h	259;"	d
+ks_combsort_128	cuda/ksort_CUDA.h	/^__device__ static void ks_combsort_128(size_t n, pair64_t a[])						$/;"	f
+ks_combsort_64	cuda/ksort_CUDA.h	/^__device__ void ks_combsort_64(size_t n, uint64_t a[])						$/;"	f
+ks_combsort_mem_ars2	cuda/ksort_CUDA.h	/^__device__ void ks_combsort_mem_ars2(size_t n, mem_alnreg_t a[])						$/;"	f
+ks_combsort_mem_ars_hash	cuda/ksort_CUDA.h	/^__device__ void ks_combsort_mem_ars_hash(size_t n, mem_alnreg_t a[])						$/;"	f
+ks_combsort_mem_ars_hash2	cuda/ksort_CUDA.h	/^__device__ void ks_combsort_mem_ars_hash2(size_t n, mem_alnreg_t a[])						$/;"	f
+ks_combsort_mem_flt	cuda/ksort_CUDA.h	/^__device__ void ks_combsort_mem_flt(size_t n, mem_chain_t a[])						$/;"	f
+ks_eof	kseq.h	51;"	d
+ks_heapadjust	ksort.h	262;"	d
+ks_heapmake	ksort.h	261;"	d
+ks_heapsort	ksort.h	260;"	d
+ks_insertsort_128	cuda/ksort_CUDA.h	/^__device__ static inline void ks_insertsort_128(pair64_t *s, pair64_t *t)		$/;"	f
+ks_insertsort_64	cuda/ksort_CUDA.h	/^__device__ static inline void ks_insertsort_64(uint64_t *s, uint64_t *t){																	$/;"	f
+ks_insertsort_mem_ars_hash	cuda/ksort_CUDA.h	/^__device__ static inline void ks_insertsort_mem_ars_hash(mem_alnreg_t *s, mem_alnreg_t *t)		$/;"	f
+ks_insertsort_mem_ars_hash2	cuda/ksort_CUDA.h	/^__device__ static inline void ks_insertsort_mem_ars_hash2(mem_alnreg_t *s, mem_alnreg_t *t)		$/;"	f
+ks_insertsort_mem_flt	cuda/ksort_CUDA.h	/^__device__ static inline void ks_insertsort_mem_flt(mem_chain_t *s, mem_chain_t *t)		$/;"	f
+ks_introsort	cuda/ksort_CUDA.h	/^__device__ void ks_introsort(size_t n, bwtintv_t a[], void* d_buffer_ptr)						$/;"	f
+ks_introsort	ksort.h	258;"	d
+ks_introsort_128	cuda/ksort_CUDA.h	/^__device__ static void ks_introsort_128(size_t n, pair64_t a[], void* d_buffer_ptr)						$/;"	f
+ks_introsort_64	cuda/ksort_CUDA.h	/^__device__ void ks_introsort_64(size_t n, uint64_t a[], void* d_buffer_ptr)						$/;"	f
+ks_introsort_mem_ars2	cuda/ksort_CUDA.h	/^__device__ void ks_introsort_mem_ars2(size_t n, mem_alnreg_t a[], void* d_buffer_ptr)						$/;"	f
+ks_introsort_mem_ars_hash	cuda/ksort_CUDA.h	/^__device__ void ks_introsort_mem_ars_hash(size_t n, mem_alnreg_t a[], void* d_buffer_ptr)						$/;"	f
+ks_introsort_mem_ars_hash2	cuda/ksort_CUDA.h	/^__device__ void ks_introsort_mem_ars_hash2(size_t n, mem_alnreg_t a[], void* d_buffer_ptr)						$/;"	f
+ks_introsort_mem_flt	cuda/ksort_CUDA.h	/^__device__ void ks_introsort_mem_flt(size_t n, mem_chain_t a[], void* d_buffer_ptr)$/;"	f
+ks_isort_stack_t	cuda/ksort_CUDA.h	/^} ks_isort_stack_t;$/;"	t	typeref:struct:__anon7
+ks_isort_stack_t	ksort.h	/^} ks_isort_stack_t;$/;"	t	typeref:struct:__anon40
+ks_ksmall	ksort.h	263;"	d
+ks_lt_generic	ksort.h	265;"	d
+ks_lt_str	ksort.h	266;"	d
+ks_mergesort	ksort.h	257;"	d
+ks_resize	cuda/kstring_CUDA.cu	/^__device__ void ks_resize(kstring_t *s, size_t size, void* d_buffer_ptr)$/;"	f
+ks_resize	kstring.h	/^static inline void ks_resize(kstring_t *s, size_t size)$/;"	f
+ks_rewind	kseq.h	52;"	d
+kseq2bseq1	bwa.c	/^static inline void kseq2bseq1(const kseq_t *ks, bseq1_t *s)$/;"	f	file:
+kseq2bseq2	bwa.c	/^static inline void kseq2bseq2(const kseq_t *ks, bseq1_t *s, superbatch_data_t *out)$/;"	f	file:
+kseq_rewind	kseq.h	153;"	d
+ksprintf	cuda/kstring_CUDA.cu	/^__device__ int ksprintf(kstring_t *s, const char *fmt, float alt_sc, void* d_buffer_ptr)$/;"	f
+ksprintf	kstring.c	/^int ksprintf(kstring_t *s, const char *fmt, ...)$/;"	f
+ksstr_t	ksort.h	/^typedef const char *ksstr_t;$/;"	t
+kstring_t	kseq.h	/^} kstring_t;$/;"	t	typeref:struct:__kstring_t
+kstring_t	kstring.h	/^} kstring_t;$/;"	t	typeref:struct:__kstring_t
+ksw_align	ksw.c	/^kswr_t ksw_align(int qlen, uint8_t *query, int tlen, uint8_t *target, int m, const int8_t *mat, int gapo, int gape, int xtra, kswq_t **qry)$/;"	f
+ksw_align2	cuda/ksw_CUDA.cu	/^__device__ kswr_t ksw_align2(int qlen, uint8_t *query, int tlen, uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int xtra, kswq_t **qry, void* d_buffer_ptr)$/;"	f
+ksw_align2	ksw.c	/^kswr_t ksw_align2(int qlen, uint8_t *query, int tlen, uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int xtra, kswq_t **qry)$/;"	f
+ksw_extend	ksw.c	/^int ksw_extend(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int gapo, int gape, int w, int end_bonus, int zdrop, int h0, int *qle, int *tle, int *gtle, int *gscore, int *max_off)$/;"	f
+ksw_extend2	cuda/ksw_CUDA.cu	/^__device__ int ksw_extend2(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int w, int end_bonus, int zdrop, int h0, int *_qle, int *_tle, int *_gtle, int *_gscore, int *_max_off, void* d_buffer_ptr)$/;"	f
+ksw_extend2	ksw.c	/^int ksw_extend2(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int w, int end_bonus, int zdrop, int h0, int *_qle, int *_tle, int *_gtle, int *_gscore, int *_max_off)$/;"	f
+ksw_extend_warp	cuda/ksw_CUDA.cu	/^__device__ int ksw_extend_warp(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int h0, int *_qle, int *_tle, int *_gtle, int *_gscore)$/;"	f
+ksw_global	ksw.c	/^int ksw_global(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int gapo, int gape, int w, int *n_cigar_, uint32_t **cigar_)$/;"	f
+ksw_global2	cuda/ksw_CUDA.cu	/^__device__ int ksw_global2(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int w, int *n_cigar_, uint32_t **cigar_, void* d_buffer_ptr)$/;"	f
+ksw_global2	ksw.c	/^int ksw_global2(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int w, int *n_cigar_, uint32_t **cigar_)$/;"	f
+ksw_global_warp	cuda/ksw_CUDA.cu	/^__device__ int ksw_global_warp(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m, const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int *i_max, int *j_max, uint8_t *traceback){$/;"	f
+ksw_i16	cuda/ksw_CUDA.cu	/^static __device__ kswr_t ksw_i16(kswq_t *q, int tlen, const uint8_t *target, int _o_del, int _e_del, int _o_ins, int _e_ins, int xtra, void* d_buffer_ptr) \/\/ the first gap costs -(_o+_e)$/;"	f	file:
+ksw_i16	ksw.c	/^kswr_t ksw_i16(kswq_t *q, int tlen, const uint8_t *target, int _o_del, int _e_del, int _o_ins, int _e_ins, int xtra) \/\/ the first gap costs -(_o+_e)$/;"	f
+ksw_qinit	cuda/ksw_CUDA.cu	/^static __device__ kswq_t* ksw_qinit(int size, int qlen, const uint8_t *query, int m, const int8_t *mat, void* d_buffer_ptr)$/;"	f	file:
+ksw_qinit	ksw.c	/^kswq_t *ksw_qinit(int size, int qlen, const uint8_t *query, int m, const int8_t *mat)$/;"	f
+ksw_u8	ksw.c	/^kswr_t ksw_u8(kswq_t *q, int tlen, const uint8_t *target, int _o_del, int _e_del, int _o_ins, int _e_ins, int xtra) \/\/ the first gap costs -(_o+_e)$/;"	f
+kswq_t	ksw.h	/^typedef struct _kswq_t kswq_t;$/;"	t	typeref:struct:_kswq_t
+kswr_t	ksw.h	/^} kswr_t;$/;"	t	typeref:struct:__anon56
+kt_for	kthread.c	/^void kt_for(int n_threads, void (*func)(void*,long,int), void *data, long n)$/;"	f
+kt_for_t	kthread.c	/^typedef struct kt_for_t {$/;"	s	file:
+kt_for_t	kthread.c	/^} kt_for_t;$/;"	t	typeref:struct:kt_for_t	file:
+kt_pipeline	kthread.c	/^void kt_pipeline(int n_threads, void *(*func)(void*, int, void*), void *shared_data, int n_steps)$/;"	f
+ktf_worker	kthread.c	/^static void *ktf_worker(void *data)$/;"	f	file:
+ktf_worker_t	kthread.c	/^} ktf_worker_t;$/;"	t	typeref:struct:__anon22	file:
+ktp_aux_t	cuda/superbatch_process.h	/^} ktp_aux_t;$/;"	t	typeref:struct:__anon13
+ktp_t	kthread.c	/^typedef struct ktp_t {$/;"	s	file:
+ktp_t	kthread.c	/^} ktp_t;$/;"	t	typeref:struct:ktp_t	file:
+ktp_worker	kthread.c	/^static void *ktp_worker(void *data)$/;"	f	file:
+ktp_worker_t	kthread.c	/^} ktp_worker_t;$/;"	t	typeref:struct:__anon23	file:
+kv_A	kvec.h	62;"	d
+kv_a	kvec.h	88;"	d
+kv_copy	kvec.h	69;"	d
+kv_destroy	kvec.h	61;"	d
+kv_init	kvec.h	60;"	d
+kv_max	kvec.h	65;"	d
+kv_pop	kvec.h	63;"	d
+kv_push	kvec.h	75;"	d
+kv_pushp	kvec.h	83;"	d
+kv_resize	kvec.h	67;"	d
+kv_roundup32	kvec.h	57;"	d
+kv_size	kvec.h	64;"	d
+kvec_t	kvec.h	59;"	d
+l	bwtaln.h	/^	bwtint_t k, l;$/;"	m	struct:__anon17
+l	bwtgap.h	/^	bwtint_t k, l; \/\/ (k,l) is the SA region of [i,n-1]$/;"	m	struct:__anon81
+l	bwtsw2.h	/^	bwtint_t k, l;$/;"	m	struct:__anon74
+l	bwtsw2.h	/^	int l, tid;$/;"	m	struct:__anon78
+l	bwtsw2_core.c	/^	bwtint_t k, l;$/;"	m	struct:__anon1	file:
+l	kseq.h	/^	size_t l, m;$/;"	m	struct:__kstring_t
+l	kstring.h	/^	size_t l, m;$/;"	m	struct:__kstring_t
+l	rope.h	/^	uint64_t l:54, n:9, is_bottom:1; \/\/ $n and $is_bottom are only set for the first node in a bucket$/;"	m	struct:rpnode_s
+l_aux	bamlite.h	/^	int l_aux, data_len, m_data;$/;"	m	struct:__anon47
+l_comment	bwa.h	/^	int8_t l_name, l_comment;$/;"	m	struct:__anon25
+l_cons	bwakit/typeHLA.js	/^var l_cons = 0, l_incons = 0;$/;"	v
+l_mem	bwa.h	/^	int64_t l_mem;$/;"	m	struct:__anon24
+l_name	bwa.h	/^	int8_t l_name, l_comment;$/;"	m	struct:__anon25
+l_pac	bntseq.h	/^	int64_t l_pac;$/;"	m	struct:__anon55
+l_qname	bamlite.h	/^	uint32_t bin:16, qual:8, l_qname:8;$/;"	m	struct:__anon46
+l_qseq	bamlite.h	/^	int32_t l_qseq;$/;"	m	struct:__anon46
+l_qual	bwa.h	/^	int16_t l_qual;$/;"	m	struct:__anon25
+l_seq	bwa.h	/^	int l_seq, id;$/;"	m	struct:__anon25
+l_text	bamlite.h	/^	size_t l_text, n_text;$/;"	m	struct:__anon45
+last	bwakit/typeHLA.js	/^var last = [null, -1], matches = [];$/;"	v
+last_diff_pos	bwtgap.h	/^	int last_diff_pos;$/;"	m	struct:__anon81
+leadingZero	bwt_gen.c	/^unsigned int leadingZero(const unsigned int input)$/;"	f
+leaf	rope.h	/^	void *node, *leaf; \/\/ memory pool$/;"	m	struct:__anon59
+left	bwakit/typeHLA.js	/^	var left  = ts < clip[0]? ts : clip[0];$/;"	v
+left	cuda/ksort_CUDA.h	/^	void *left, *right;$/;"	m	struct:__anon7
+left	ksort.h	/^	void *left, *right;$/;"	m	struct:__anon40
+len	bntseq.h	/^	int32_t len;$/;"	m	struct:__anon53
+len	bntseq.h	/^	int32_t len;$/;"	m	struct:__anon54
+len	bwa.h	/^	int32_t qbeg, len;$/;"	m	struct:__anon27
+len	bwakit/typeHLA.js	/^var len = {}, list = [], gcnt = [];$/;"	v
+len	bwamem_extra.c	/^	int start, len;$/;"	m	struct:__smem_i	file:
+len	bwtaln.h	/^	uint32_t len:20, strand:1, type:2, dummy:1, extra_flag:8;$/;"	m	struct:__anon19
+len	bwtsw2.h	/^	int len, G, G2;$/;"	m	struct:__anon74
+len	bwtsw2_pair.c	/^	int n_cigar, beg, end, len;$/;"	m	struct:__anon63	file:
+list2exons	bwakit/typeHLA.js	/^function list2exons(list, flt_flag, perf_hash)$/;"	f
+loadArray	kmers_index/datadump.hpp	/^T* loadArray(unsigned long long arr_size, const std::string& file_name){$/;"	f
+loadInputMiniBatch	cuda/minibatch_process.cpp	/^static void loadInputMiniBatch(transfer_data_t *transfer_data, superbatch_data_t *superbatch_data, int n_loaded)$/;"	f	file:
+loadInputSuperBatch	cuda/superbatch_process.cpp	/^static int loadInputSuperBatch(kseq_t *ks, kseq_t *ks2, int actual_chunk_size, int copy_comment, superbatch_data_t *transfer_data)$/;"	f	file:
+loadKMerIndex	kmers_index/loadKMerIndex.cpp	/^kmers_bucket_t *loadKMerIndex(const char* path){$/;"	f
+loadObject	kmers_index/datadump.hpp	/^T loadObject(const std::string& file_name){$/;"	f
+low	bwa.h	/^	int low, high;   \/\/ lower and upper bounds within which a read pair is considered to be properly paired$/;"	m	struct:__anon33
+low	bwape.c	/^	bwtint_t low, high, high_bayesian;$/;"	m	struct:__anon66	file:
+low	bwtsw2_pair.c	/^	int low, high, failed;$/;"	m	struct:__anon62	file:
+m	bwa.h	/^	int16_t n, m, first, rid;$/;"	m	struct:__anon29
+m	bwa.h	/^typedef struct { int n, m; mem_alnreg_t *a; } mem_alnreg_v;$/;"	m	struct:__anon32
+m	bwa.h	/^typedef struct { int n, m; mem_chain_t *a;  } mem_chain_v;$/;"	m	struct:__anon30
+m	bwt.h	/^typedef struct { int n, m; bwtintv_t *a; } bwtintv_v;$/;"	m	struct:__anon52
+m	cuda/bwamem_GPU.cu	/^typedef struct { size_t n, m; int *a; } int_v;$/;"	m	struct:__anon12	file:
+m	cuda/bwamem_GPU.cu	/^typedef struct { size_t n, m; uint64_t *a; } uint64_v;$/;"	m	struct:__anon11	file:
+m	cuda/ksort_CUDA.h	/^typedef struct { size_t n, m; pair64_t *a; } pair64_v;$/;"	m	struct:__anon9
+m	kseq.h	/^	size_t l, m;$/;"	m	struct:__kstring_t
+m	kstring.h	/^	size_t l, m;$/;"	m	struct:__kstring_t
+m	utils.h	/^typedef struct { size_t n, m; pair64_t *a; } pair64_v;$/;"	m	struct:__anon43
+m	utils.h	/^typedef struct { size_t n, m; uint64_t *a; } uint64_v;$/;"	m	struct:__anon42
+m_data	bamlite.h	/^	int l_aux, data_len, m_data;$/;"	m	struct:__anon47
+m_entries	bwtgap.h	/^	int n_entries, m_entries;$/;"	m	struct:__anon82
+main	bwt_gen.c	/^int main(int argc, char *argv[])$/;"	f
+main	kmers_index/buildIndex.cpp	/^int main(int argc, char const *argv[])$/;"	f
+main	kopen.c	/^int main(int argc, char *argv[])$/;"	f
+main	kstring.c	/^int main()$/;"	f
+main	ksw.c	/^int main(int argc, char *argv[])$/;"	f
+main	main.c	/^int main(int argc, char *argv[])$/;"	f
+main_fastmap	fastmap.c	/^int main_fastmap(int argc, char *argv[])$/;"	f
+main_mem	fastmap.c	/^int main_mem(int argc, char *argv[])$/;"	f
+main_pemerge	pemerge.c	/^int main_pemerge(int argc, char *argv[])$/;"	f
+main_shm	bwashm.c	/^int main_shm(int argc, char *argv[])$/;"	f
+malloc	malloc_wrap.h	31;"	d
+malloc	malloc_wrap.h	33;"	d
+mapQ	bwtaln.h	/^	uint32_t n_mm:8, n_gapo:8, n_gape:8, mapQ:8;$/;"	m	struct:__anon19
+mapQ_coef_fac	bwa.h	/^	int mapQ_coef_fac;$/;"	m	struct:__anon26
+mapQ_coef_len	bwa.h	/^	float mapQ_coef_len;$/;"	m	struct:__anon26
+mapq	bwa.h	/^	uint32_t is_rev:1, is_alt:1, mapq:8, NM:22; \/\/ is_rev: whether on the reverse strand; mapq: mapping quality; NM: edit distance$/;"	m	struct:__anon34
+mask_level	bwa.h	/^	float mask_level;       \/\/ regard a hit as redundant if the overlap with another better hit is over mask_level times the min length of the two hits$/;"	m	struct:__anon26
+mask_level	bwtsw2.h	/^	float mask_level, coef;$/;"	m	struct:__anon73
+mask_level_redun	bwa.h	/^	float mask_level_redun;$/;"	m	struct:__anon26
+mat	bwa.h	/^	int8_t mat[25];         \/\/ scoring matrix; mat[0] == 0 if unset$/;"	m	struct:__anon26
+mat	pemerge.c	/^	int8_t mat[25];$/;"	m	struct:__anon48	file:
+matches	bwamem_extra.c	/^	bwtintv_v *matches; \/\/ matches; to be returned by smem_next()$/;"	m	struct:__smem_i	file:
+max	bwt_gen.c	66;"	d	file:
+max	bwtsw2.h	/^	int n, max;$/;"	m	struct:__anon76
+max	bwtsw2_aux.c	/^	int n, max;$/;"	m	struct:__anon79	file:
+max	bwtsw2_core.c	/^	int n, max;$/;"	m	struct:__anon3	file:
+max	ksw.c	/^	uint8_t shift, mdiff, max, size;$/;"	m	struct:_kswq_t	file:
+max	rope.c	/^	int64_t top, max;$/;"	m	struct:__anon84	file:
+max2	cuda/ksw_CUDA.cu	424;"	d	file:
+max_8	cuda/ksw_CUDA.cu	/^static inline __device__ int max_8(m128i xx){$/;"	f	file:
+max_XA_hits	bwa.h	/^	int max_XA_hits, max_XA_hits_alt; \/\/ if there are max_hits or fewer, output them all$/;"	m	struct:__anon26
+max_XA_hits_alt	bwa.h	/^	int max_XA_hits, max_XA_hits_alt; \/\/ if there are max_hits or fewer, output them all$/;"	m	struct:__anon26
+max_chain_extend	bwa.h	/^	int max_chain_extend;$/;"	m	struct:__anon26
+max_chain_gap	bwa.h	/^	int max_chain_gap;      \/\/ do not chain seed if it is max_chain_gap-bp away from the closest seed$/;"	m	struct:__anon26
+max_chain_gap	bwtsw2.h	/^	int a, b, q, r, t, qr, bw, max_ins, max_chain_gap;$/;"	m	struct:__anon73
+max_del_occ	bwtaln.h	/^	int indel_end_skip, max_del_occ, max_entries;$/;"	m	struct:__anon20
+max_diff	bwtaln.h	/^	int max_diff, max_gapo, max_gape;$/;"	m	struct:__anon20
+max_entries	bwtaln.h	/^	int indel_end_skip, max_del_occ, max_entries;$/;"	m	struct:__anon20
+max_gape	bwtaln.h	/^	int max_diff, max_gapo, max_gape;$/;"	m	struct:__anon20
+max_gapo	bwtaln.h	/^	int max_diff, max_gapo, max_gape;$/;"	m	struct:__anon20
+max_ins	bwa.h	/^	int max_ins;            \/\/ when estimating insert size distribution, skip pairs with insert longer than this value$/;"	m	struct:__anon26
+max_ins	bwtsw2.h	/^	int a, b, q, r, t, qr, bw, max_ins, max_chain_gap;$/;"	m	struct:__anon73
+max_intv	bwamem_extra.c	/^	uint64_t max_intv;$/;"	m	struct:__smem_i	file:
+max_isize	bwtaln.h	/^	int max_isize, force_isize;$/;"	m	struct:__anon21
+max_l	bwtsw2.h	/^	int max_l;$/;"	m	struct:__anon77
+max_len	bwamem_extra.c	/^	int min_intv, max_len;$/;"	m	struct:__smem_i	file:
+max_m128i	cuda/ksw_CUDA.cu	/^static inline __device__ m128i max_m128i(m128i a, m128i b){$/;"	f	file:
+max_matesw	bwa.h	/^	int max_matesw;         \/\/ perform maximally max_matesw rounds of mate-SW for each end$/;"	m	struct:__anon26
+max_mem_intv	bwa.h	/^	uint64_t max_mem_intv;$/;"	m	struct:__anon26
+max_nm_sc	bwakit/bwa-postalt.js	/^	var c, opt = { a:1, b:4, o:6, e:1, min_mapq:10, min_sc:90, max_nm_sc:10, min_pa_ratio:1 };$/;"	p	class:collect_hla_hits.bwa_postalt.c
+max_nodes	rope.h	/^	int32_t max_nodes, block_len; \/\/ both MUST BE even numbers$/;"	m	struct:__anon59
+max_occ	bwa.h	/^	int max_occ;            \/\/ skip a seed if its occurence is larger than this value$/;"	m	struct:__anon26
+max_occ	bwtaln.h	/^	int max_occ;$/;"	m	struct:__anon21
+max_response	kopen.c	/^	int max_response, ctrl_fd;$/;"	m	struct:__anon70	file:
+max_seed_diff	bwtaln.h	/^	int max_seed_diff, seed_len;$/;"	m	struct:__anon20
+max_top2	bwtaln.h	/^	int max_top2;$/;"	m	struct:__anon20
+mchr	bwtsw2.h	/^	int flag, nn, n_cigar, chr, pos, qual, mchr, mpos, pqual, isize, nm;$/;"	m	struct:__anon75
+md	bwtaln.h	/^	char *md;$/;"	m	struct:__anon19
+mdiff	ksw.c	/^	uint8_t shift, mdiff, max, size;$/;"	m	struct:_kswq_t	file:
+med3	QSufSort.c	38;"	d	file:
+med3	bwt_gen.c	67;"	d	file:
+mem	bwa.h	/^	bwtintv_v mem, mem1, *tmpv[2];$/;"	m	struct:__anon37
+mem	bwa.h	/^	uint8_t  *mem;$/;"	m	struct:__anon24
+mem	rope.c	/^	uint8_t **mem;$/;"	m	struct:__anon84	file:
+mem1	bwa.h	/^	bwtintv_v mem, mem1, *tmpv[2];$/;"	m	struct:__anon37
+mem_align1	bwamem_extra.c	/^mem_alnreg_v mem_align1(const mem_opt_t *opt, const bwt_t *bwt, const bntseq_t *bns, const uint8_t *pac, int l_seq, const char *seq_)$/;"	f
+mem_align1_core	bwamem.c	/^mem_alnreg_v mem_align1_core(const mem_opt_t *opt, const bwt_t *bwt, const bntseq_t *bns, const uint8_t *pac, int l_seq, char *seq, void *buf)$/;"	f
+mem_align_GPU	cuda/bwamem_GPU.cu	/^void mem_align_GPU(process_data_t *process_data)$/;"	f
+mem_aln2sam	bwamem.c	/^void mem_aln2sam(const mem_opt_t *opt, const bntseq_t *bns, kstring_t *str, bseq1_t *s, int n, const mem_aln_t *list, int which, const mem_aln_t *m_)$/;"	f
+mem_aln_t	bwa.h	/^} mem_aln_t;$/;"	t	typeref:struct:__anon34
+mem_aln_v	bwa.h	/^typedef struct { int n; mem_aln_t *a; } mem_aln_v;$/;"	t	typeref:struct:__anon35
+mem_alnreg_t	bwa.h	/^} mem_alnreg_t;$/;"	t	typeref:struct:__anon31
+mem_alnreg_v	bwa.h	/^typedef struct { int n, m; mem_alnreg_t *a; } mem_alnreg_v;$/;"	t	typeref:struct:__anon32
+mem_approx_mapq_se	bwamem.c	/^int mem_approx_mapq_se(const mem_opt_t *opt, const mem_alnreg_t *a)$/;"	f
+mem_approx_mapq_se	cuda/bwamem_GPU.cu	/^__device__ static int mem_approx_mapq_se(const mem_opt_t *opt, const mem_alnreg_t *a)$/;"	f	file:
+mem_chain	bwamem.c	/^mem_chain_v mem_chain(const mem_opt_t *opt, const bwt_t *bwt, const bntseq_t *bns, int len, const uint8_t *seq, void *buf)$/;"	f
+mem_chain2aln	bwamem.c	/^void mem_chain2aln(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const uint8_t *query, const mem_chain_t *c, mem_alnreg_v *av)$/;"	f
+mem_chain2aln	cuda/bwamem_GPU.cu	/^__device__ void mem_chain2aln(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const uint8_t *query, const mem_chain_t *c, mem_alnreg_v *av, void* d_buffer_ptr)$/;"	f
+mem_chain_flt_kernel	cuda/bwamem_GPU.cu	/^__global__ void mem_chain_flt_kernel(const mem_opt_t *opt, $/;"	f
+mem_chain_kernel	cuda/bwamem_GPU.cu	/^__global__ void mem_chain_kernel($/;"	f
+mem_chain_t	bwa.h	/^} mem_chain_t;$/;"	t	typeref:struct:__anon29
+mem_chain_v	bwa.h	/^typedef struct { int n, m; mem_chain_t *a;  } mem_chain_v;$/;"	t	typeref:struct:__anon30
+mem_chain_weight	bwamem.c	/^int mem_chain_weight(const mem_chain_t *c)$/;"	f
+mem_chain_weight	cuda/bwamem_GPU.cu	/^__device__ int mem_chain_weight(const mem_chain_t *c)$/;"	f
+mem_collect_intv	bwamem.c	/^static void mem_collect_intv(const mem_opt_t *opt, const bwt_t *bwt, int len, const uint8_t *seq, smem_aux_t *a)$/;"	f	file:
+mem_collect_intv_kernel1	cuda/bwamem_GPU.cu	/^__global__ void mem_collect_intv_kernel1(const mem_opt_t *opt, const bwt_t *bwt, const bseq1_t *d_seqs, $/;"	f
+mem_collect_intv_kernel2	cuda/bwamem_GPU.cu	/^__global__ void mem_collect_intv_kernel2(const mem_opt_t *opt, const bwt_t *bwt, const bseq1_t *d_seqs, $/;"	f
+mem_collect_intv_kernel3	cuda/bwamem_GPU.cu	/^__global__ void mem_collect_intv_kernel3(const mem_opt_t *opt, const bwt_t *bwt, const bseq1_t *d_seqs, $/;"	f
+mem_flt_chained_seeds	bwamem.c	/^void mem_flt_chained_seeds(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const uint8_t *query, int n_chn, mem_chain_t *a)$/;"	f
+mem_flt_chained_seeds	cuda/bwamem_GPU.cu	/^__device__ void mem_flt_chained_seeds(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const uint8_t *query, int n_chn, mem_chain_t *a, void* d_buffer_ptr)$/;"	f
+mem_gen_alt	bwamem_extra.c	/^char **mem_gen_alt(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_alnreg_v *a, int l_query, const char *query) \/\/ ONLY work after mem_mark_primary_se()$/;"	f
+mem_infer_dir	bwamem_pair.c	/^static inline int mem_infer_dir(int64_t l_pac, int64_t b1, int64_t b2, int64_t *dist)$/;"	f	file:
+mem_infer_dir	cuda/bwamem_GPU.cu	/^__device__ static inline int mem_infer_dir(int64_t l_pac, int64_t b1, int64_t b2, int64_t *dist)$/;"	f	file:
+mem_mark_primary_se	bwamem.c	/^int mem_mark_primary_se(const mem_opt_t *opt, int n, mem_alnreg_t *a, int64_t id)$/;"	f
+mem_mark_primary_se_GPU	cuda/bwamem_GPU.cu	/^__device__ int mem_mark_primary_se_GPU(const mem_opt_t *d_opt, int n, mem_alnreg_t *a, int id, void* d_buffer_ptr)$/;"	f
+mem_mark_primary_se_core	bwamem.c	/^static void mem_mark_primary_se_core(const mem_opt_t *opt, int n, mem_alnreg_t *a, int_v *z)$/;"	f	file:
+mem_mark_primary_se_core_GPU	cuda/bwamem_GPU.cu	/^__device__ static void mem_mark_primary_se_core_GPU(const mem_opt_t *opt, int n, mem_alnreg_t *a, int_v *z, void* d_buffer_ptr)$/;"	f	file:
+mem_matesw	bwamem_pair.c	/^int mem_matesw(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_pestat_t pes[4], const mem_alnreg_t *a, int l_ms, const uint8_t *ms, mem_alnreg_v *ma)$/;"	f
+mem_matesw	cuda/bwamem_GPU.cu	/^__device__ int mem_matesw(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_pestat_t pes[4], const mem_alnreg_t *a, int l_ms, const uint8_t *ms, mem_alnreg_v *ma, void* d_buffer_ptr)$/;"	f
+mem_opt_init	bwamem.c	/^mem_opt_t *mem_opt_init()$/;"	f
+mem_opt_t	bwa.h	/^} mem_opt_t;$/;"	t	typeref:struct:__anon26
+mem_pair	bwamem_pair.c	/^int mem_pair(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_pestat_t pes[4], bseq1_t s[2], mem_alnreg_v a[2], int id, int *sub, int *n_sub, int z[2], int n_pri[2])$/;"	f
+mem_patch_reg	cuda/bwamem_GPU.cu	/^__device__ int mem_patch_reg(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, uint8_t *query, const mem_alnreg_t *a, const mem_alnreg_t *b, int *_w, void* d_buffer_ptr)$/;"	f
+mem_pestat	bwamem_pair.c	/^void mem_pestat(const mem_opt_t *opt, int64_t l_pac, int n, const mem_alnreg_v *regs, mem_pestat_t pes[4])$/;"	f
+mem_pestat_GPU	cuda/bwamem_GPU.cu	/^__device__ void mem_pestat_GPU(const mem_opt_t *opt, int64_t l_pac, int n, const mem_alnreg_v *regs, mem_pestat_t pes[4], void* d_buffer_ptr)$/;"	f
+mem_pestat_t	bwa.h	/^} mem_pestat_t;$/;"	t	typeref:struct:__anon33
+mem_print_chain	bwamem.c	/^void mem_print_chain(const bntseq_t *bns, mem_chain_v *chn)$/;"	f
+mem_process_seqs	bwamem.c	/^void mem_process_seqs(const mem_opt_t *opt, const bwt_t *bwt, const bntseq_t *bns, const uint8_t *pac, int64_t n_processed, int n, bseq1_t *seqs, const mem_pestat_t *pes0)$/;"	f
+mem_reg2aln	bwamem.c	/^mem_aln_t mem_reg2aln(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const char *query_, const mem_alnreg_t *ar)$/;"	f
+mem_reg2sam	bwamem.c	/^void mem_reg2sam(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, bseq1_t *s, mem_alnreg_v *a, int extra_flag, const mem_aln_t *m)$/;"	f
+mem_reorder_primary5	bwamem.c	/^void mem_reorder_primary5(int T, mem_alnreg_v *a)$/;"	f
+mem_sam_pe	bwamem_pair.c	/^int mem_sam_pe(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, const mem_pestat_t pes[4], uint64_t id, bseq1_t s[2], mem_alnreg_v a[2])$/;"	f
+mem_seed_sw	bwamem.c	/^int mem_seed_sw(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const uint8_t *query, const mem_seed_t *s)$/;"	f
+mem_seed_sw	cuda/bwamem_GPU.cu	/^__device__ int mem_seed_sw(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, int l_query, const uint8_t *query, const mem_seed_t *s, void* d_buffer_ptr)$/;"	f
+mem_seed_t	bwa.h	/^} mem_seed_t; \/\/ unaligned memory$/;"	t	typeref:struct:__anon27
+mem_seed_v	bwa.h	/^} mem_seed_v;$/;"	t	typeref:struct:__anon28
+mem_sort_dedup_patch	bwamem.c	/^int mem_sort_dedup_patch(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, uint8_t *query, int n, mem_alnreg_t *a)$/;"	f
+mem_sort_dedup_patch	cuda/bwamem_GPU.cu	/^__device__ int mem_sort_dedup_patch(const mem_opt_t *opt, const bntseq_t *bns, const uint8_t *pac, uint8_t *query, int n, mem_alnreg_t *a, void* d_buffer_ptr)$/;"	f
+mempool_t	bwtsw2_core.c	/^} mempool_t;$/;"	t	typeref:struct:__mempool_t	file:
+mempool_t	rope.c	/^} mempool_t;$/;"	t	typeref:struct:__anon84	file:
+merge_entry	bwtsw2_core.c	/^static void merge_entry(const bsw2opt_t * __restrict opt, bsw2entry_t *u, bsw2entry_t *v, bwtsw2_t *b)$/;"	f	file:
+merge_hits	bwtsw2_aux.c	/^static void merge_hits(bwtsw2_t *b[2], int l, int is_reverse)$/;"	f	file:
+min	QSufSort.c	37;"	d	file:
+min	bwt_gen.c	65;"	d	file:
+min_chain_weight	bwa.h	/^	int min_chain_weight;$/;"	m	struct:__anon26
+min_intv	bwamem_extra.c	/^	int min_intv, max_len;$/;"	m	struct:__smem_i	file:
+min_mapq	bwakit/bwa-postalt.js	/^	var c, opt = { a:1, b:4, o:6, e:1, min_mapq:10, min_sc:90, max_nm_sc:10, min_pa_ratio:1 };$/;"	p	class:collect_hla_hits.bwa_postalt.c
+min_ovlp	bwakit/typeHLA-selctg.js	/^var min_ovlp = 30;$/;"	v
+min_pa_ratio	bwakit/bwa-postalt.js	/^	var c, opt = { a:1, b:4, o:6, e:1, min_mapq:10, min_sc:90, max_nm_sc:10, min_pa_ratio:1 };$/;"	p	class:collect_hla_hits.bwa_postalt.c
+min_sc	bwakit/bwa-postalt.js	/^	var c, opt = { a:1, b:4, o:6, e:1, min_mapq:10, min_sc:90, max_nm_sc:10, min_pa_ratio:1 };$/;"	p	class:collect_hla_hits.bwa_postalt.c
+min_seed_len	bwa.h	/^	int min_seed_len;       \/\/ minimum seed length$/;"	m	struct:__anon26
+miniBatchMain	cuda/minibatch_process.cpp	/^void miniBatchMain(superbatch_data_t *superbatch_data, transfer_data_t *transfer_data, process_data_t *process_data)$/;"	f
+mm	bwtaln.h	/^	uint32_t n_cigar:15, gap:8, mm:8, strand:1;$/;"	m	struct:__anon18
+mode	bwtaln.h	/^	int mode; \/\/ bit 24-31 are the barcode length$/;"	m	struct:__anon20
+move_backward	rle.c	163;"	d	file:
+move_backward	rle.c	189;"	d	file:
+mp_alloc	bwtsw2_core.c	/^inline static bsw2entry_p mp_alloc(mempool_t *mp)$/;"	f	file:
+mp_alloc	rope.c	/^static inline void *mp_alloc(mempool_t *mp)$/;"	f	file:
+mp_destroy	bwtsw2_core.c	/^static void mp_destroy(struct __mempool_t *mp)$/;"	f	file:
+mp_destroy	rope.c	/^static void mp_destroy(mempool_t *mp)$/;"	f	file:
+mp_free	bwtsw2_core.c	/^inline static void mp_free(mempool_t *mp, bsw2entry_p e)$/;"	f	file:
+mp_init	rope.c	/^static mempool_t *mp_init(int size)$/;"	f	file:
+mpos	bamlite.h	/^	int32_t mpos;$/;"	m	struct:__anon46
+mpos	bwtsw2.h	/^	int flag, nn, n_cigar, chr, pos, qual, mchr, mpos, pqual, isize, nm;$/;"	m	struct:__anon75
+mtid	bamlite.h	/^	int32_t mtid;$/;"	m	struct:__anon46
+multi	bwtaln.h	/^	bwt_multi1_t *multi;$/;"	m	struct:__anon19
+multi_2nd	bwtsw2.h	/^	int z, is, t_seeds, multi_2nd;$/;"	m	struct:__anon73
+mutex	kthread.c	/^	pthread_mutex_t mutex;$/;"	m	struct:ktp_t	file:
+n	bwa.h	/^	int n;$/;"	m	struct:__anon28
+n	bwa.h	/^	int16_t n, m, first, rid;$/;"	m	struct:__anon29
+n	bwa.h	/^typedef struct { int n, m; mem_alnreg_t *a; } mem_alnreg_v;$/;"	m	struct:__anon32
+n	bwa.h	/^typedef struct { int n, m; mem_chain_t *a;  } mem_chain_v;$/;"	m	struct:__anon30
+n	bwa.h	/^typedef struct { int n; mem_aln_t *a; } mem_aln_v;$/;"	m	struct:__anon35
+n	bwape.c	/^	int n;$/;"	m	struct:__anon65	file:
+n	bwt.h	/^typedef struct { int n, m; bwtintv_t *a; } bwtintv_v;$/;"	m	struct:__anon52
+n	bwtsw2.h	/^	int n, max;$/;"	m	struct:__anon76
+n	bwtsw2_aux.c	/^	int n, max;$/;"	m	struct:__anon79	file:
+n	bwtsw2_core.c	/^	int n, max;$/;"	m	struct:__anon3	file:
+n	cuda/bwamem_GPU.cu	/^typedef struct { size_t n, m; int *a; } int_v;$/;"	m	struct:__anon12	file:
+n	cuda/bwamem_GPU.cu	/^typedef struct { size_t n, m; uint64_t *a; } uint64_v;$/;"	m	struct:__anon11	file:
+n	cuda/ksort_CUDA.h	/^typedef struct { size_t n, m; pair64_t *a; } pair64_v;$/;"	m	struct:__anon9
+n	kbtree.h	/^	int32_t is_internal:1, n:31;$/;"	m	struct:__anon57
+n	kthread.c	/^	long n;$/;"	m	struct:kt_for_t	file:
+n	pemerge.c	/^	int n, start;$/;"	m	struct:__anon49	file:
+n	rope.h	/^	uint64_t l:54, n:9, is_bottom:1; \/\/ $n and $is_bottom are only set for the first node in a bucket$/;"	m	struct:rpnode_s
+n	utils.h	/^typedef struct { size_t n, m; pair64_t *a; } pair64_v;$/;"	m	struct:__anon43
+n	utils.h	/^typedef struct { size_t n, m; uint64_t *a; } uint64_v;$/;"	m	struct:__anon42
+n_aln	bwtaln.h	/^	int n_aln;$/;"	m	struct:__anon19
+n_ambs	bntseq.h	/^	int32_t n_ambs;$/;"	m	struct:__anon53
+n_cigar	bamlite.h	/^	uint32_t flag:16, n_cigar:16;$/;"	m	struct:__anon46
+n_cigar	bwa.h	/^	int n_cigar;     \/\/ number of CIGAR operations$/;"	m	struct:__anon34
+n_cigar	bwtaln.h	/^	int n_cigar;$/;"	m	struct:__anon19
+n_cigar	bwtaln.h	/^	uint32_t n_cigar:15, gap:8, mm:8, strand:1;$/;"	m	struct:__anon18
+n_cigar	bwtsw2.h	/^	int flag, nn, n_cigar, chr, pos, qual, mchr, mpos, pqual, isize, nm;$/;"	m	struct:__anon75
+n_cigar	bwtsw2_pair.c	/^	int n_cigar, beg, end, len;$/;"	m	struct:__anon63	file:
+n_comp	bwa.h	/^	int n_comp:30, is_alt:2; \/\/ number of sub-alignments chained together$/;"	m	struct:__anon31
+n_del	bwtaln.h	/^	uint64_t n_mm:8, n_gapo:8, n_gape:8, score:20, n_ins:10, n_del:10;$/;"	m	struct:__anon17
+n_del	bwtgap.h	/^	uint32_t n_ins:16, n_del:16;$/;"	m	struct:__anon81
+n_elems	rope.c	/^	int size, i, n_elems;$/;"	m	struct:__anon84	file:
+n_entries	bwtgap.h	/^	int n_entries, m_entries;$/;"	m	struct:__anon82
+n_entries	bwtgap.h	/^	int n_stacks, best, n_entries;$/;"	m	struct:__anon83
+n_gape	bwtaln.h	/^	uint32_t n_mm:8, n_gapo:8, n_gape:8, mapQ:8;$/;"	m	struct:__anon19
+n_gape	bwtaln.h	/^	uint64_t n_mm:8, n_gapo:8, n_gape:8, score:20, n_ins:10, n_del:10;$/;"	m	struct:__anon17
+n_gape	bwtgap.h	/^	uint32_t n_mm:8, n_gapo:8, n_gape:8, state:2, n_seed_mm:6;$/;"	m	struct:__anon81
+n_gapo	bwtaln.h	/^	uint32_t n_mm:8, n_gapo:8, n_gape:8, mapQ:8;$/;"	m	struct:__anon19
+n_gapo	bwtaln.h	/^	uint64_t n_mm:8, n_gapo:8, n_gape:8, score:20, n_ins:10, n_del:10;$/;"	m	struct:__anon17
+n_gapo	bwtgap.h	/^	uint32_t n_mm:8, n_gapo:8, n_gape:8, state:2, n_seed_mm:6;$/;"	m	struct:__anon81
+n_holes	bntseq.h	/^	int32_t n_holes;$/;"	m	struct:__anon55
+n_ins	bwtaln.h	/^	uint64_t n_mm:8, n_gapo:8, n_gape:8, score:20, n_ins:10, n_del:10;$/;"	m	struct:__anon17
+n_ins	bwtgap.h	/^	uint32_t n_ins:16, n_del:16;$/;"	m	struct:__anon81
+n_mm	bwtaln.h	/^	uint32_t n_mm:8, n_gapo:8, n_gape:8, mapQ:8;$/;"	m	struct:__anon19
+n_mm	bwtaln.h	/^	uint64_t n_mm:8, n_gapo:8, n_gape:8, score:20, n_ins:10, n_del:10;$/;"	m	struct:__anon17
+n_mm	bwtgap.h	/^	uint32_t n_mm:8, n_gapo:8, n_gape:8, state:2, n_seed_mm:6;$/;"	m	struct:__anon81
+n_multi	bwtaln.h	/^	int n_multi, N_multi;$/;"	m	struct:__anon21
+n_multi	bwtaln.h	/^	int n_multi;$/;"	m	struct:__anon19
+n_occ	bwt_lite.h	/^	uint32_t seq_len, bwt_size, n_occ;$/;"	m	struct:__anon44
+n_pending	bwtsw2_core.c	/^	int n_pending;$/;"	m	struct:__anon4	file:
+n_processed	bwa.h	/^	int64_t n_processed;	\/\/ number of reads processed prior to this batch$/;"	m	struct:__anon38
+n_processed	bwamem.c	/^	int64_t n_processed;$/;"	m	struct:__anon69	file:
+n_processed	cuda/superbatch_process.h	/^	int64_t n_processed;$/;"	m	struct:__anon13
+n_reads	bwa.h	/^	int n_reads;	   \/\/ number of reads$/;"	m	struct:superbatch_data_t
+n_sa	bwt.h	/^	bwtint_t n_sa;$/;"	m	struct:__anon50
+n_seed_mm	bwtgap.h	/^	uint32_t n_mm:8, n_gapo:8, n_gape:8, state:2, n_seed_mm:6;$/;"	m	struct:__anon81
+n_seeds	bwtsw2.h	/^	uint32_t flag:18, n_seeds:13, is_rev:1;$/;"	m	struct:__anon74
+n_seqs	bntseq.h	/^	int32_t n_seqs;$/;"	m	struct:__anon55
+n_seqs	bwa.h	/^	int n_seqs;			\/\/ number of reads on device$/;"	m	struct:__anon38
+n_seqs	bwa.h	/^	int n_seqs;			\/\/ number of reads$/;"	m	struct:__anon39
+n_seqs	bwtaln.c	/^	int n_seqs;$/;"	m	struct:__anon14	file:
+n_sortkeys	bwa.h	/^	int n_sortkeys;$/;"	m	struct:__anon38
+n_stacks	bwtgap.h	/^	int n_stacks, best, n_entries;$/;"	m	struct:__anon83
+n_steps	kthread.c	/^	int n_workers, n_steps;$/;"	m	struct:ktp_t	file:
+n_targets	bamlite.h	/^	int32_t n_targets;$/;"	m	struct:__anon45
+n_text	bamlite.h	/^	size_t l_text, n_text;$/;"	m	struct:__anon45
+n_threads	bwa.h	/^	int n_threads;          \/\/ number of threads$/;"	m	struct:__anon26
+n_threads	bwtaln.h	/^	int n_threads;$/;"	m	struct:__anon20
+n_threads	bwtsw2.h	/^	int n_threads, chunk_size;$/;"	m	struct:__anon73
+n_threads	kthread.c	/^	int n_threads;$/;"	m	struct:kt_for_t	file:
+n_threads	pemerge.c	/^	int n_threads;$/;"	m	struct:__anon48	file:
+n_workers	kthread.c	/^	int n_workers, n_steps;$/;"	m	struct:ktp_t	file:
+name	bntseq.h	/^	char *name, *anno;$/;"	m	struct:__anon53
+name	bwa.h	/^	char *name, *comment, *seq, *qual, *sam;$/;"	m	struct:__anon25
+name	bwa.h	/^	char *name;		   \/\/ big chunk of all names$/;"	m	struct:superbatch_data_t
+name	bwtaln.h	/^	char *name;$/;"	m	struct:__anon19
+name	bwtsw2.h	/^	char *name, *seq, *qual, *sam, *comment;$/;"	m	struct:__anon78
+name_size	bwa.h	/^	long name_size;	   \/\/ total length of name strings$/;"	m	struct:superbatch_data_t
+newProcess	cuda/streams.cu	/^process_data_t* newProcess($/;"	f
+newSuperBatchData	cuda/superbatch_process.cpp	/^static superbatch_data_t *newSuperBatchData()$/;"	f	file:
+newTransfer	cuda/streams.cu	/^transfer_data_t* newTransfer(){$/;"	f
+nm	bwtaln.h	/^	uint32_t full_len:20, nm:12;$/;"	m	struct:__anon19
+nm	bwtsw2.h	/^	int flag, nn, n_cigar, chr, pos, qual, mchr, mpos, pqual, isize, nm;$/;"	m	struct:__anon75
+nn	bwtsw2.h	/^	int flag, nn, n_cigar, chr, pos, qual, mchr, mpos, pqual, isize, nm;$/;"	m	struct:__anon75
+node	rope.h	/^	void *node, *leaf; \/\/ memory pool$/;"	m	struct:__anon59
+nt_comp_table	bwtsw2_aux.c	/^unsigned char nt_comp_table[256] = {$/;"	v
+numberOfIterationDone	bwt_gen.c	/^	unsigned int numberOfIterationDone;$/;"	m	struct:BWTInc	file:
+o	bwakit/bwa-postalt.js	/^	var c, opt = { a:1, b:4, o:6, e:1, min_mapq:10, min_sc:90, max_nm_sc:10, min_pa_ratio:1 };$/;"	p	class:collect_hla_hits.bwa_postalt.c
+o_del	bwa.h	/^	int o_del, e_del;$/;"	m	struct:__anon26
+o_ins	bwa.h	/^	int o_ins, e_ins;$/;"	m	struct:__anon26
+occ	bwt_lite.h	/^	uint32_t *bwt, *occ, *sa, L2[5];$/;"	m	struct:__anon44
+occMajorSizeInWord	bwt_gen.c	/^	bgint_t occMajorSizeInWord;			\/\/ Temporary variable to hold the memory allocated$/;"	m	struct:BWT	file:
+occSizeInWord	bwt_gen.c	/^	bgint_t occSizeInWord;				\/\/ Temporary variable to hold the memory allocated$/;"	m	struct:BWT	file:
+occValue	bwt_gen.c	/^	unsigned int *occValue;				\/\/ Occurrence values stored explicitly$/;"	m	struct:BWT	file:
+occValueMajor	bwt_gen.c	/^	bgint_t *occValueMajor;				\/\/ Occurrence values stored explicitly$/;"	m	struct:BWT	file:
+offset	bntseq.h	/^	int64_t offset;$/;"	m	struct:__anon53
+offset	bntseq.h	/^	int64_t offset;$/;"	m	struct:__anon54
+ont2d	bwakit/run-bwamem	/^                   ont2d:    Oxford Nanopore reads (~10kb query, higher error rate)$/;"	l
+opt	bwamem.c	/^	const mem_opt_t *opt;$/;"	m	struct:__anon69	file:
+opt	bwtaln.c	/^	const gap_opt_t *opt;$/;"	m	struct:__anon14	file:
+opt	cuda/superbatch_process.h	/^	mem_opt_t *opt;$/;"	m	struct:__anon13
+opt	pemerge.c	/^	const pem_opt_t *opt;$/;"	m	struct:__anon49	file:
+p	rope.h	/^	struct rpnode_s *p; \/\/ child; at the bottom level, $p points to a string with the first 2 bytes giving the number of runs (#runs)$/;"	m	struct:rpnode_s	typeref:struct:rpnode_s::rpnode_s
+p	rope.h	/^	uint8_t *p;$/;"	m	struct:__anon61
+pa	rope.h	/^	const rpnode_t *pa[ROPE_MAX_DEPTH]; \/\/ parent nodes$/;"	m	struct:__anon60
+pac	bwa.h	/^	uint8_t  *pac; \/\/ the actual 2-bit encoded reference sequences with 'N' converted to a random base$/;"	m	struct:__anon24
+pac	bwamem.c	/^	const uint8_t *pac;$/;"	m	struct:__anon69	file:
+pac	bwtsw2_aux.c	/^	uint8_t *pac;$/;"	m	struct:__anon80	file:
+pacbio	bwakit/run-bwamem	/^                   pacbio:   pacbio subreads (~10kb query, high error rate)$/;"	l
+packedShift	bwt_gen.c	/^	unsigned int *packedShift;$/;"	m	struct:BWTInc	file:
+packedText	bwt_gen.c	/^	unsigned int *packedText;$/;"	m	struct:BWTInc	file:
+pair64_lt	cuda/ksort_CUDA.h	528;"	d
+pair64_lt	utils.c	45;"	d	file:
+pair64_t	cuda/ksort_CUDA.h	/^} pair64_t;$/;"	t	typeref:struct:__anon8
+pair64_t	utils.h	/^} pair64_t;$/;"	t	typeref:struct:__anon41
+pair64_v	cuda/ksort_CUDA.h	/^typedef struct { size_t n, m; pair64_t *a; } pair64_v;$/;"	t	typeref:struct:__anon9
+pair64_v	utils.h	/^typedef struct { size_t n, m; pair64_t *a; } pair64_v;$/;"	t	typeref:struct:__anon43
+pairaux_t	bwtsw2_pair.c	/^} pairaux_t;$/;"	t	typeref:struct:__anon63	file:
+pairing	bwape.c	/^static int pairing(bwa_seq_t *p[2], pe_data_t *d, const pe_opt_t *opt, int s_mm, const isize_info_t *ii)$/;"	f	file:
+parse_hit	bwakit/bwa-postalt.js	/^function parse_hit(s, opt)$/;"	f
+pe_data_t	bwape.c	/^} pe_data_t;$/;"	t	typeref:struct:__anon67	file:
+pe_opt_t	bwtaln.h	/^} pe_opt_t;$/;"	t	typeref:struct:__anon21
+pem_opt_init	pemerge.c	/^pem_opt_t *pem_opt_init()$/;"	f
+pem_opt_t	pemerge.c	/^} pem_opt_t;$/;"	t	typeref:struct:__anon48	file:
+pen_clip3	bwa.h	/^	int pen_clip5,pen_clip3;\/\/ clipping penalty. This score is not deducted from the DP score.$/;"	m	struct:__anon26
+pen_clip5	bwa.h	/^	int pen_clip5,pen_clip3;\/\/ clipping penalty. This score is not deducted from the DP score.$/;"	m	struct:__anon26
+pen_unpaired	bwa.h	/^	int pen_unpaired;       \/\/ phred-scaled penalty for unpaired reads$/;"	m	struct:__anon26
+perf_exons	bwakit/typeHLA.js	/^var perf_exons = [];$/;"	v
+perf_genes	bwakit/typeHLA.js	/^var perf_genes = [];$/;"	v
+pes	bwamem.c	/^	const mem_pestat_t *pes;$/;"	m	struct:__anon69	file:
+pes0	cuda/superbatch_process.h	/^	mem_pestat_t *pes0;$/;"	m	struct:__anon13
+pid	kopen.c	/^	pid_t pid;$/;"	m	struct:__anon71	file:
+pj	bwtsw2_core.c	/^	uint32_t pj:2, qlen:30;$/;"	m	struct:__anon2	file:
+pl	kthread.c	/^	struct ktp_t *pl;$/;"	m	struct:__anon23	typeref:struct:__anon23::ktp_t	file:
+pool	bwtsw2_core.c	/^	struct __mempool_t *pool;$/;"	m	struct:__anon4	typeref:struct:__anon4::__mempool_t	file:
+pos	bamlite.h	/^	int32_t pos;$/;"	m	struct:__anon46
+pos	bwa.h	/^	int64_t pos;     \/\/ forward strand 5'-end mapping position$/;"	m	struct:__anon34
+pos	bwa.h	/^	int64_t pos;$/;"	m	struct:__anon29
+pos	bwape.c	/^	pair64_v pos[2];$/;"	m	struct:__anon67	file:
+pos	bwtaln.h	/^	bwtint_t pos;$/;"	m	struct:__anon18
+pos	bwtaln.h	/^	bwtint_t sa, pos;$/;"	m	struct:__anon19
+pos	bwtsw2.h	/^	int flag, nn, n_cigar, chr, pos, qual, mchr, mpos, pqual, isize, nm;$/;"	m	struct:__anon75
+pos	bwtsw2_pair.c	/^	int64_t pos;$/;"	m	struct:__anon63	file:
+pos_5	bwase.c	/^static int64_t pos_5(const bwa_seq_t *p)$/;"	f	file:
+pos_end	bwase.c	/^int64_t pos_end(const bwa_seq_t *p)$/;"	f
+pos_end_multi	bwase.c	/^int64_t pos_end_multi(const bwt_multi1_t *p, int len) \/\/ analogy to pos_end()$/;"	f
+poslist_t	bwape.c	/^} poslist_t;$/;"	t	typeref:struct:__anon65	file:
+pow4	kmers_index/hashKMerIndex.h	8;"	d
+pow5	cuda/preprocessing.cu	/^__device__ inline int pow5(int x){$/;"	f
+ppos	bwtsw2_core.c	/^	int ppos, upos;$/;"	m	struct:__anon2	file:
+pqual	bwtsw2.h	/^	int flag, nn, n_cigar, chr, pos, qual, mchr, mpos, pqual, isize, nm;$/;"	m	struct:__anon75
+preprocessing1	cuda/preprocessing.cu	/^int* preprocessing1(bseq1_t* d_seqs, int n_seqs)$/;"	f
+pri_exon	bwakit/typeHLA.js	/^var pri_exon = [], n_pri_exons;$/;"	v
+pri_list	bwakit/typeHLA.js	/^	var pri_list = [];$/;"	v
+primary	bwt.h	/^	bwtint_t primary; \/\/ S^{-1}(0), or the primary index of BWT$/;"	m	struct:__anon50
+primary	bwt_lite.h	/^	uint32_t primary;$/;"	m	struct:__anon44
+printBufferInfo	cuda/CUDAKernel_memmgnt.cu	/^__device__ void	printBufferInfo(void* d_buffer_pools, int pool_id){$/;"	f
+printBufferInfoHost	cuda/CUDAKernel_memmgnt.cu	/^void printBufferInfoHost(void* d_buffer_pools){$/;"	f
+printBufferInfoHost_kernel	cuda/CUDAKernel_memmgnt.cu	/^__global__ void printBufferInfoHost_kernel(void* d_buffer_pools, float* d_usage){$/;"	f
+print_bseq	pemerge.c	/^static inline void print_bseq(const bseq1_t *s, int rn)$/;"	f	file:
+print_buffer	bwakit/bwa-postalt.js	/^function print_buffer(buf2, fp_hla, hla) \/\/ output alignments$/;"	f
+print_hits	bwtsw2_aux.c	/^static void print_hits(const bntseq_t *bns, const bsw2opt_t *opt, bsw2seq1_t *ks, bwtsw2_t *b, int is_pe, bwtsw2_t *bmate)$/;"	f	file:
+proc_freq	main.c	/^uint64_t proc_freq;$/;"	v
+processSuperBatch	cuda/superbatch_process.cpp	/^static void processSuperBatch(superbatch_data_t *data, transfer_data_t *mini_transfer, process_data_t *mini_process)$/;"	f	file:
+process_data_t	bwa.h	/^} process_data_t;$/;"	t	typeref:struct:__anon38
+process_seqs	bwtsw2_aux.c	/^static void process_seqs(bsw2seq_t *_seq, const bsw2opt_t *opt, const bntseq_t *bns, uint8_t *pac, const bwt_t *target, int is_pe)$/;"	f	file:
+process_seqs	pemerge.c	/^static void process_seqs(const pem_opt_t *opt, int n_, bseq1_t *seqs, int64_t cnt[MAX_ERR+1])$/;"	f	file:
+push_array_p	bwtsw2_core.c	/^static inline bsw2cell_t *push_array_p(bsw2entry_t *e)$/;"	f	file:
+push_cigar	cuda/ksw_CUDA.cu	/^__device__ static inline uint32_t *push_cigar(int *n_cigar, int *m_cigar, uint32_t *cigar, int op, int len, void* d_buffer_ptr)$/;"	f	file:
+push_cigar	ksw.c	/^static inline uint32_t *push_cigar(int *n_cigar, int *m_cigar, uint32_t *cigar, int op, int len)$/;"	f	file:
+push_perf_exons	bwakit/typeHLA.js	/^function push_perf_exons(matches, last)$/;"	f
+q	bwtsw2.h	/^	int a, b, q, r, t, qr, bw, max_ins, max_chain_gap;$/;"	m	struct:__anon73
+q	pemerge.c	/^	int a, b, q, r, w;$/;"	m	struct:__anon48	file:
+q_def	pemerge.c	/^	int q_def, q_thres;$/;"	m	struct:__anon48	file:
+q_thres	pemerge.c	/^	int q_def, q_thres;$/;"	m	struct:__anon48	file:
+qb	bwa.h	/^	int qb, qe;     \/\/ [qb,qe): query sequence in the alignment$/;"	m	struct:__anon31
+qb	ksw.h	/^	int tb, qb; \/\/ target start and query start$/;"	m	struct:__anon56
+qbeg	bwa.h	/^	int32_t qbeg, len;$/;"	m	struct:__anon27
+qbeg	bwtsw2_chain.c	/^	int qbeg, qend;$/;"	m	struct:__anon64	file:
+qe	bwa.h	/^	int qb, qe;     \/\/ [qb,qe): query sequence in the alignment$/;"	m	struct:__anon31
+qe	ksw.h	/^	int te, qe; \/\/ target end and query end$/;"	m	struct:__anon56
+qend	bwtsw2_chain.c	/^	int qbeg, qend;$/;"	m	struct:__anon64	file:
+qintv_eq	bwtsw2_core.c	19;"	d	file:
+qintv_hash	bwtsw2_core.c	20;"	d	file:
+qintv_t	bwtsw2_core.c	/^} qintv_t;$/;"	t	typeref:struct:__anon1	file:
+qk	bwtsw2_core.c	/^	bwtint_t qk, ql;$/;"	m	struct:__anon2	file:
+ql	bwtsw2_core.c	/^	bwtint_t qk, ql;$/;"	m	struct:__anon2	file:
+qlen	bwtsw2_core.c	/^	uint32_t pj:2, qlen:30;$/;"	m	struct:__anon2	file:
+qlen	ksw.c	/^	int qlen, slen;$/;"	m	struct:_kswq_t	file:
+qp	ksw.c	/^	__m128i *qp, *H0, *H1, *E, *Hmax;$/;"	m	struct:_kswq_t	file:
+qr	bwtsw2.h	/^	int a, b, q, r, t, qr, bw, max_ins, max_chain_gap;$/;"	m	struct:__anon73
+qs	bwakit/typeHLA.js	/^	var qs, qe, ql = clip[0] + x + clip[1];$/;"	v
+qsint_t	QSufSort.h	/^typedef int64_t qsint_t;$/;"	t
+qual	bamlite.h	/^	uint32_t bin:16, qual:8, l_qname:8;$/;"	m	struct:__anon46
+qual	bwa.h	/^	char *name, *comment, *seq, *qual, *sam;$/;"	m	struct:__anon25
+qual	bwa.h	/^	char *qual;		   \/\/ big chunk of all qual$/;"	m	struct:superbatch_data_t
+qual	bwtaln.h	/^	ubyte_t *seq, *rseq, *qual;$/;"	m	struct:__anon19
+qual	bwtsw2.h	/^	char *name, *seq, *qual, *sam, *comment;$/;"	m	struct:__anon78
+qual	bwtsw2.h	/^	int flag, nn, n_cigar, chr, pos, qual, mchr, mpos, pqual, isize, nm;$/;"	m	struct:__anon75
+qual_size	bwa.h	/^	long qual_size;	   \/\/ total length of qual strings$/;"	m	struct:superbatch_data_t
+query	bwamem_extra.c	/^	const uint8_t *query;$/;"	m	struct:__smem_i	file:
+r	bwtsw2.h	/^	int a, b, q, r, t, qr, bw, max_ins, max_chain_gap;$/;"	m	struct:__anon73
+r	pemerge.c	/^	int a, b, q, r, w;$/;"	m	struct:__anon48	file:
+raw_mapq	bwamem_pair.c	274;"	d	file:
+raw_mapq	cuda/bwamem_GPU.cu	1004;"	d	file:
+rb	bwa.h	/^	int64_t rb, re; \/\/ [rb,re): reference sequence in the alignment$/;"	m	struct:__anon31
+rbeg	bwa.h	/^	int64_t rbeg;$/;"	m	struct:__anon27
+re	bwa.h	/^	int64_t rb, re; \/\/ [rb,re): reference sequence in the alignment$/;"	m	struct:__anon31
+re_cigar	bwakit/bwa-postalt.js	/^var re_cigar = \/(\\d+)([MIDSHN])\/g;$/;"	v
+re_cigar	bwakit/typeHLA.js	/^var re_cigar = \/(\\d+)([MIDSH])\/g;$/;"	v
+read_left	bwa.h	/^	uint8_t* read_left; 	\/\/ string of read on the left of seed$/;"	m	struct:__anon36
+read_right	bwa.h	/^	uint8_t* read_right; 	\/\/ string of read on the right of seed$/;"	m	struct:__anon36
+readlen_left	bwa.h	/^	uint16_t readlen_left; 	\/\/ length of read on the left of seed$/;"	m	struct:__anon36
+readlen_right	bwa.h	/^	uint16_t readlen_right; \/\/ length of read on the right of seed$/;"	m	struct:__anon36
+reads	bwa.h	/^	bseq1_t *reads;	   \/\/ read info with pointers to the ones below$/;"	m	struct:superbatch_data_t
+realloc	malloc_wrap.h	36;"	d
+realloc	malloc_wrap.h	38;"	d
+realtime	utils.c	/^double realtime()$/;"	f
+ref_left	bwa.h	/^	uint8_t* ref_left;		\/\/ string of reference on the left of seed$/;"	m	struct:__anon36
+ref_right	bwa.h	/^	uint8_t* ref_right;		\/\/ string of reference on the right of seed$/;"	m	struct:__anon36
+ref_shift	bwtaln.h	/^	int ref_shift;$/;"	m	struct:__anon18
+ref_shift	bwtaln.h	/^	int ref_shift;$/;"	m	struct:__anon19
+reflen_left	bwa.h	/^	uint16_t reflen_left;	\/\/ length of reference on the left of seed$/;"	m	struct:__anon36
+reflen_right	bwa.h	/^	uint16_t reflen_right;	\/\/ length of reference on the right of seed$/;"	m	struct:__anon36
+regID	bwa.h	/^	uint16_t regID;		\/\/ index on the (mem_alnreg_t)regs.a vector$/;"	m	struct:__anon36
+regs	bwamem.c	/^	mem_alnreg_v *regs;$/;"	m	struct:__anon69	file:
+remove_duplicate	bwtsw2_core.c	/^static inline void remove_duplicate(bsw2entry_t *u, khash_t(qintv) *hash)$/;"	f	file:
+resetProcess	cuda/streams.cu	/^void resetProcess(process_data_t *process_data){$/;"	f
+resetSuperBatchData	cuda/superbatch_process.cpp	/^static void resetSuperBatchData(superbatch_data_t *data)$/;"	f	file:
+resetTransfer	cuda/streams.cu	/^void resetTransfer(transfer_data_t *transfer_data){$/;"	f
+response	kopen.c	/^	char *response;$/;"	m	struct:__anon70	file:
+revcomp	bwakit/bwa-postalt.js	/^Bytes.prototype.revcomp = function()$/;"	m	class:Bytes
+reverse	bwakit/bwa-postalt.js	/^Bytes.prototype.reverse = function()$/;"	m	class:Bytes
+reverse	cuda/kstring_CUDA.cu	/^__device__ static inline void reverse(char* str, int len) $/;"	f	file:
+revseq	cuda/ksw_CUDA.cu	/^__device__ static inline void revseq(int l, uint8_t *s)$/;"	f	file:
+revseq	ksw.c	/^static inline void revseq(int l, uint8_t *s)$/;"	f	file:
+rid	bwa.h	/^	int rid;         \/\/ reference sequence index in bntseq_t; <0 for unmapped$/;"	m	struct:__anon34
+rid	bwa.h	/^	int rid;        \/\/ reference seq ID$/;"	m	struct:__anon31
+rid	bwa.h	/^	int rid;$/;"	m	struct:__anon27
+rid	bwa.h	/^	int16_t n, m, first, rid;$/;"	m	struct:__anon29
+right	bwakit/typeHLA.js	/^	var right = tl - te < clip[1]? tl - te : clip[1];$/;"	v
+right	cuda/ksort_CUDA.h	/^	void *left, *right;$/;"	m	struct:__anon7
+right	ksort.h	/^	void *left, *right;$/;"	m	struct:__anon40
+right_shift_2bytes	cuda/ksw_CUDA.cu	/^static inline __device__ m128i right_shift_2bytes(m128i a){$/;"	f	file:
+rle_auxtab	rle.c	/^const uint8_t rle_auxtab[8] = { 0x01, 0x11, 0x21, 0x31, 0x03, 0x13, 0x07, 0x17 };$/;"	v
+rle_count	rle.c	/^void rle_count(const uint8_t *block, int64_t cnt[6])$/;"	f
+rle_dec1	rle.h	39;"	d
+rle_enc1	rle.h	/^static inline int rle_enc1(uint8_t *p, int c, int64_t l)$/;"	f
+rle_insert	rle.c	/^int rle_insert(uint8_t *block, int64_t x, int a, int64_t rl, int64_t cnt[6], const int64_t ec[6])$/;"	f
+rle_insert_cached	rle.c	/^int rle_insert_cached(uint8_t *block, int64_t x, int a, int64_t rl, int64_t cnt[6], const int64_t ec[6], int *beg, int64_t bc[6])$/;"	f
+rle_nptr	rle.h	36;"	d
+rle_print	rle.c	/^void rle_print(const uint8_t *block, int expand)$/;"	f
+rle_rank1a	rle.h	21;"	d
+rle_rank2a	rle.c	/^void rle_rank2a(const uint8_t *block, int64_t x, int64_t y, int64_t *cx, int64_t *cy, const int64_t ec[6])$/;"	f
+rle_split	rle.c	/^void rle_split(uint8_t *block, uint8_t *new_block)$/;"	f
+root	rope.h	/^	rpnode_t *root;$/;"	m	struct:__anon59
+rope	rope.h	/^	const rope_t *rope; \/\/ the rope$/;"	m	struct:__anon60
+rope_count_to_leaf	rope.c	/^static rpnode_t *rope_count_to_leaf(const rope_t *rope, int64_t x, int64_t cx[6], int64_t *rest)$/;"	f	file:
+rope_destroy	rope.c	/^void rope_destroy(rope_t *rope)$/;"	f
+rope_dump	rope.c	/^void rope_dump(const rope_t *r, FILE *fp)$/;"	f
+rope_dump_node	rope.c	/^void rope_dump_node(const rpnode_t *p, FILE *fp)$/;"	f
+rope_init	rope.c	/^rope_t *rope_init(int max_nodes, int block_len)$/;"	f
+rope_insert_run	rope.c	/^int64_t rope_insert_run(rope_t *rope, int64_t x, int a, int64_t rl, rpcache_t *cache)$/;"	f
+rope_itr_first	rope.c	/^void rope_itr_first(const rope_t *rope, rpitr_t *i)$/;"	f
+rope_itr_next_block	rope.c	/^const uint8_t *rope_itr_next_block(rpitr_t *i)$/;"	f
+rope_print_node	rope.c	/^void rope_print_node(const rpnode_t *p)$/;"	f
+rope_rank1a	rope.h	45;"	d
+rope_rank2a	rope.c	/^void rope_rank2a(const rope_t *rope, int64_t x, int64_t y, int64_t *cx, int64_t *cy)$/;"	f
+rope_restore	rope.c	/^rope_t *rope_restore(FILE *fp)$/;"	f
+rope_restore_node	rope.c	/^rpnode_t *rope_restore_node(const rope_t *r, FILE *fp, int64_t c[6])$/;"	f
+rope_t	rope.h	/^} rope_t;$/;"	t	typeref:struct:__anon59
+rpcache_t	rope.h	/^} rpcache_t;$/;"	t	typeref:struct:__anon61
+rpitr_t	rope.h	/^} rpitr_t;$/;"	t	typeref:struct:__anon60
+rpnode_s	rope.h	/^typedef struct rpnode_s {$/;"	s
+rpnode_t	rope.h	/^} rpnode_t;$/;"	t	typeref:struct:rpnode_s
+rseq	bwtaln.h	/^	ubyte_t *seq, *rseq, *qual;$/;"	m	struct:__anon19
+s	bwakit/typeHLA-selctg.js	/^var s = {}, re = \/(\\d+)([MIDSHN])\/g;$/;"	v
+s	kseq.h	/^	char *s;$/;"	m	struct:__kstring_t
+s	kstring.h	/^	char *s;$/;"	m	struct:__kstring_t
+s_gape	bwtaln.h	/^	int s_mm, s_gapo, s_gape;$/;"	m	struct:__anon20
+s_gapo	bwtaln.h	/^	int s_mm, s_gapo, s_gape;$/;"	m	struct:__anon20
+s_mm	bwtaln.h	/^	int s_mm, s_gapo, s_gape;$/;"	m	struct:__anon20
+sa	bwt.h	/^	bwtint_t *sa;$/;"	m	struct:__anon50
+sa	bwt_lite.h	/^	uint32_t *bwt, *occ, *sa, L2[5];$/;"	m	struct:__anon44
+sa	bwtaln.h	/^	bwtint_t sa, pos;$/;"	m	struct:__anon19
+sa_intv	bwt.h	/^	int sa_intv;$/;"	m	struct:__anon50
+sais_main	is.c	/^static int sais_main(const unsigned char *T, int *SA, int fs, int n, int k, int cs)$/;"	f	file:
+sam	bwa.h	/^	char *name, *comment, *seq, *qual, *sam;$/;"	m	struct:__anon25
+sam	bwtsw2.h	/^	char *name, *seq, *qual, *sam, *comment;$/;"	m	struct:__anon78
+save_hits	bwtsw2_core.c	/^static void save_hits(const bwtl_t *bwt, int thres, bsw2hit_t *hits, bsw2entry_t *u)$/;"	f	file:
+save_narrow_hits	bwtsw2_core.c	/^static void save_narrow_hits(const bwtl_t *bwtl, bsw2entry_t *u, bwtsw2_t *b1, int t, int IS)$/;"	f	file:
+sbgint_t	bwt_gen.c	/^typedef int64_t sbgint_t;$/;"	t	file:
+score	bwa.h	/^	int score, sub, alt_sc;$/;"	m	struct:__anon34
+score	bwa.h	/^	int score;      \/\/ best local SW score$/;"	m	struct:__anon31
+score	bwa.h	/^	int score;$/;"	m	struct:__anon27
+score	bwtaln.h	/^	int score;$/;"	m	struct:__anon19
+score	bwtaln.h	/^	uint64_t n_mm:8, n_gapo:8, n_gape:8, score:20, n_ins:10, n_del:10;$/;"	m	struct:__anon17
+score	cuda/ksw_CUDA.cu	/^__device__ static inline int score(uint8_t A, uint8_t B, const int8_t *mat, int m){$/;"	f	file:
+score	ksw.h	/^	int score; \/\/ best score$/;"	m	struct:__anon56
+score2	ksw.h	/^	int score2, te2; \/\/ second best score and ending position on the target$/;"	m	struct:__anon56
+seQ	bwtaln.h	/^	uint64_t c1:28, c2:28, seQ:8; \/\/ number of top1 and top2 hits; single-end mapQ$/;"	m	struct:__anon19
+search_lower_bound_rbeg	cuda/bwamem_GPU.cu	/^__device__ inline static int search_lower_bound_rbeg(mem_seed_t *seeds, int seedID, int64_t rbeg_lower_bound){$/;"	f	file:
+secondary	bwa.h	/^	int secondary;  \/\/ index of the parent hit shadowing the current hit; <0 if primary$/;"	m	struct:__anon31
+secondary_all	bwa.h	/^	int secondary_all;$/;"	m	struct:__anon31
+seed	bntseq.h	/^	uint32_t seed;$/;"	m	struct:__anon55
+seedID	bwa.h	/^	uint16_t seedID	;	\/\/ index of seed on the chain$/;"	m	struct:__anon36
+seed_len	bwtaln.h	/^	int max_seed_diff, seed_len;$/;"	m	struct:__anon20
+seed_record_t	bwa.h	/^} seed_record_t;$/;"	t	typeref:struct:__anon36
+seedcov	bwa.h	/^	int seedcov;    \/\/ length of regions coverged by seeds$/;"	m	struct:__anon31
+seedlen0	bwa.h	/^	int seedlen0;   \/\/ length of the starting seed$/;"	m	struct:__anon31
+seeds	bwa.h	/^	mem_seed_t *seeds;$/;"	m	struct:__anon29
+seq	bwa.h	/^	char *name, *comment, *seq, *qual, *sam;$/;"	m	struct:__anon25
+seq	bwtaln.h	/^	ubyte_t *seq, *rseq, *qual;$/;"	m	struct:__anon19
+seq	bwtsw2.h	/^	char *name, *seq, *qual, *sam, *comment;$/;"	m	struct:__anon78
+seq	bwtsw2_aux.c	/^	bsw2seq1_t *seq;$/;"	m	struct:__anon79	file:
+seqID	bwa.h	/^	int seqID;			\/\/ read ID$/;"	m	struct:__anon36
+seq_len	bwt.h	/^	bwtint_t seq_len; \/\/ sequence length$/;"	m	struct:__anon50
+seq_len	bwt_lite.h	/^	uint32_t seq_len, bwt_size, n_occ;$/;"	m	struct:__anon44
+seq_reverse	bwaseqio.c	/^void seq_reverse(int len, ubyte_t *seq, int is_comp)$/;"	f
+seqs	bwa.h	/^	char *seqs;		   \/\/ big chunk of all seqs$/;"	m	struct:superbatch_data_t
+seqs	bwamem.c	/^	bseq1_t *seqs;$/;"	m	struct:__anon69	file:
+seqs	bwtaln.c	/^	bwa_seq_t *seqs;$/;"	m	struct:__anon14	file:
+seqs	pemerge.c	/^	bseq1_t *seqs;$/;"	m	struct:__anon49	file:
+seqs_size	bwa.h	/^	long seqs_size;	   \/\/ total length of seq strings$/;"	m	struct:superbatch_data_t
+set_value_m128i	cuda/ksw_CUDA.cu	/^static inline __device__ m128i set_value_m128i(int16_t val){$/;"	f	file:
+shared	kthread.c	/^	void *shared;$/;"	m	struct:ktp_t	file:
+shift	ksw.c	/^	uint8_t shift, mdiff, max, size;$/;"	m	struct:_kswq_t	file:
+size	ksw.c	/^	uint8_t shift, mdiff, max, size;$/;"	m	struct:_kswq_t	file:
+size	rope.c	/^	int size, i, n_elems;$/;"	m	struct:__anon84	file:
+skip_sw	bwtsw2.h	/^	int skip_sw:8, cpy_cmt:8, hard_clip:16;$/;"	m	struct:__anon73
+slen	ksw.c	/^	int qlen, slen;$/;"	m	struct:_kswq_t	file:
+smem_aux_destroy	bwamem.c	/^static void smem_aux_destroy(smem_aux_t *a)$/;"	f	file:
+smem_aux_init	bwamem.c	/^static smem_aux_t *smem_aux_init()$/;"	f	file:
+smem_aux_t	bwa.h	/^} smem_aux_t;$/;"	t	typeref:struct:__anon37
+smem_config	bwamem_extra.c	/^void smem_config(smem_i *itr, int min_intv, int max_len, uint64_t max_intv)$/;"	f
+smem_i	bwa.h	/^typedef struct __smem_i smem_i;$/;"	t	typeref:struct:__smem_i
+smem_itr_destroy	bwamem_extra.c	/^void smem_itr_destroy(smem_i *itr)$/;"	f
+smem_itr_init	bwamem_extra.c	/^smem_i *smem_itr_init(const bwt_t *bwt)$/;"	f
+smem_next	bwamem_extra.c	/^const bwtintv_v *smem_next(smem_i *itr)$/;"	f
+smem_set_query	bwamem_extra.c	/^void smem_set_query(smem_i *itr, int len, const uint8_t *query)$/;"	f
+socket_connect	kopen.c	/^static int socket_connect(const char *host, const char *port)$/;"	f	file:
+socket_wait	kopen.c	/^static int socket_wait(int fd, int is_read)$/;"	f	file:
+sortReads	cuda/superbatch_process.cpp	/^static void sortReads(bseq1_t *reads, int n_reads)$/;"	f	file:
+split_factor	bwa.h	/^	float split_factor;     \/\/ split into a seed if MEM is longer than min_seed_len*split_factor$/;"	m	struct:__anon26
+split_node	rope.c	/^static inline rpnode_t *split_node(rope_t *rope, rpnode_t *u, rpnode_t *v)$/;"	f	file:
+split_width	bwa.h	/^	int split_width;        \/\/ split into a seed if its occurence is smaller than this value$/;"	m	struct:__anon26
+stack	bwtgap.h	/^	gap_entry_t *stack;$/;"	m	struct:__anon82
+stack	bwtsw2.h	/^	void *stack;$/;"	m	struct:__anon77
+stack_destroy	bwtsw2_core.c	/^static void stack_destroy(bsw2stack_t *s) { mp_destroy(s->pool); kv_destroy(s->stack0); kv_destroy(s->pending); free(s); }$/;"	f	file:
+stack_isempty	bwtsw2_core.c	60;"	d	file:
+stack_pop	bwtsw2_core.c	/^inline static bsw2entry_p stack_pop(bsw2stack_t *s)$/;"	f	file:
+stack_push0	bwtsw2_core.c	/^inline static void stack_push0(bsw2stack_t *s, bsw2entry_p e) { kv_push(bsw2entry_p, s->stack0, e); }$/;"	f	file:
+stacks	bwtgap.h	/^	gap_stack1_t *stacks;$/;"	m	struct:__anon83
+start	bwamem_extra.c	/^	int start, len;$/;"	m	struct:__smem_i	file:
+start	pemerge.c	/^	int n, start;$/;"	m	struct:__anon49	file:
+start_width	cuda/bwamem_GPU.cu	1313;"	d	file:
+start_width	cuda/bwamem_GPU.cu	1429;"	d	file:
+state	bwtgap.h	/^	uint32_t n_mm:8, n_gapo:8, n_gape:8, state:2, n_seed_mm:6;$/;"	m	struct:__anon81
+std	bwa.h	/^	double avg, std; \/\/ mean and stddev of the insert size distribution$/;"	m	struct:__anon33
+std	bwape.c	/^	double avg, std, ap_prior;$/;"	m	struct:__anon66	file:
+std	bwtsw2_pair.c	/^	double avg, std;$/;"	m	struct:__anon62	file:
+steal_work	kthread.c	/^static inline long steal_work(kt_for_t *t)$/;"	f	file:
+step	kthread.c	/^	int step;$/;"	m	struct:__anon23	file:
+strand	bwtaln.h	/^	uint32_t len:20, strand:1, type:2, dummy:1, extra_flag:8;$/;"	m	struct:__anon19
+strand	bwtaln.h	/^	uint32_t n_cigar:15, gap:8, mm:8, strand:1;$/;"	m	struct:__anon18
+strdup	malloc_wrap.h	41;"	d
+strdup	malloc_wrap.h	43;"	d
+strdup_GPU	cuda/kstring_CUDA.cu	/^__device__ char* strdup_GPU(char* src, void* d_buffer_ptr)$/;"	f
+strlen_GPU	cuda/kstring_CUDA.cu	/^__device__ int strlen_GPU(const char *p)$/;"	f
+sub	bwa.h	/^	int score, sub, alt_sc;$/;"	m	struct:__anon34
+sub	bwa.h	/^	int sub;        \/\/ 2nd best SW score$/;"	m	struct:__anon31
+sub	bwamem_extra.c	/^	bwtintv_v *sub;     \/\/ sub-matches inside the longest match; temporary$/;"	m	struct:__smem_i	file:
+sub_n	bwa.h	/^	int sub_n;      \/\/ approximate number of suboptimal hits$/;"	m	struct:__anon31
+subs_unsigned_m128i	cuda/ksw_CUDA.cu	/^static inline __device__ m128i subs_unsigned_m128i(m128i a, m128i b){$/;"	f	file:
+superBatchMain	cuda/superbatch_process.cpp	/^void superBatchMain(ktp_aux_t *aux)$/;"	f
+superbatch_data_t	bwa.h	/^typedef struct superbatch_data_t$/;"	s
+superbatch_data_t	bwa.h	/^} superbatch_data_t;$/;"	t	typeref:struct:superbatch_data_t
+swap	QSufSort.c	39;"	d	file:
+swap	bwt_gen.c	68;"	d	file:
+swapData	cuda/streams.cu	/^void swapData(process_data_t *process_data, transfer_data_t *transfer_data){$/;"	f
+swap_endian_data	bamlite.c	/^static void swap_endian_data(const bam1_core_t *c, int data_len, uint8_t *data)$/;"	f	file:
+t	bwtsw2.h	/^	int a, b, q, r, t, qr, bw, max_ins, max_chain_gap;$/;"	m	struct:__anon73
+t	kthread.c	/^	struct kt_for_t *t;$/;"	m	struct:__anon22	typeref:struct:__anon22::kt_for_t	file:
+t_seeds	bwtsw2.h	/^	int z, is, t_seeds, multi_2nd;$/;"	m	struct:__anon73
+target	bwtsw2_aux.c	/^	const bwt_t *target;$/;"	m	struct:__anon80	file:
+target_len	bamlite.h	/^	uint32_t *target_len;$/;"	m	struct:__anon45
+target_name	bamlite.h	/^	char **target_name;$/;"	m	struct:__anon45
+tb	ksw.h	/^	int tb, qb; \/\/ target start and query start$/;"	m	struct:__anon56
+tbeg	bwtsw2_chain.c	/^	uint32_t tbeg, tend;$/;"	m	struct:__anon64	file:
+te	ksw.h	/^	int te, qe; \/\/ target end and query end$/;"	m	struct:__anon56
+te2	ksw.h	/^	int score2, te2; \/\/ second best score and ending position on the target$/;"	m	struct:__anon56
+tend	bwtsw2_chain.c	/^	uint32_t tbeg, tend;$/;"	m	struct:__anon64	file:
+test_and_merge	bwamem.c	/^static int test_and_merge(const mem_opt_t *opt, int64_t l_pac, mem_chain_t *c, const mem_seed_t *p, int seed_rid)$/;"	f	file:
+test_and_merge	cuda/bwamem_GPU.cu	/^__device__ static int test_and_merge(const mem_opt_t *opt, int64_t l_pac, mem_chain_t *c, const mem_seed_t *p, int seed_rid, void* CUDAKernel_buffer)$/;"	f	file:
+text	bamlite.h	/^	char *text;$/;"	m	struct:__anon45
+textBuffer	bwt_gen.c	/^	unsigned char *textBuffer;$/;"	m	struct:BWTInc	file:
+textLength	bwt_gen.c	/^	bgint_t textLength;					\/\/ length of the text$/;"	m	struct:BWT	file:
+thread_aux_t	bwtaln.c	/^} thread_aux_t;$/;"	t	typeref:struct:__anon14	file:
+thread_aux_t	bwtsw2_aux.c	/^} thread_aux_t;$/;"	t	typeref:struct:__anon80	file:
+tid	bamlite.h	/^	int32_t tid;$/;"	m	struct:__anon46
+tid	bwtaln.c	/^	int tid;$/;"	m	struct:__anon14	file:
+tid	bwtaln.h	/^	int tid;$/;"	m	struct:__anon19
+tid	bwtsw2.h	/^	int l, tid;$/;"	m	struct:__anon78
+tid	bwtsw2_aux.c	/^	int tid, is_pe;$/;"	m	struct:__anon80	file:
+time_elapse	bwtsw2_core.c	/^static inline double time_elapse(const struct rusage *curr, const struct rusage *last)$/;"	f	file:
+tk	bwtsw2_core.c	/^	uint32_t tk, tl; \/\/ this is fine$/;"	m	struct:__anon3	file:
+tl	bwakit/typeHLA.js	/^	var tl = len[t[2]];$/;"	v
+tl	bwtsw2_core.c	/^	uint32_t tk, tl; \/\/ this is fine$/;"	m	struct:__anon3	file:
+tlen	bwtsw2_core.c	/^	int tlen;$/;"	m	struct:__anon2	file:
+tmpv	bwa.h	/^	bwtintv_v mem, mem1, *tmpv[2];$/;"	m	struct:__anon37
+tmpvec	bwamem_extra.c	/^	bwtintv_v *tmpvec[2]; \/\/ temporary arrays$/;"	m	struct:__smem_i	file:
+top	rope.c	/^	int64_t top, max;$/;"	m	struct:__anon84	file:
+total_input	bwa.h	/^	int64_t total_input;	\/\/ number of reads input prior to this batch$/;"	m	struct:__anon39
+total_output	bwa.h	/^	int64_t total_output;	\/\/ number of reads output prior to this batch$/;"	m	struct:__anon39
+transferIndex	cuda/streams.cu	/^static void transferIndex($/;"	f	file:
+transferOptions	cuda/streams.cu	/^static void transferOptions($/;"	f	file:
+transfer_data_t	bwa.h	/^} transfer_data_t;$/;"	t	typeref:struct:__anon39
+traverse_func	bwamem.c	313;"	d	file:
+traverse_func	bwamem.c	315;"	d	file:
+trim_qual	bwtaln.h	/^	int trim_qual;$/;"	m	struct:__anon20
+trim_readno	bwa.c	/^static inline void trim_readno(kstring_t *s)$/;"	f	file:
+truesc	bwa.h	/^	int truesc;     \/\/ actual score corresponding to the aligned region; possibly smaller than $score$/;"	m	struct:__anon31
+truncateLeft	bwt_gen.c	69;"	d	file:
+truncateRight	bwt_gen.c	70;"	d	file:
+type	bwtaln.h	/^	int type, is_sw, is_preload;$/;"	m	struct:__anon21
+type	bwtaln.h	/^	uint32_t len:20, strand:1, type:2, dummy:1, extra_flag:8;$/;"	m	struct:__anon19
+type	kopen.c	/^	int type, fd;$/;"	m	struct:__anon71	file:
+type_exon	bwakit/typeHLA.js	/^	function type_exon(e, gt_list)$/;"	f	function:type_gene
+type_gene	bwakit/typeHLA.js	/^function type_gene(perf_mode)$/;"	f
+ubyte_t	bntseq.h	/^typedef uint8_t ubyte_t;$/;"	t
+ubyte_t	bwt.h	/^typedef unsigned char ubyte_t;$/;"	t
+ubyte_t	is.c	/^typedef unsigned char ubyte_t;$/;"	t	file:
+uint64_v	cuda/bwamem_GPU.cu	/^typedef struct { size_t n, m; uint64_t *a; } uint64_v;$/;"	t	typeref:struct:__anon11	file:
+uint64_v	utils.h	/^typedef struct { size_t n, m; uint64_t *a; } uint64_v;$/;"	t	typeref:struct:__anon42
+update_a	fastmap.c	/^static void update_a(mem_opt_t *opt, const mem_opt_t *opt0)$/;"	f	file:
+update_mate_aux	bwtsw2_aux.c	/^static void update_mate_aux(bwtsw2_t *b, const bwtsw2_t *m)$/;"	f	file:
+update_opt	bwtsw2_aux.c	/^static void update_opt(bsw2opt_t *dst, const bsw2opt_t *src, int qlen)$/;"	f	file:
+update_pair	bwakit/typeHLA.js	/^		function update_pair(x, m, is_pri)$/;"	f	function:type_gene.type_exon
+upos	bwtsw2_core.c	/^	int ppos, upos;$/;"	m	struct:__anon2	file:
+usage	main.c	/^static int usage()$/;"	f	file:
+ver	bwakit/typeHLA.js	/^var ver = "r19";$/;"	v
+w	bwa.h	/^	int w;                  \/\/ band width$/;"	m	struct:__anon26
+w	bwa.h	/^	int w;          \/\/ actual band width used in extension$/;"	m	struct:__anon31
+w	bwa.h	/^	uint32_t w:29, kept:2, is_alt:1;$/;"	m	struct:__anon29
+w	bwtaln.h	/^	bwtint_t w;$/;"	m	struct:__anon16
+w	kthread.c	/^	ktf_worker_t *w;$/;"	m	struct:kt_for_t	file:
+w	pemerge.c	/^	int a, b, q, r, w;$/;"	m	struct:__anon48	file:
+which	bwakit/run-bwamem	/^sub which$/;"	s
+which	bwaseqio.c	/^	int is_bam, which; \/\/ 1st bit: read1, 2nd bit: read2, 3rd: SE$/;"	m	struct:__bwa_seqio_t	file:
+worker	bwtaln.c	/^static void *worker(void *data)$/;"	f	file:
+worker	bwtsw2_aux.c	/^static void *worker(void *data)$/;"	f	file:
+worker	pemerge.c	/^void *worker(void *data)$/;"	f
+worker1	bwamem.c	/^static void worker1(void *data, int i, int tid)$/;"	f	file:
+worker2	bwamem.c	/^static void worker2(void *data, int i, int tid)$/;"	f	file:
+worker_t	bwamem.c	/^} worker_t;$/;"	t	typeref:struct:__anon69	file:
+worker_t	pemerge.c	/^} worker_t;$/;"	t	typeref:struct:__anon49	file:
+workers	kthread.c	/^	ktp_worker_t *workers;$/;"	m	struct:ktp_t	file:
+workingMemory	bwt_gen.c	/^	unsigned int *workingMemory;$/;"	m	struct:BWTInc	file:
+wrap_calloc	malloc_wrap.c	/^void *wrap_calloc(size_t nmemb, size_t size,$/;"	f
+wrap_malloc	malloc_wrap.c	/^void *wrap_malloc(size_t size,$/;"	f
+wrap_realloc	malloc_wrap.c	/^void *wrap_realloc(void *ptr, size_t size,$/;"	f
+wrap_strdup	malloc_wrap.c	/^char *wrap_strdup(const char *s,$/;"	f
+writeOutputMiniBatch	cuda/minibatch_process.cpp	/^static void writeOutputMiniBatch(transfer_data_t *transfer_data)$/;"	f	file:
+write_aux	bwtsw2_aux.c	/^static void write_aux(const bsw2opt_t *opt, const bntseq_t *bns, int qlen, uint8_t *seq[2], const uint8_t *pac, bwtsw2_t *b, const char *name)$/;"	f	file:
+write_bytes	kopen.c	/^static int write_bytes(int fd, const char *buf, size_t len)$/;"	f	file:
+x	bwt.h	/^	bwtint_t x[3], info;$/;"	m	struct:__anon51
+x	cuda/kbtree_CUDA.cu	/^	kbnode_t *x;$/;"	m	struct:__anon6	file:
+x	cuda/ksort_CUDA.h	/^	uint64_t x, y;$/;"	m	struct:__anon8
+x	kbtree.h	/^	kbnode_t *x;$/;"	m	struct:__anon58
+x	kmers_index/hashKMerIndex.h	/^	bwtint_t x[3]; \/\/ same as first 3 elements on bwtintv_t$/;"	m	struct:__anon72
+x	utils.h	/^	uint64_t x, y;$/;"	m	struct:__anon41
+xassert	utils.h	48;"	d
+xopen	utils.h	44;"	d
+xreopen	utils.h	45;"	d
+xzopen	utils.h	46;"	d
+y	cuda/ksort_CUDA.h	/^	uint64_t x, y;$/;"	m	struct:__anon8
+y	utils.h	/^	uint64_t x, y;$/;"	m	struct:__anon41
+z	bwtsw2.h	/^	int z, is, t_seeds, multi_2nd;$/;"	m	struct:__anon73
+zdrop	bwa.h	/^	int zdrop;              \/\/ Z-dropoff$/;"	m	struct:__anon26

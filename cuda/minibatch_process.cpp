@@ -139,15 +139,31 @@ static void writeOutputMiniBatch(transfer_data_t *transfer_data)
 	struct timespec timing_start, timing_stop; // variables for printing timings
 	// transfer from device's to host's
 	if (bwa_verbose >= 3) clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
-	CUDATransferSamOut(transfer_data);
+
+	//CUDATransferSamOut(transfer_data);
+  CUDATransferSeeds(transfer_data);
+  smem_aux_t *seeds = transfer_data->h_aux;
+  for (int i=0; i < n_seqs; i++) {
+    printf("Query %2d\n", i);
+    int n_seeds = aux[i].mem.n;
+    for (int j=0; j < n_seeds; j++) {
+      printf("seed %3d %ld %ld %ld %ld\n", j, aux[i].mem.a[i].x[0],aux[i].mem.a[i].x[1],aux[i].mem.a[i].x[2],aux[i].mem.a[i].info);
+    }
+  }
+
+
 	if (bwa_verbose >= 3) clock_gettime(CLOCK_MONOTONIC_RAW, &timing_stop);
 	if (bwa_verbose >= 3) fprintf(stderr, "[M::%-25s] ***transfer SAMs to host took %lu ms\n", __func__, (timing_stop.tv_nsec - timing_start.tv_nsec) / 1000000);
 
 	// write from host's seq_io to output
 	if (bwa_verbose >= 3) clock_gettime(CLOCK_MONOTONIC_RAW, &timing_start);
-	bseq1_t *seqs = transfer_data->h_seqs;
-	for (int i = 0; i < n_seqs; ++i)
-		if (seqs[i].sam) err_fputs(seqs[i].sam, stdout);
+	//bseq1_t *seqs = transfer_data->h_seqs;
+	//for (int i = 0; i < n_seqs; ++i)
+	//	if (seqs[i].sam) err_fputs(seqs[i].sam, stdout);
+
+
+
+
 	if (bwa_verbose >= 3) clock_gettime(CLOCK_MONOTONIC_RAW, &timing_stop);
 	if (bwa_verbose >= 3) fprintf(stderr, "[M::%-25s] ***write SAMs to stdout took %lu ms\n", __func__, (timing_stop.tv_nsec - timing_start.tv_nsec) / 1000000);
 	if (bwa_verbose >= 3)

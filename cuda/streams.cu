@@ -228,10 +228,12 @@ process_data_t* newProcess(
 }
 
 
+#define MAX_SEEDS_PER_QUERY 1000
 transfer_data_t* newTransfer(){
     transfer_data_t *instance = (transfer_data_t*)calloc(1, sizeof(transfer_data_t));
 
 	// initialize pinned memory for reads on host
+	gpuErrchk( cudaMallocHost((void**)&instance->h_aux, MB_MAX_COUNT*MAX_SEEDS_PER_QUERY*sizeof(bwtint_t) ));
 	gpuErrchk( cudaMallocHost((void**)&instance->h_seqs, MB_MAX_COUNT*sizeof(bseq1_t)) );
 	gpuErrchk( cudaMallocHost((void**)&instance->h_seq_name_ptr, MB_NAME_LIMIT) );
 	gpuErrchk( cudaMallocHost((void**)&instance->h_seq_comment_ptr, MB_COMMENT_LIMIT) );
@@ -250,6 +252,9 @@ transfer_data_t* newTransfer(){
 	// initialize memory for reads on device
 	unsigned long long total_size = MB_MAX_COUNT*sizeof(bseq1_t) + MB_NAME_LIMIT + MB_COMMENT_LIMIT + MB_SEQ_LIMIT + MB_QUAL_LIMIT + MB_SAM_LIMIT;
 	fprintf(stderr, "[M::%-25s] d_seqs (transf) .. %llu MB\n", __func__, total_size/MB_SIZE);
+
+	gpuErrchk( cudaMalloc((void**)&instance->d_seeds_size, sizeof(int)));
+	gpuErrchk( cudaMalloc((void**)&instance->d_aux, MB_MAX_COUNT*MAX_SEEDS_PER_QUERY*sizeof(bwtint_t) ));
 	gpuErrchk( cudaMalloc((void**)&instance->d_seqs, MB_MAX_COUNT*sizeof(bseq1_t)) );
 	gpuErrchk( cudaMalloc((void**)&instance->d_seq_name_ptr, MB_NAME_LIMIT) );
 	gpuErrchk( cudaMalloc((void**)&instance->d_seq_comment_ptr, MB_COMMENT_LIMIT) );
@@ -257,6 +262,7 @@ transfer_data_t* newTransfer(){
 	gpuErrchk( cudaMalloc((void**)&instance->d_seq_qual_ptr, MB_QUAL_LIMIT) );
 	gpuErrchk( cudaMalloc((void**)&instance->d_seq_sam_ptr, MB_SAM_LIMIT) );
 	gpuErrchk( cudaMalloc((void**)&instance->d_seq_sam_size, sizeof(int)) );
+
 
 	if (instance->d_seqs == nullptr || instance->d_seq_name_ptr == nullptr ||
 		instance->d_seq_comment_ptr == nullptr || instance->d_seq_seq_ptr == nullptr ||
@@ -284,6 +290,7 @@ void swapData(process_data_t *process_data, transfer_data_t *transfer_data){
 	{ auto tmp = process_data->h_seq_qual_ptr; process_data->h_seq_qual_ptr = transfer_data->h_seq_qual_ptr; transfer_data->h_seq_qual_ptr = tmp; }
 	{ auto tmp = process_data->h_seq_sam_ptr; process_data->h_seq_sam_ptr = transfer_data->h_seq_sam_ptr; transfer_data->h_seq_sam_ptr = tmp; }
 	// swap device pointers
+	{ auto tmp = process_data->d_aux; process_data->d_aux = transfer_data->d_aux; transfer_data->d_aux = tmp; }
 	{ auto tmp = process_data->d_seqs; process_data->d_seqs = transfer_data->d_seqs; transfer_data->d_seqs = tmp; }
 	{ auto tmp = process_data->d_seq_name_ptr; process_data->d_seq_name_ptr = transfer_data->d_seq_name_ptr; transfer_data->d_seq_name_ptr = tmp; }
 	{ auto tmp = process_data->d_seq_comment_ptr; process_data->d_seq_comment_ptr = transfer_data->d_seq_comment_ptr; transfer_data->d_seq_comment_ptr = tmp; }
@@ -330,6 +337,20 @@ void CUDATransferSamOut(transfer_data_t *transfer_data){
 		seqs[i].sam = sam + (long)seqs[i].sam;
 }
 
+// Copy seeds to host
+void CUDATransferSeeds(transfer_data_t *transfer_data) {
+  //TODO
+  cudaStream_t transfer_stream = (cudaStream_t*)(transfer_data->CUDA_stream);
+  // how much to copy?
+  int seeds_size;
+  gpuErrchk(cudaMemcpyAsync(&seeds_size, transfer_data->d_seeds_size, sizeof(int), cudaMemcpyDeviceToHost, *transfer_stream));
+  // copy all
+  gpuErrchk ( cudaMemcpyAsync(transfer_data->h_aux, transfer_data->d_aux, seeds_size, cudaMemcpyDeviceToHost, *transfer_stream));
+  cudaStreamSynchronize(*transfer_stream);
+
+  // now all seeds are at h_aux on host memory.
+}
+
 
 
 void resetProcess(process_data_t *process_data){
@@ -342,6 +363,7 @@ void resetProcess(process_data_t *process_data){
 	gpuErrchk( cudaMemsetAsync(process_data->d_Nseeds, 0, sizeof(int), *process_stream) );
 		// reset sam size on device
 	gpuErrchk( cudaMemsetAsync(process_data->d_seq_sam_size, 0, sizeof(int), *process_stream) );
+	gpuErrchk( cudaMemsetAsync(process_data->d_seeds_size, 0, sizeof(int), *process_stream) );
 
 }
 

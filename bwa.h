@@ -275,10 +275,12 @@ typedef struct {
 	int n_seqs;			// number of reads
 	int64_t total_input;	// number of reads input prior to this batch
 	int64_t total_output;	// number of reads output prior to this batch
+	smem_aux_t* d_aux;		// collections of SA intervals, vector of size nseqs
 	bseq1_t *d_seqs;		// reads
     char *d_seq_name_ptr, *d_seq_comment_ptr, *d_seq_seq_ptr, *d_seq_qual_ptr, *d_seq_sam_ptr;  // name, comment, seq, qual, sam output
 	int *d_seq_sam_size;	// length of sam on device
     // pre-allocated reads on host
+	smem_aux_t* h_aux;		// collections of SA intervals, vector of size nseqs
     bseq1_t *h_seqs;		// reads
     char *h_seq_name_ptr, *h_seq_comment_ptr, *h_seq_seq_ptr, *h_seq_qual_ptr, *h_seq_sam_ptr;  // name, comment, seq, qual, sam output
 	int h_seq_name_size, h_seq_comment_size, h_seq_seq_size, h_seq_qual_size; // total char length of name, comment, seq, qual in a batch
